@@ -5,7 +5,6 @@ import {
   Get,
   Param,
   ParseUUIDPipe,
-  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -51,13 +50,5 @@ export class ImageController {
     @Param('id', new ParseUUIDPipe({ version: '7' })) id: string,
   ): Promise<Image> {
     return this.service.remove(id);
-  }
-
-  @Patch('/category/key/:key')
-  setCategory(
-    @Param('key') key: string,
-    @Body('category') category: string,
-  ): Image | string {
-    return 'alterado key: ' + key + '     para a category: ' + category;
   }
 }
