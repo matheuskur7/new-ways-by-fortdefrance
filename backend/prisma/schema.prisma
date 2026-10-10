@@ -12,13 +12,15 @@ datasource db {
   provider = "postgresql"
 }
 
-model CarImage {
+model Image {
   id             String   @id @default(uuid(7)) @db.Uuid
+  tag            String   @db.VarChar(100)
   key            String   @db.VarChar(255)
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
   userId         String?  @map("user_id") @db.Uuid
   serviceOrderId String?  @map("service_order_id") @db.Uuid
 
-  @@map("car_image")
+  @@index([tag])
+  @@map("image")
 }

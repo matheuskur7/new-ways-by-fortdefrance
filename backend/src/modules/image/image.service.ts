@@ -1,28 +1,28 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { StorageService } from '../../shared/storage/storage.service.js';
 import { v7 as uuidv7 } from 'uuid';
-import { CarImageRepository } from './car-image.repository.js';
-import { CreateCarImageResponse } from './responses/create-car-image-response.dto.js';
-import { GetCarImageResponse } from './responses/get-car-image.response.dto.js';
-import type { CarImage } from '../../generated/prisma/client.js';
+import { ImageRepository } from './image.repository.js';
+import type { CreateImageResponse } from './responses/create-image-response.dto.js';
+import type { GetImageResponse } from './responses/get-image.response.dto.js';
+import type { Image } from '../../generated/prisma/client.js';
 import {
   createPaginatedResponse,
-  PaginatedResponse,
+  type PaginatedResponse,
 } from '../../shared/pagination/paginated-response.dto.js';
 import { getPaginationParams } from '../../shared/pagination/pagination.js';
 
-const CAR_IMAGE_PAGE_SIZE = 50;
+const IMAGE_PAGE_SIZE = 50;
 
 @Injectable()
-export class CarImageService {
+export class ImageService {
   constructor(
     private readonly storageService: StorageService,
-    private readonly repository: CarImageRepository,
+    private readonly repository: ImageRepository,
   ) {}
 
-  async create(): Promise<CreateCarImageResponse> {
-    const newKey = 'car-image/' + uuidv7();
-    const newImage = await this.repository.create(newKey);
+  async create(tag: string): Promise<CreateImageResponse> {
+    const newKey = tag + '/' + uuidv7();
+    const newImage = await this.repository.create(newKey, tag);
     const uploadUrl = await this.storageService.getPresignedUploadUrl(
       newKey,
       'image/*',
@@ -32,9 +32,12 @@ export class CarImageService {
     return { imageData: await this.toGetResponse(newImage), uploadUrl };
   }
 
-  async findAll(page: number): Promise<PaginatedResponse<GetCarImageResponse>> {
-    const pagination = getPaginationParams(page, CAR_IMAGE_PAGE_SIZE);
-    const { data, total } = await this.repository.findAll(pagination);
+  async findAll(
+    page: number,
+    tag?: string,
+  ): Promise<PaginatedResponse<GetImageResponse>> {
+    const pagination = getPaginationParams(page, IMAGE_PAGE_SIZE);
+    const { data, total } = await this.repository.findAll(pagination, tag);
     const images = await this.toGetResponseList(data);
 
     return createPaginatedResponse(
@@ -47,9 +50,13 @@ export class CarImageService {
 
   async findAllUnlinked(
     page: number,
-  ): Promise<PaginatedResponse<GetCarImageResponse>> {
-    const pagination = getPaginationParams(page, CAR_IMAGE_PAGE_SIZE);
-    const { data, total } = await this.repository.findAllUnlinked(pagination);
+    tag?: string,
+  ): Promise<PaginatedResponse<GetImageResponse>> {
+    const pagination = getPaginationParams(page, IMAGE_PAGE_SIZE);
+    const { data, total } = await this.repository.findAllUnlinked(
+      pagination,
+      tag,
+    );
     const images = await this.toGetResponseList(data);
 
     return createPaginatedResponse(
@@ -60,7 +67,7 @@ export class CarImageService {
     );
   }
 
-  async remove(id: string): Promise<CarImage> {
+  async remove(id: string): Promise<Image> {
     const image = await this.repository.findOne(id);
     if (!image) throw new NotFoundException('Imagem não encontrada.');
 
@@ -68,14 +75,14 @@ export class CarImageService {
     return this.repository.remove(id);
   }
 
-  async toGetResponse(image: CarImage): Promise<GetCarImageResponse> {
+  async toGetResponse(image: Image): Promise<GetImageResponse> {
     return {
       ...image,
       url: await this.storageService.getPresignedUrl(image.key, 900),
     };
   }
 
-  async toGetResponseList(images: CarImage[]): Promise<GetCarImageResponse[]> {
+  async toGetResponseList(images: Image[]): Promise<GetImageResponse[]> {
     return Promise.all(images.map((image) => this.toGetResponse(image)));
   }
 }

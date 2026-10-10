@@ -1,11 +1,12 @@
 import { NotFoundException } from '@nestjs/common';
-import { CarImageService } from './car-image.service.js';
-import type { CarImageRepository } from './car-image.repository.js';
+import { ImageService } from './image.service.js';
+import type { ImageRepository } from './image.repository.js';
 import type { StorageService } from '../../shared/storage/storage.service.js';
 
 const image = {
   id: '019a0000-0000-7000-8000-000000000001',
-  key: 'car-image/test',
+  key: 'products/test',
+  tag: 'products',
   createdAt: new Date(),
   updatedAt: new Date(),
   serviceOrderId: null,
@@ -14,7 +15,13 @@ const image = {
 
 function setup() {
   const repository = {
-    create: vi.fn().mockImplementation((key: string) => ({ ...image, key })),
+    create: vi
+      .fn()
+      .mockImplementation((key: string, tag: string) => ({
+        ...image,
+        key,
+        tag,
+      })),
     findAll: vi.fn().mockResolvedValue({ data: [image], total: 51 }),
     findAllUnlinked: vi.fn().mockResolvedValue({ data: [image], total: 1 }),
     findOne: vi.fn().mockResolvedValue(image),
@@ -25,19 +32,20 @@ function setup() {
     getPresignedUrl: vi.fn().mockResolvedValue('read-url'),
     delete: vi.fn().mockResolvedValue(undefined),
   };
-  const service = new CarImageService(
+  const service = new ImageService(
     storage as unknown as StorageService,
-    repository as unknown as CarImageRepository,
+    repository as unknown as ImageRepository,
   );
   return { repository, storage, service };
 }
 
-describe('CarImageService', () => {
+describe('ImageService', () => {
   it('creates a record and returns signed upload and read URLs', async () => {
     const { service, repository, storage } = setup();
-    const result = await service.create();
+    const result = await service.create('products');
     expect(repository.create).toHaveBeenCalledWith(
-      expect.stringMatching(/^car-image\//),
+      expect.stringMatching(/^products\//),
+      'products',
     );
     expect(storage.getPresignedUploadUrl).toHaveBeenCalledWith(
       result.imageData.key,
@@ -46,17 +54,21 @@ describe('CarImageService', () => {
     );
     expect(result.uploadUrl).toBe('upload-url');
     expect(result.imageData.url).toBe('read-url');
+    expect(result.imageData.tag).toBe('products');
   });
 
   it('paginates records in groups of 50 and signs image URLs', async () => {
     const { service, repository } = setup();
     const result = await service.findAll(2);
-    expect(repository.findAll).toHaveBeenCalledWith({
-      page: 2,
-      perPage: 50,
-      skip: 50,
-      take: 50,
-    });
+    expect(repository.findAll).toHaveBeenCalledWith(
+      {
+        page: 2,
+        perPage: 50,
+        skip: 50,
+        take: 50,
+      },
+      undefined,
+    );
     expect(result.meta).toMatchObject({
       total: 51,
       totalPages: 2,
