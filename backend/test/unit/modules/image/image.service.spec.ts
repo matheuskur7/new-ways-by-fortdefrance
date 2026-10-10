@@ -5,8 +5,8 @@ import type { StorageService } from '../../../../src/shared/storage/storage.serv
 
 const image = {
   id: '019a0000-0000-7000-8000-000000000001',
-  key: 'products/test',
-  tag: 'products',
+  key: 'car-image/test',
+  tag: 'car-image',
   createdAt: new Date(),
   updatedAt: new Date(),
   serviceOrderId: null,
@@ -15,13 +15,11 @@ const image = {
 
 function setup() {
   const repository = {
-    create: vi
-      .fn()
-      .mockImplementation((key: string, tag: string) => ({
-        ...image,
-        key,
-        tag,
-      })),
+    create: vi.fn().mockImplementation((key: string, tag: string) => ({
+      ...image,
+      key,
+      tag,
+    })),
     findAll: vi.fn().mockResolvedValue({ data: [image], total: 51 }),
     findAllUnlinked: vi.fn().mockResolvedValue({ data: [image], total: 1 }),
     findOne: vi.fn().mockResolvedValue(image),
@@ -42,10 +40,10 @@ function setup() {
 describe('ImageService', () => {
   it('creates a record and returns signed upload and read URLs', async () => {
     const { service, repository, storage } = setup();
-    const result = await service.create('products');
+    const result = await service.create('car-image');
     expect(repository.create).toHaveBeenCalledWith(
-      expect.stringMatching(/^products\//),
-      'products',
+      expect.stringMatching(/^car-image\//),
+      'car-image',
     );
     expect(storage.getPresignedUploadUrl).toHaveBeenCalledWith(
       result.imageData.key,
@@ -54,7 +52,7 @@ describe('ImageService', () => {
     );
     expect(result.uploadUrl).toBe('upload-url');
     expect(result.imageData.url).toBe('read-url');
-    expect(result.imageData.tag).toBe('products');
+    expect(result.imageData.tag).toBe('car-image');
   });
 
   it('paginates records in groups of 50 and signs image URLs', async () => {

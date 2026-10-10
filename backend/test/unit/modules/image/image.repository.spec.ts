@@ -7,7 +7,7 @@ function setup() {
   const image = {
     create: vi
       .fn()
-      .mockResolvedValue({ key: 'products/test', tag: 'products' }),
+      .mockResolvedValue({ key: 'car-image/test', tag: 'car-image' }),
     findMany: vi.fn().mockResolvedValue([]),
     count: vi.fn().mockResolvedValue(0),
   };
@@ -24,13 +24,13 @@ function setup() {
 describe('ImageRepository', () => {
   it('persists the tag alongside the storage key', async () => {
     const { image, repository } = setup();
-    await repository.create('products/test', 'products');
+    await repository.create('car-image/test', 'car-image');
     expect(image.create).toHaveBeenCalledWith({
-      data: { key: 'products/test', tag: 'products' },
+      data: { key: 'car-image/test', tag: 'car-image' },
     });
   });
 
-  it.each([undefined, 'products'])(
+  it.each([undefined, 'car-image'])(
     'uses the same tag filter for records and totals (%s)',
     async (tag) => {
       const { image, repository } = setup();
@@ -45,8 +45,8 @@ describe('ImageRepository', () => {
 
   it('combines the tag and unlinked filters for records and totals', async () => {
     const { image, repository } = setup();
-    await repository.findAllUnlinked(pagination, 'products');
-    const where = { serviceOrderId: null, tag: 'products' };
+    await repository.findAllUnlinked(pagination, 'car-image');
+    const where = { serviceOrderId: null, tag: 'car-image' };
     expect(image.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where }),
     );
