@@ -1,8 +1,8 @@
 import 'reflect-metadata';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { ImageTagDto } from './image-tag.dto.js';
-import { ImageQueryDto } from './image-query.dto.js';
+import { ImageTagDto } from '../../../../../src/modules/image/dto/image-tag.dto.js';
+import { ImageQueryDto } from '../../../../../src/modules/image/dto/image-query.dto.js';
 
 describe('Image tag validation', () => {
   it.each([

@@ -1,7 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
-import { ImageService } from './image.service.js';
-import type { ImageRepository } from './image.repository.js';
-import type { StorageService } from '../../shared/storage/storage.service.js';
+import { ImageService } from '../../../../src/modules/image/image.service.js';
+import type { ImageRepository } from '../../../../src/modules/image/image.repository.js';
+import type { StorageService } from '../../../../src/shared/storage/storage.service.js';
 
 const image = {
   id: '019a0000-0000-7000-8000-000000000001',

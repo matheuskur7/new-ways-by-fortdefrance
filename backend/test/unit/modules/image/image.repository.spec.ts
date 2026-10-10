@@ -1,5 +1,5 @@
-import { ImageRepository } from './image.repository.js';
-import type { PrismaService } from '../../shared/db/prisma.service.js';
+import { ImageRepository } from '../../../../src/modules/image/image.repository.js';
+import type { PrismaService } from '../../../../src/shared/db/prisma.service.js';
 
 const pagination = { page: 1, perPage: 50, skip: 0, take: 50 };
 
