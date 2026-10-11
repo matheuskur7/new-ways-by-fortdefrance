@@ -161,6 +161,69 @@ describe('Better Auth HTTP integration (in-memory database)', () => {
       .send({ organizationId })
       .expect(403);
   });
+  it('expires after 12 hours and only renews after each 3-hour interval', async () => {
+    const login = await request(app.getHttpServer())
+      .post('/api/auth/sign-in/email')
+      .set('Origin', frontend)
+      .send({ email: 'test@example.com', password: 'Strong-password-123' })
+      .expect(200);
+    const cookie = login.headers['set-cookie'][0].split(';')[0];
+    const initial = await request(app.getHttpServer())
+      .get('/api/auth/get-session')
+      .set('Cookie', cookie)
+      .expect(200);
+    const createdAt = new Date(initial.body.session.createdAt).getTime();
+    const expiresAt = new Date(initial.body.session.expiresAt).getTime();
+    const hour = 60 * 60 * 1000;
+    expect(expiresAt - createdAt).toBe(12 * hour);
+    expect(login.headers['set-cookie'][0]).toContain('Max-Age=43200');
+
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(createdAt + 3 * hour - 1000);
+      const before = await request(app.getHttpServer())
+        .get('/api/auth/get-session')
+        .set('Cookie', cookie)
+        .expect(200);
+      expect(new Date(before.body.session.expiresAt).getTime()).toBe(expiresAt);
+
+      const renewalTime = createdAt + 3 * hour + 1000;
+      vi.setSystemTime(renewalTime);
+      const renewed = await request(app.getHttpServer())
+        .get('/api/auth/get-session')
+        .set('Cookie', cookie)
+        .expect(200);
+      const renewedExpiry = new Date(renewed.body.session.expiresAt).getTime();
+      expect(renewedExpiry).toBe(renewalTime + 12 * hour);
+      expect(renewed.headers['set-cookie'][0]).toContain('Max-Age=43200');
+
+      vi.setSystemTime(renewalTime + 3 * hour - 1000);
+      const unchanged = await request(app.getHttpServer())
+        .get('/api/auth/get-session')
+        .set('Cookie', cookie)
+        .expect(200);
+      expect(new Date(unchanged.body.session.expiresAt).getTime()).toBe(
+        renewedExpiry,
+      );
+
+      vi.setSystemTime(renewalTime + 3 * hour);
+      const nextRenewal = await request(app.getHttpServer())
+        .get('/api/auth/get-session')
+        .set('Cookie', cookie)
+        .expect(200);
+      expect(new Date(nextRenewal.body.session.expiresAt).getTime()).toBe(
+        renewalTime + 15 * hour,
+      );
+
+      vi.setSystemTime(renewalTime + 15 * hour + 1000);
+      await request(app.getHttpServer())
+        .get('/test-auth/private')
+        .set('Cookie', cookie)
+        .expect(401);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
   it('invalidates the session on logout and rejects reuse of the old cookie', async () => {
     const loginSession = await agent.get('/api/auth/get-session').expect(200);
     expect(loginSession.body.user.email).toBe('test@example.com');

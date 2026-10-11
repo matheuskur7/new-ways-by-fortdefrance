@@ -28,6 +28,13 @@ Dentro de `frontend/`, execute `pnpm dev`. Em produção, configure as URLs HTTP
 
 O Better Auth expõe os endpoints de autenticação e Organization em `/api/auth/*`. `GET /auth/context` retorna apenas o usuário e a organização ativa validada com seu papel; nunca retorna o token da sessão. A resposta usa `Cache-Control: private, no-store`.
 
+As sessões têm validade de 12 horas. Uma consulta a uma sessão válida pode
+renová-la por mais 12 horas somente quando passaram pelo menos 3 horas desde
+a criação ou a última renovação; não há renovação por temporizador. Os endpoints
+do Better Auth enviam o cookie renovado ao navegador. A consulta interna
+`GET /auth/context` não repassa esse cookie, portanto a extensão da validade no
+banco por essa consulta não estende, por si só, a validade do cookie no navegador.
+
 Todas as rotas NestJS exigem sessão por padrão. `@Public()` libera rotas explicitamente (a mensagem inicial em `/` é pública). O handler Better Auth gerencia suas próprias rotas públicas e privadas. Mutações autenticadas nas rotas Nest exigem `Origin` igual a `FRONTEND_URL` ou `BETTER_AUTH_URL`; a proteção de origem/CSRF do Better Auth permanece ativa.
 
 A autorização do frontend é centralizada em `requireSession` e `requireOrganization`, executadas no servidor, com chamadas sem cache persistente ao backend. Novas páginas protegidas devem chamar esses helpers perto do acesso aos dados, dentro de Suspense, conforme a configuração Cache Components do projeto. Server Actions e Route Handlers futuros devem fazer sua própria verificação; esconder botões ou verificar somente layouts não autoriza uma operação.

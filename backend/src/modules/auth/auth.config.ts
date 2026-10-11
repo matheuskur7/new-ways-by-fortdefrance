@@ -25,7 +25,11 @@ export function getAuthOptions(config: ConfigService) {
       minPasswordLength: 8,
       maxPasswordLength: 128,
     },
-    session: { cookieCache: { enabled: false } },
+    session: {
+      expiresIn: 12 * 3600,
+      updateAge: 3 * 3600,
+      cookieCache: { enabled: false },
+    },
     plugins: [organizationPlugin] as [typeof organizationPlugin],
   };
 }
