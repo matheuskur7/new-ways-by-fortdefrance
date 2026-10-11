@@ -14,7 +14,7 @@ export function configureApplication(app: INestApplication): void {
 
   const config = new DocumentBuilder()
     .setTitle('New Ways API')
-    .setDescription('API de imagens com organização por tags no S3.')
+    .setDescription('API do Sistema New Ways - by Fort de France.')
     .setVersion('1.0')
     .addCookieAuth('better-auth.session_token')
     .build();
