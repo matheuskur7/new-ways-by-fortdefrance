@@ -38,3 +38,5 @@ Before the final response, run one reporting pass. If candidates remain, from th
 ## Aparência
 
 - Use somente o tema claro (light). Não implemente tema escuro, seleção de tema ou adaptação ao tema do sistema.
+- Botões somente com ícone devem exibir um tooltip descritivo ao passar o mouse e ao receber foco pelo teclado. Forneça também um nome acessível com `aria-label`; prefira o componente compartilhado `IconButton` para manter esse comportamento.
+- Use o componente `Skeleton` do shadcn/ui nos estados de carregamento de páginas e seções, incluindo fallbacks de `Suspense` durante validações de acesso e carregamento de dados. Modele os skeletons conforme o layout do conteúdo esperado, preservando espaço e evitando textos transitórios que piscam na interface. A validação de acesso deve continuar sendo realizada no servidor.
