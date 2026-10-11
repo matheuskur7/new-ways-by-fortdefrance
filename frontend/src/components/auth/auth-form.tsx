@@ -12,6 +12,8 @@ import { useState } from "react";
 import type { SubmitEvent } from "react";
 import { authClient } from "@/lib/auth-client";
 import { signInSchema, signUpSchema } from "@/lib/auth-schemas";
+import { toast } from "react-toastify";
+import { CompanyEntryToast } from "@/components/auth/company-entry-toast";
 
 export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const router = useRouter();
@@ -59,7 +61,10 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
             const activation = await authClient.organization.setActive({
               organizationId: companies.data[0].id,
             });
-            if (!activation.error) destination = "/dashboard";
+            if (!activation.error) {
+              destination = "/dashboard";
+              toast.info(<CompanyEntryToast name={companies.data[0].name} />);
+            }
           }
         } catch {
           // Keep the authenticated session and allow manual selection on failure.

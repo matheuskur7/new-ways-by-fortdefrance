@@ -6,6 +6,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { toast } from "react-toastify";
+import { CompanyEntryToast } from "@/components/auth/company-entry-toast";
 
 export function OrganizationManager({ activeId }: { activeId?: string }) {
   const router = useRouter();
@@ -22,6 +24,8 @@ export function OrganizationManager({ activeId }: { activeId?: string }) {
       throw new Error(
         result.error.message ?? "Não foi possível selecionar a empresa.",
       );
+    const company = organizations?.find((org) => org.id === organizationId);
+    if (company) toast.info(<CompanyEntryToast name={company.name} />);
     router.replace("/dashboard");
     router.refresh();
   }

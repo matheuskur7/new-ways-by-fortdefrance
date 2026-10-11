@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Roboto } from "next/font/google";
 import "./globals.css";
+import "react-toastify/dist/ReactToastify.css";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ToastProvider } from "@/components/toast-provider";
 
 const roboto = Roboto({
   variable: "--font-roboto",
@@ -32,6 +34,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <TooltipProvider>{children}</TooltipProvider>
+        <ToastProvider />
       </body>
     </html>
   );
