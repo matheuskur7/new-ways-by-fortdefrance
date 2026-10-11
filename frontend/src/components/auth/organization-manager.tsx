@@ -5,7 +5,8 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { authClient } from "@/lib/auth-client";
+import { useOrganizations, useSetActiveOrganization } from "@/api/auth.queries";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "react-toastify";
 import { CompanyEntryToast } from "@/components/auth/company-entry-toast";
 
@@ -15,15 +16,12 @@ export function OrganizationManager({ activeId }: { activeId?: string }) {
     data: organizations,
     isPending: loading,
     error: listError,
-  } = authClient.useListOrganizations();
-  const [pending, setPending] = useState(false);
+  } = useOrganizations();
+  const activation = useSetActiveOrganization();
+  const pending = activation.isPending;
   const [error, setError] = useState("");
   async function activate(organizationId: string) {
-    const result = await authClient.organization.setActive({ organizationId });
-    if (result.error)
-      throw new Error(
-        result.error.message ?? "Não foi possível selecionar a empresa.",
-      );
+    await activation.mutateAsync(organizationId);
     const company = organizations?.find((org) => org.id === organizationId);
     if (company) toast.info(<CompanyEntryToast name={company.name} />);
     router.replace("/");
@@ -32,7 +30,6 @@ export function OrganizationManager({ activeId }: { activeId?: string }) {
 
   async function select(organizationId: string) {
     if (pending) return;
-    setPending(true);
     setError("");
     try {
       await activate(organizationId);
@@ -42,8 +39,6 @@ export function OrganizationManager({ activeId }: { activeId?: string }) {
           ? cause.message
           : "Não foi possível selecionar a empresa.",
       );
-    } finally {
-      setPending(false);
     }
   }
 
@@ -55,9 +50,10 @@ export function OrganizationManager({ activeId }: { activeId?: string }) {
         </CardHeader>
         <CardContent>
           {loading && (
-            <p className="mt-4" role="status">
-              Carregando…
-            </p>
+            <div className="mt-4 grid gap-3" role="status" aria-label="Carregando empresas">
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+            </div>
           )}
           {listError && (
             <p className="mt-4 text-destructive" role="alert">

@@ -10,14 +10,16 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { SubmitEvent } from "react";
-import { authClient } from "@/lib/auth-client";
-import { signInSchema, signUpSchema } from "@/lib/auth-schemas";
+import { useAuthenticate, useSetActiveOrganization } from "@/api/auth.queries";
+import { listOrganizations } from "@/api/organizations";
 import { toast } from "react-toastify";
 import { CompanyEntryToast } from "@/components/auth/company-entry-toast";
 
 export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const router = useRouter();
   const [error, setError] = useState("");
+  const authentication = useAuthenticate();
+  const activation = useSetActiveOrganization();
   const [pending, setPending] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const signup = mode === "signup";
@@ -29,42 +31,16 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
     const values = Object.fromEntries(new FormData(event.currentTarget));
     setPending(true);
     try {
-      if (signup) {
-        const input = signUpSchema.safeParse(values);
-        if (!input.success) {
-          setError(input.error.issues[0].message);
-          return;
-        }
-        const result = await authClient.signUp.email(input.data);
-        if (result.error) {
-          setError(result.error.message ?? "Não foi possível criar sua conta.");
-          return;
-        }
-      } else {
-        const input = signInSchema.safeParse(values);
-        if (!input.success) {
-          setError(input.error.issues[0].message);
-          return;
-        }
-        const result = await authClient.signIn.email(input.data);
-        if (result.error) {
-          setError(result.error.message ?? "Email ou senha inválidos.");
-          return;
-        }
-      }
+      await authentication.mutateAsync({ mode, values });
       let destination = "/organizations";
       if (!signup) {
         // Only a fresh login may skip company selection.
         try {
-          const companies = await authClient.organization.list();
-          if (!companies.error && companies.data?.length === 1) {
-            const activation = await authClient.organization.setActive({
-              organizationId: companies.data[0].id,
-            });
-            if (!activation.error) {
-              destination = "/";
-              toast.info(<CompanyEntryToast name={companies.data[0].name} />);
-            }
+          const companies = await listOrganizations();
+          if (companies.length === 1) {
+            await activation.mutateAsync(companies[0].id);
+            destination = "/";
+            toast.info(<CompanyEntryToast name={companies[0].name} />);
           }
         } catch {
           // Keep the authenticated session and allow manual selection on failure.
@@ -74,8 +50,8 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
         router.replace(destination);
       }
       router.refresh();
-    } catch {
-      setError("Não foi possível conectar. Tente novamente.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Não foi possível conectar. Tente novamente.");
     } finally {
       setPending(false);
     }

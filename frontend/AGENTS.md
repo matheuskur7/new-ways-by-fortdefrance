@@ -23,6 +23,14 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - O grupo `(private)` organiza as páginas, mas não valida acesso automaticamente. Preserve a validação de sessão e de vínculo com a empresa no servidor, conforme a necessidade de cada página. Defina também a autorização das futuras páginas de `(pdf)` conforme os dados acessados.
 - Reserve `(pdf)` sem implementar páginas ou fluxos enquanto não houver uma funcionalidade solicitada.
 
+## Requisições à API
+
+- Centralize consultas e alterações da API em `src/api/`, organizadas por domínio. Componentes e páginas devem consumir essas funções ou hooks, sem implementar chamadas HTTP diretamente.
+- Use TanStack Query para dados remotos no cliente que precisem de cache, deduplicação, atualização ou estados de carregamento, e `useMutation` para alterações disparadas pelo usuário. Mantenha query keys e hooks junto ao domínio em `src/api/`.
+- Mantenha consultas e validações de acesso do servidor em módulos `*.server.ts` com `server-only`, sem cache compartilhado de sessão entre usuários. Os helpers de autorização ficam em `src/lib/auth-server.ts`.
+- Valide respostas externas com Zod. Ao alterar dados, invalide as consultas relacionadas; ao autenticar, sair ou trocar de empresa, cancele consultas em andamento e limpe dados da sessão ou empresa anterior.
+- Não repita mutations automaticamente. Preserve o cliente do Better Auth como transporte de autenticação, evitando duplicar o gerenciamento de sessão.
+
 <!-- BEGIN:nextjs-agent-feedback -->
 
 ## Report Next.js feedback

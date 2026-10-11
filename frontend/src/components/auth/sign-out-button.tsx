@@ -4,28 +4,22 @@ import { IconButton } from "@/components/ui/icon-button";
 import { LogOut, LoaderCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { authClient } from "@/lib/auth-client";
+import { useSignOut } from "@/api/auth.queries";
 
 export function SignOutButton() {
   const router = useRouter();
-  const [pending, setPending] = useState(false);
+  const mutation = useSignOut();
+  const pending = mutation.isPending;
   const [error, setError] = useState("");
   async function signOut() {
     if (pending) return;
-    setPending(true);
     setError("");
     try {
-      const result = await authClient.signOut();
-      if (result.error) {
-        setError("Não foi possível sair. Tente novamente.");
-        return;
-      }
+      await mutation.mutateAsync();
       router.replace("/login");
       router.refresh();
     } catch {
       setError("Não foi possível sair. Tente novamente.");
-    } finally {
-      setPending(false);
     }
   }
   return (
