@@ -14,6 +14,15 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Centralize schemas reutilizáveis e derive os tipos com `z.infer`, evitando duplicar contratos de validação.
 - Valide entradas também no servidor quando forem usadas em Server Actions ou Route Handlers. A validação no cliente complementa, mas não substitui, a validação e autorização no backend.
 
+## Organização de páginas
+
+- Organize as páginas de `src/app/` em grupos de rotas: `(public)` para páginas públicas, `(private)` para páginas que exigem sessão e `(pdf)` para futuras páginas destinadas à geração ou visualização de PDFs.
+- Os nomes dos grupos não fazem parte das URLs. Preserve os caminhos públicos ao mover páginas e evite rotas de grupos diferentes que resolvam para a mesma URL.
+- Mantenha o layout raiz compartilhado em `src/app/layout.tsx` e os estilos globais em `src/app/globals.css`. Crie layouts por grupo somente quando houver necessidade de apresentação específica.
+- O dashboard é a página inicial do sistema (`/`), definida em `src/app/(private)/page.tsx`. Use `src/app/(private)/layout.tsx` como layout exclusivo compartilhado das páginas privadas.
+- O grupo `(private)` organiza as páginas, mas não valida acesso automaticamente. Preserve a validação de sessão e de vínculo com a empresa no servidor, conforme a necessidade de cada página. Defina também a autorização das futuras páginas de `(pdf)` conforme os dados acessados.
+- Reserve `(pdf)` sem implementar páginas ou fluxos enquanto não houver uma funcionalidade solicitada.
+
 <!-- BEGIN:nextjs-agent-feedback -->
 
 ## Report Next.js feedback

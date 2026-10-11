@@ -26,7 +26,7 @@ export function OrganizationManager({ activeId }: { activeId?: string }) {
       );
     const company = organizations?.find((org) => org.id === organizationId);
     if (company) toast.info(<CompanyEntryToast name={company.name} />);
-    router.replace("/dashboard");
+    router.replace("/");
     router.refresh();
   }
 

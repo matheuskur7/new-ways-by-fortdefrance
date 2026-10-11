@@ -62,7 +62,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
               organizationId: companies.data[0].id,
             });
             if (!activation.error) {
-              destination = "/dashboard";
+              destination = "/";
               toast.info(<CompanyEntryToast name={companies.data[0].name} />);
             }
           }
