@@ -31,6 +31,7 @@ Este arquivo se aplica a todo o monorepo. Orientações em `AGENTS.md` dentro de
 - Para alterações de estrutura do banco, inclua migrações em `prisma/migrations/`. Confira o banco de destino antes de aplicar migrações; não execute operações destrutivas sem autorização explícita.
 - Documente variáveis de banco e armazenamento em `.env.example`, sem credenciais reais.
 - Para validar alterações, use `pnpm build`, `pnpm test` e `pnpm lint` conforme o escopo. Valide o schema com `pnpm exec prisma validate --config prisma7.config.ts` quando ele for alterado.
+- Mantenha todos os testes em `test/`, fora de `src/`: unitários em `test/unit/`, organizados por módulo, e e2e em `test/e2e/`. Não crie pastas `specs` dentro dos módulos.
 - Testes unitários devem usar mocks para banco e armazenamento; testes de integração devem declarar as dependências externas necessárias.
 
 ## Commits — Conventional Commits
