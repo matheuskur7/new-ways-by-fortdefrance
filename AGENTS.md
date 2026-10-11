@@ -43,6 +43,7 @@ Todos os commits devem seguir Conventional Commits:
 
 - Use `feat` para funcionalidades, `fix` para correções, `docs` para documentação, `refactor` para refatorações, `test` para testes, `build` para dependências ou configuração de build, `ci` para integração contínua e `chore` para manutenção.
 - Prefira os escopos `frontend`, `backend` ou um domínio específico quando isso esclarecer a mudança.
+- Escreva as mensagens dos commits em português, incluindo a descrição, o corpo e as explicações dos rodapés. Preserve os tipos, os escopos técnicos e os marcadores do Conventional Commits, como `BREAKING CHANGE:`.
 - Escreva uma descrição curta e objetiva sobre o resultado do commit.
 - Separe alterações independentes em commits coerentes e inclua apenas arquivos pertinentes ao assunto.
 - Para mudanças incompatíveis, use `!` após o tipo ou escopo e explique a quebra no rodapé `BREAKING CHANGE:`.
@@ -51,8 +52,8 @@ Todos os commits devem seguir Conventional Commits:
 Exemplos:
 
 ```text
-feat(backend): add car image upload and listing
-fix(frontend): correct image preview loading
-build(backend): add Prisma and S3 dependencies
-docs: document monorepo agent guidelines
+feat(backend): adicionar envio e listagem de imagens de carros
+fix(frontend): corrigir carregamento da prévia de imagens
+build(backend): adicionar dependências do Prisma e S3
+docs: documentar orientações para agentes do monorepo
 ```
