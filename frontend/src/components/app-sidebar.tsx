@@ -74,7 +74,7 @@ export function AppSidebar({ user }: { user: AuthContext["user"] }) {
                     className="h-10 border border-transparent text-[15px] transition-[width,height,padding,font-size] duration-200 ease-linear motion-reduce:transition-none data-active:shadow-[inset_2px_0_0_var(--primary)] group-data-[collapsible=icon]:text-sm"
                     onClick={() => setOpenMobile(false)}
                   >
-                    <Icon className="size-[18px]! transition-[width,height] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:size-4!" aria-hidden="true" />
+                    <Icon className="size-4.5! transition-[width,height] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:size-4!" aria-hidden="true" />
                     <span className="max-w-40 overflow-hidden whitespace-nowrap opacity-100 transition-[max-width,font-size,opacity] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:max-w-0 group-data-[collapsible=icon]:text-[0px] group-data-[collapsible=icon]:opacity-0">{label}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
