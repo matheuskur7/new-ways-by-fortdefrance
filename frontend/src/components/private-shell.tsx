@@ -17,8 +17,8 @@ function NavigationHeader({ organization }: { organization: AuthContext["organiz
         <Icon aria-hidden="true" />
       </IconButton>
       <div className="ml-auto min-w-0 text-right">
+        <p className="text-xs text-muted-foreground">Você está em</p>
         <p className="truncate text-sm font-medium">{organization?.name ?? "Selecione uma empresa"}</p>
-        <p className="text-xs text-muted-foreground">Seu espaço de trabalho</p>
       </div>
     </header>
   );
