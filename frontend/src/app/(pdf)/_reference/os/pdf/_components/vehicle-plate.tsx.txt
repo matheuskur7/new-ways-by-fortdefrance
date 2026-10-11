@@ -1,0 +1,128 @@
+import { Circle, Path, Rect, StyleSheet, Svg, Text, View } from "@react-pdf/renderer";
+
+export function VehiclePlate({ plate }: { plate: string }) {
+  const plateFormat = getVehiclePlateFormat(plate);
+  const useOldPlateDesign = plateFormat === "old";
+  const mainPlateStyle = useOldPlateDesign ? [styles.main, styles.mainOld] : styles.main;
+  const plateViewStyle = useOldPlateDesign ? [styles.view, styles.viewOld] : styles.view;
+
+  return (
+    <View style={plateViewStyle}>
+      {useOldPlateDesign ? (
+        <OldPlateHeader />
+      ) : (
+        <View style={styles.title}>
+          <Text style={styles.titleText}>PLACA</Text>
+          <BrazilFlag />
+        </View>
+      )}
+      <Text style={mainPlateStyle}>{formatVehiclePlate(plate)}</Text>
+    </View>
+  );
+}
+
+function BrazilFlag() {
+  return (
+    <Svg style={styles.flag} viewBox="0 0 28 20">
+      <Rect x="0" y="0" width="28" height="20" fill="#009C3B" />
+      <Path d="M14 2 L26 10 L14 18 L2 10 Z" fill="#FFDF00" />
+      <Circle cx="14" cy="10" r="4.5" fill="#002776" />
+    </Svg>
+  );
+}
+
+function PlateBolt() {
+  return (
+    <Svg style={styles.bolt} viewBox="0 0 10 10">
+      <Circle cx="5" cy="5" r="4" fill="#D8E0E2" stroke="#566166" strokeWidth="0.4" />
+      <Circle cx="5" cy="5" r="1.4" fill="#1E2528" />
+    </Svg>
+  );
+}
+
+function OldPlateHeader() {
+  return (
+    <View style={styles.oldTitle}>
+      <PlateBolt />
+      <Text style={styles.oldTitleText}>PLACA</Text>
+      <PlateBolt />
+    </View>
+  );
+}
+
+export function formatVehiclePlate(plate: string) {
+  const normalizedPlate = plate.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+  return normalizedPlate.length > 3 ? `${normalizedPlate.slice(0, 3)} ${normalizedPlate.slice(3)}` : normalizedPlate;
+}
+
+export function getVehiclePlateFormat(plate: string) {
+  const normalizedPlate = plate.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+
+  if (/^[A-Z]{3}[0-9][A-Z][0-9]{2}$/.test(normalizedPlate)) return "mercosul";
+  else return "old";
+}
+
+const styles = StyleSheet.create({
+  main: {
+    backgroundColor: "#FFFFFF",
+    padding: "0.5mm",
+    fontSize: 12,
+    fontWeight: "bold",
+    textAlign: "center",
+    borderBottomLeftRadius: "2mm",
+    borderBottomRightRadius: "2mm",
+  },
+  mainOld: {
+    backgroundColor: "#C8D1D4",
+    color: "#111111",
+  },
+  title: {
+    backgroundColor: "blue",
+    paddingVertical: "0.6mm",
+    borderTopLeftRadius: "0.4mm",
+    borderTopRightRadius: "0.4mm",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  titleText: {
+    color: "white",
+    fontSize: 6,
+    fontWeight: "bold",
+  },
+  flag: {
+    width: "3mm",
+    height: "2.16mm",
+    marginLeft: "1mm",
+  },
+  oldTitle: {
+    backgroundColor: "#D9E1E3",
+    paddingVertical: "0.6mm",
+    borderTopLeftRadius: "0.4mm",
+    borderTopRightRadius: "0.4mm",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  oldTitleText: {
+    color: "#171A1C",
+    fontSize: 6,
+    fontWeight: "bold",
+  },
+  bolt: {
+    width: "1.8mm",
+    height: "1.8mm",
+    marginHorizontal: "1mm",
+  },
+  view: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#000000",
+    borderWidth: "0.6mm",
+    width: "27mm",
+    height: "11mm",
+    borderRadius: "1mm",
+  },
+  viewOld: {
+    backgroundColor: "#C8D1D4",
+  },
+});

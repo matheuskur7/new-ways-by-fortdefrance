@@ -1,0 +1,24 @@
+"use client";
+
+import { FilePdfIcon } from "@phosphor-icons/react";
+import Link from "next/link";
+import type { ServiceOrder } from "@/api/service-orders";
+import { Button } from "@/components/ui/button";
+import type { ComponentProps } from "react";
+
+export function ServiceOrderPdfButton({
+  serviceOrder,
+  size = "sm",
+}: {
+  serviceOrder: ServiceOrder;
+  size?: ComponentProps<typeof Button>["size"];
+}) {
+  return (
+    <Button asChild variant="outline" size={size}>
+      <Link href={`/os/pdf/${serviceOrder.id}`} target="_blank" rel="noreferrer">
+        <FilePdfIcon />
+        Abrir PDF
+      </Link>
+    </Button>
+  );
+}

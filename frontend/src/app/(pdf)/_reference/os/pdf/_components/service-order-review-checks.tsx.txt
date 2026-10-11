@@ -1,0 +1,55 @@
+import { StyleSheet, Text, View } from "@react-pdf/renderer";
+import type { ServiceOrderReviewCheck } from "@/api/service-order-review-checks";
+import type { PdfTheme } from "./service-order-pdf-document";
+
+type ReviewCheck = Pick<ServiceOrderReviewCheck, "label" | "type"> & { value?: string };
+
+type Props = { checks: ReviewCheck[]; theme: PdfTheme };
+type CheckStyles = ReturnType<typeof createStyles>;
+
+export function ServiceOrderReviewChecks({ checks, theme }: Props) {
+  const styles = createStyles(theme);
+  return (
+    <View style={styles.section}>
+      {checks.map((check) => (
+        <ReviewCheck key={check.label} check={check} styles={styles} />
+      ))}
+    </View>
+  );
+}
+
+function ReviewCheck({ check, styles }: { check: ReviewCheck; styles: CheckStyles }) {
+  const isDate = check.type === "date";
+  return (
+    <View style={styles.check}>
+      <View style={styles.label}>
+        <Text style={styles.labelText}>{check.label}</Text>
+      </View>
+      <View style={[styles.value, isDate ? styles.dateValue : styles.blankValue]}>
+        <Text style={styles.valueText}>{isDate ? (check.value ?? "/") : ""}</Text>
+      </View>
+    </View>
+  );
+}
+
+function createStyles({ colors, borders, layout }: PdfTheme) {
+  const control = layout.reviewControls;
+  return StyleSheet.create({
+    section: { alignSelf: "flex-end", flexDirection: "row", gap: control.gap, marginTop: control.marginTop },
+    check: {
+      height: control.height,
+      borderWidth: borders.width,
+      borderColor: colors.border,
+      borderRadius: borders.radius,
+      backgroundColor: colors.paper,
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    label: { alignSelf: "stretch", backgroundColor: colors.bar, justifyContent: "center", paddingHorizontal: control.labelPadding },
+    labelText: { color: colors.tableText, fontFamily: "Helvetica-Bold", fontSize: 5.5, textTransform: "uppercase" },
+    value: { alignSelf: "stretch", borderLeftWidth: borders.width, borderColor: colors.border, justifyContent: "center" },
+    valueText: { color: colors.tableText, fontFamily: "Helvetica-Bold", fontSize: 7, textAlign: "center" },
+    blankValue: { width: layout.reportTable.columnWidth },
+    dateValue: { width: control.dateCellWidth },
+  });
+}

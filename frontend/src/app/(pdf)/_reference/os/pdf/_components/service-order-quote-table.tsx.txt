@@ -1,0 +1,91 @@
+import { StyleSheet, Text } from "@react-pdf/renderer";
+import type { ServiceOrder, ServiceOrderNumberedInfoItem } from "@/api/service-orders";
+import type { PdfTheme } from "./service-order-pdf-document";
+import { PdfTableCell, PdfTableFooter, PdfTableFooterCell, PdfTableHeader, PdfTableHeaderCell, PdfTableRow } from "./pdf-table";
+import { PdfSection } from "./pdf-section";
+
+type Props = { breakBefore?: boolean; rows: number; serviceOrder: ServiceOrder; theme: PdfTheme };
+type QuoteTableStyles = ReturnType<typeof createStyles>;
+
+export function ServiceOrderQuoteTable({ breakBefore = true, rows, serviceOrder, theme }: Props) {
+  const items = serviceOrder.quoteRequest ?? [];
+  const styles = createStyles(theme);
+  return (
+    <PdfSection break={breakBefore} label="A orçar" theme={theme}>
+      <PdfTableHeader theme={theme}>
+        <PdfTableHeaderCell style={styles.numberCell} theme={theme}>
+          Nº
+        </PdfTableHeaderCell>
+        <PdfTableHeaderCell style={styles.itemCell} theme={theme}>
+          Peça / serviço observado
+        </PdfTableHeaderCell>
+        <PdfTableHeaderCell isLast style={styles.reasonCell} theme={theme}>
+          Motivo
+        </PdfTableHeaderCell>
+      </PdfTableHeader>
+      {Array.from({ length: rows }, (_, index) => (
+        <QuoteRow key={index} index={index} item={items[index]} styles={styles} theme={theme} />
+      ))}
+      <PdfTableFooter style={styles.footer} theme={theme}>
+        <PdfTableFooterCell isLast style={styles.footerContent} theme={theme}>
+          <Text style={styles.footerText}>Nº · Marcar número de relato ou de item de revisão ao qual o item se refere</Text>
+        </PdfTableFooterCell>
+      </PdfTableFooter>
+    </PdfSection>
+  );
+}
+
+function QuoteRow({
+  index,
+  item,
+  styles,
+  theme,
+}: {
+  index: number;
+  item?: ServiceOrderNumberedInfoItem;
+  styles: QuoteTableStyles;
+  theme: PdfTheme;
+}) {
+  return (
+    <PdfTableRow striped={Boolean(index % 2)} style={styles.row} theme={theme}>
+      <PdfTableCell style={styles.numberCell} theme={theme}>
+        {item && <Text style={styles.numberText}>-</Text>}
+      </PdfTableCell>
+      <PdfTableCell style={styles.itemCell} theme={theme}>
+        <Text style={styles.itemText}>{item?.description.toUpperCase()}</Text>
+      </PdfTableCell>
+      <PdfTableCell isLast style={styles.reasonCell} theme={theme}>
+        {item && <Text style={styles.reasonText}>Solicitação Cliente</Text>}
+      </PdfTableCell>
+    </PdfTableRow>
+  );
+}
+
+function createStyles({ colors, layout }: PdfTheme) {
+  const table = layout.reportTable;
+  return StyleSheet.create({
+    row: { height: table.rowHeight },
+    numberCell: { width: table.columnWidth },
+    numberText: { color: colors.tableText, fontFamily: "Helvetica-Bold", fontSize: 7, textAlign: "center" },
+    itemCell: { flex: 1 },
+    itemText: {
+      color: colors.tableText,
+      fontFamily: "Helvetica",
+      fontSize: 8,
+      paddingHorizontal: 2,
+      paddingTop: 1.5,
+      textTransform: "uppercase",
+    },
+    reasonCell: { width: "23%" },
+    reasonText: {
+      color: colors.tableText,
+      fontFamily: "Helvetica",
+      fontSize: 7,
+      textAlign: "center",
+      textTransform: "uppercase",
+    },
+    footer: { height: 12 },
+    footerContent: { paddingHorizontal: 8 },
+    footerText: { color: colors.tableText, fontFamily: "Helvetica-Bold", fontSize: 5, textTransform: "uppercase" },
+  });
+}

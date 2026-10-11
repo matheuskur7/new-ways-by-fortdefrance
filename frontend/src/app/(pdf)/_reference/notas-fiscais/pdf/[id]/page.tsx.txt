@@ -1,0 +1,61 @@
+"use client";
+
+import dynamic from "next/dynamic";
+import { useParams, useSearchParams } from "next/navigation";
+import { Suspense, useEffect } from "react";
+import { useInvoice } from "@/api/invoices";
+import { InvoiceLabelPdfDocument } from "../_components/invoice-label-pdf-document";
+
+const BlobProvider = dynamic(() => import("@react-pdf/renderer").then((module) => module.BlobProvider), { ssr: false });
+
+function PageMessage({ children }: { children: React.ReactNode }) {
+  return <main className="flex h-dvh items-center justify-center text-sm text-muted-foreground">{children}</main>;
+}
+
+function OpenPdfInBrowser({ url }: { url: string }) {
+  useEffect(() => {
+    window.location.replace(url);
+  }, [url]);
+
+  return <PageMessage>Abrindo PDF...</PageMessage>;
+}
+
+function InvoiceLabelsPdf() {
+  const { id } = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
+  const { data: invoice, isLoading, isError } = useInvoice(id);
+
+  if (isLoading) return <PageMessage>Carregando nota fiscal...</PageMessage>;
+  if (isError || !invoice) return <PageMessage>Não foi possível carregar a nota fiscal.</PageMessage>;
+
+  const selectedIds = new Set(searchParams.getAll("unit"));
+  const units = invoice.units.filter((unit) => selectedIds.has(unit.id));
+  if (units.length === 0) return <PageMessage>Nenhuma unidade selecionada para impressão.</PageMessage>;
+  if (units.length !== selectedIds.size)
+    return <PageMessage>Uma ou mais unidades selecionadas não pertencem a esta nota fiscal.</PageMessage>;
+
+  const quantities = Object.fromEntries(
+    units.map((unit) => [unit.id, Number(searchParams.get(`qty:${unit.id}`) ?? Math.ceil(Number(unit.initialQty)))]),
+  );
+  if (Object.values(quantities).some((quantity) => !Number.isSafeInteger(quantity) || quantity < 1)) {
+    return <PageMessage>Informe uma quantidade inteira e positiva de etiquetas para cada unidade.</PageMessage>;
+  }
+
+  return (
+    <BlobProvider document={<InvoiceLabelPdfDocument invoice={invoice} units={units} quantities={quantities} />}>
+      {({ error, url }) => {
+        if (url) return <OpenPdfInBrowser url={url} />;
+        if (error) return <PageMessage>Não foi possível gerar o PDF das etiquetas.</PageMessage>;
+        return <PageMessage>Gerando etiquetas...</PageMessage>;
+      }}
+    </BlobProvider>
+  );
+}
+
+export default function InvoiceLabelsPdfPage() {
+  return (
+    <Suspense fallback={<PageMessage>Carregando etiquetas...</PageMessage>}>
+      <InvoiceLabelsPdf />
+    </Suspense>
+  );
+}

@@ -1,0 +1,120 @@
+import { Document, Page, StyleSheet, View } from "@react-pdf/renderer";
+import type { Customer } from "@/api/customers";
+import type { ServiceOrder } from "@/api/service-orders";
+import type { ServiceOrderReviewCheck } from "@/api/service-order-review-checks";
+import type { ServiceOrderReviewItem } from "@/api/service-order-review-items";
+import type { ServiceOrderConfigType } from "@/api/service-order-types";
+import { getCustomerReportLineCount, ServiceOrderCustomerReport } from "./service-order-customer-report";
+import { ServiceOrderExecuteTable } from "./service-order-execute-table";
+import { ServiceOrderFooter } from "./service-order-footer";
+import { ServiceOrderIdentification, formatServiceOrderNumber } from "./service-order-identification";
+import { ServiceOrderReviewChecklist } from "./service-order-review-checklist";
+import { ServiceOrderReviewChecks } from "./service-order-review-checks";
+import { ServiceOrderQuoteTable } from "./service-order-quote-table";
+
+export const pdfTheme = {
+  colors: {
+    ink: "#252a30",
+    paper: "#FFFFFF",
+    border: "#747C84",
+    muted: "#5c6570",
+    label: "#343b43",
+    labelText: "#FFFFFF",
+    bar: "#dadee0",
+    rowStripe: "#edf0f2",
+    tableText: "#454d56",
+    danger: "#bd2727",
+    meta: "#68717b",
+  },
+  borders: { width: 1, radius: 2 },
+  layout: {
+    pagePadding: "4mm 7mm",
+    legendGap: 8,
+    actionTableRows: 28,
+    quickActionTableRows: 17,
+    reportTable: {
+      minimumRows: 5,
+      minimumBlankRows: 4,
+      maxRowsBeforeChecklistBreak: 17,
+      rowHeight: "4.3mm",
+      columnWidth: "7mm",
+      sectionMarginTop: 12,
+      labelOffset: -10,
+      labelInset: 17,
+    },
+    reviewControls: { marginTop: 2, gap: 4, height: 14, labelPadding: 2, dateCellWidth: "16mm" },
+  },
+} as const;
+
+export type PdfTheme = typeof pdfTheme;
+
+export function ServiceOrderPdfDocument({
+  serviceOrder,
+  customer,
+  customerReportTypes,
+  executeTypes,
+  reviewChecks,
+  reviewItems,
+}: {
+  serviceOrder: ServiceOrder;
+  customer?: Customer;
+  customerReportTypes: ServiceOrderConfigType[];
+  executeTypes: ServiceOrderConfigType[];
+  reviewChecks: ServiceOrderReviewCheck[];
+  reviewItems: ServiceOrderReviewItem[];
+}) {
+  const adminChecks = getChecksByGroup(reviewChecks, "admin");
+  const executeChecks = getChecksByGroup(reviewChecks, "execute");
+  const customerReportRows = getCustomerReportLineCount(serviceOrder.customerReport ?? []);
+  const renderedCustomerReportRows = Math.max(
+    pdfTheme.layout.reportTable.minimumRows,
+    customerReportRows + pdfTheme.layout.reportTable.minimumBlankRows,
+  );
+  const isReview = serviceOrder.type === "revisão";
+  const isQuick = serviceOrder.type === "rápida";
+  const shouldBreakBeforeChecklist = isReview && renderedCustomerReportRows > pdfTheme.layout.reportTable.maxRowsBeforeChecklistBreak;
+  const minimumActionTableRows = isQuick ? pdfTheme.layout.quickActionTableRows : pdfTheme.layout.actionTableRows;
+  const actionTableRows = Math.max(minimumActionTableRows, serviceOrder.quoteRequest?.length ?? 0, serviceOrder.execute?.length ?? 0);
+
+  return (
+    <Document
+      title={`OS ${formatServiceOrderNumber(serviceOrder.externalSystemNumber ?? serviceOrder.prismaNumber)}`}
+      author="Fort de France"
+    >
+      <Page size="A4" style={styles.page}>
+        <ServiceOrderIdentification serviceOrder={serviceOrder} customer={customer} theme={pdfTheme} />
+        <ServiceOrderCustomerReport serviceOrder={serviceOrder} types={customerReportTypes} theme={pdfTheme} />
+        <ServiceOrderReviewChecks checks={adminChecks} theme={pdfTheme} />
+        {isReview && <ServiceOrderReviewChecklist break={shouldBreakBeforeChecklist} items={reviewItems} theme={pdfTheme} />}
+        <ServiceOrderQuoteTable breakBefore={!isQuick} rows={actionTableRows} serviceOrder={serviceOrder} theme={pdfTheme} />
+        <ServiceOrderExecuteTable rows={actionTableRows} serviceOrder={serviceOrder} types={executeTypes} theme={pdfTheme} />
+        <ServiceOrderReviewChecks checks={executeChecks} theme={pdfTheme} />
+        {!isQuick && (
+          <View
+            fixed
+            render={({ pageNumber }) =>
+              pageNumber === (shouldBreakBeforeChecklist ? 3 : 2) ? (
+                <ServiceOrderFooter customer={customer} positioned serviceOrder={serviceOrder} theme={pdfTheme} />
+              ) : null
+            }
+            style={styles.secondPageFooter}
+          />
+        )}
+      </Page>
+    </Document>
+  );
+}
+
+function getChecksByGroup(checks: ServiceOrderReviewCheck[], group: ServiceOrderReviewCheck["group"]) {
+  return checks.filter((check) => check.group === group).sort((first, second) => first.position - second.position);
+}
+
+const styles = StyleSheet.create({
+  page: { padding: pdfTheme.layout.pagePadding, fontFamily: "Helvetica", color: pdfTheme.colors.ink },
+  secondPageFooter: {
+    bottom: "6mm",
+    left: "7mm",
+    position: "absolute",
+    right: "7mm",
+  },
+});

@@ -1,0 +1,83 @@
+import { Document, Page, Path, StyleSheet, Svg, Text, View } from "@react-pdf/renderer";
+import QRCode from "qrcode";
+import type { Invoice, InvoiceUnit } from "@/api/invoices";
+import { formatCurrency, formatDate } from "@/lib/formatters";
+import { createInvoiceLabelPayload, getInvoiceLabelCost } from "@/lib/invoice-labels";
+
+const mm = (value: number) => (value * 72) / 25.4;
+
+export function InvoiceLabelPdfDocument({
+  invoice,
+  units,
+  quantities = {},
+}: {
+  invoice: Invoice;
+  units: InvoiceUnit[];
+  quantities?: Record<string, number>;
+}) {
+  const supplierName = invoice.supplier.nickname || invoice.supplier.fantasyName || invoice.supplier.name;
+
+  return (
+    <Document title={`Etiquetas NF ${invoice.number}`} author="Fort de France">
+      {units.flatMap((unit) =>
+        Array.from({ length: quantities[unit.id] ?? 1 }, (_, copy) => (
+          <Page key={`${unit.id}-${copy}`} size={[mm(80), mm(50)]} style={styles.page} wrap={false}>
+            <View style={styles.top}>
+              <View style={styles.details}>
+                <Text style={[styles.code, { fontSize: unit.product.code.length > 25 ? 9 : 12 }]}>{unit.product.code}</Text>
+                <Text>{`${formatCurrency(Number(getInvoiceLabelCost(unit)))} / ${unit.commercialUnit}`}</Text>
+                <Text>{String(invoice.number)}</Text>
+                <Text>{formatDate(invoice.emissionDate)}</Text>
+                <Text style={styles.description}>{unit.product.description}</Text>
+              </View>
+              <LabelQrCode value={createInvoiceLabelPayload(invoice, unit)} />
+            </View>
+            <View style={styles.footer}>
+              <Text style={styles.supplier}>{supplierName}</Text>
+              <Text style={styles.id}>{unit.id}</Text>
+            </View>
+          </Page>
+        )),
+      )}
+    </Document>
+  );
+}
+
+function LabelQrCode({ value }: { value: string }) {
+  const { modules } = QRCode.create(value, { errorCorrectionLevel: "M" });
+  const quietZone = 4;
+  const size = modules.size + quietZone * 2;
+  const segments: string[] = [];
+
+  for (let row = 0; row < modules.size; row++) {
+    for (let column = 0; column < modules.size; column++) {
+      if (modules.get(row, column)) segments.push(`M${column + quietZone},${row + quietZone}h1v1h-1z`);
+    }
+  }
+
+  return (
+    <Svg width={mm(38)} height={mm(38)} viewBox={`0 0 ${size} ${size}`}>
+      <Path d={segments.join("")} fill="#000000" />
+    </Svg>
+  );
+}
+
+const styles = StyleSheet.create({
+  page: {
+    minHeight: mm(50),
+    maxHeight: mm(50),
+    padding: mm(1),
+    paddingBottom: mm(3),
+    fontFamily: "Helvetica",
+    fontSize: 10,
+    color: "#000000",
+    backgroundColor: "#FFFFFF",
+  },
+  top: { flexDirection: "row", justifyContent: "space-between", gap: mm(2) },
+  details: { width: mm(38), gap: mm(1) },
+  code: { fontWeight: "bold" },
+  id: { fontSize: 7, lineHeight: 1 },
+  description: { fontSize: 8, maxLines: 2, textOverflow: "ellipsis" },
+  supplier: { fontSize: 7, lineHeight: 1, maxLines: 2, textOverflow: "ellipsis" },
+  footer: { position: "absolute", bottom: mm(3), left: mm(1), right: mm(1), gap: mm(0.5) },
+});

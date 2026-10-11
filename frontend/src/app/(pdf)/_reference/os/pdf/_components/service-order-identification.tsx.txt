@@ -1,0 +1,136 @@
+import { StyleSheet, Text, View } from "@react-pdf/renderer";
+import type { Customer } from "@/api/customers";
+import type { ServiceOrder } from "@/api/service-orders";
+import { formatDate, formatKilometers } from "@/lib/formatters";
+import { formatCpfCnpj, formatPhone } from "@/lib/utils";
+import type { PdfTheme } from "./service-order-pdf-document";
+import { PdfSection } from "./pdf-section";
+import { VehiclePlate } from "./vehicle-plate";
+
+type Props = { serviceOrder: ServiceOrder; customer?: Customer; theme: PdfTheme };
+
+export const formatServiceOrderNumber = (value: number | null) => (value == null ? "" : String(value).padStart(4, "0"));
+
+type IdentificationStyles = ReturnType<typeof createStyles>;
+
+export function ServiceOrderIdentification({ serviceOrder, customer, theme }: Props) {
+  const documentLabel = customer?.type === "COMPANY" ? "CNPJ" : "CPF";
+  const killSwitchLocation = serviceOrder.killSwitchLocation?.trim();
+  const styles = createStyles(theme);
+  return (
+    <PdfSection label="Identificação" theme={theme}>
+      <View style={styles.identityContent}>
+        <View style={styles.vehicleColumn}>
+          <Heading styles={styles}>Veículo</Heading>
+          <View style={styles.vehicleDetails}>
+            <VehiclePlate plate={serviceOrder.vehiclePlate} />
+            <View style={styles.vehicleInfo}>
+              <Info styles={styles} label="Modelo" value={serviceOrder.vehicleBrandModel} />
+              <Info styles={styles} label="KM inicial" value={formatKilometers(serviceOrder.odometer)} />
+            </View>
+          </View>
+        </View>
+        <View style={styles.customerColumn}>
+          <Heading styles={styles}>Cliente</Heading>
+          <Info styles={styles} label="Nome" value={customer?.name.toUpperCase()} />
+          <View style={styles.customerDetails}>
+            <Info styles={styles} label={documentLabel} value={customer?.cpfCnpj ? formatCpfCnpj(customer.cpfCnpj) : undefined} />
+            <Info styles={styles} label="Celular" value={customer?.phone ? formatPhone(customer.phone) : undefined} />
+          </View>
+        </View>
+        <View style={styles.prismaColumn}>
+          <Text style={styles.prismaValue}>{serviceOrder.prismaNumber ?? ""}</Text>
+          <Text style={styles.prismaOs}>{formatServiceOrderNumber(serviceOrder.prismaNumber)}</Text>
+        </View>
+      </View>
+      <View style={styles.bottomBar}>
+        <View style={styles.cutoffGroup}>
+          {killSwitchLocation && (
+            <>
+              <View style={styles.cutoffDot} />
+              <Text style={styles.cutoff}>
+                CORTA-CORRENTE: <Text style={styles.cutoffValue}>{killSwitchLocation.toUpperCase()}</Text>
+              </Text>
+            </>
+          )}
+        </View>
+        <View style={styles.bottomMeta}>
+          <Text style={styles.bottomLabel}>DATA DE ENTRADA</Text>
+          <Text style={styles.bottomValue}>{formatDate(serviceOrder.createdAt)}</Text>
+        </View>
+        <View style={styles.bottomMeta}>
+          <Text style={styles.bottomLabel}>OS SINOS</Text>
+          <Text style={styles.bottomValue}>{serviceOrder.externalSystemNumber ?? ""}</Text>
+        </View>
+      </View>
+    </PdfSection>
+  );
+}
+
+function Info({ label, value, styles }: { label: string; value?: string; styles: IdentificationStyles }) {
+  return (
+    <View style={styles.info}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={styles.infoValue}>{value || "—"}</Text>
+    </View>
+  );
+}
+
+function Heading({ children, styles }: { children: React.ReactNode; styles: IdentificationStyles }) {
+  return (
+    <View style={styles.sectionHeading}>
+      <Text style={styles.columnTitle}>{children}</Text>
+      <View style={styles.sectionHeadingLine} />
+    </View>
+  );
+}
+
+function createStyles(theme: PdfTheme) {
+  const { colors, borders } = theme;
+  return StyleSheet.create({
+    identityContent: { flexDirection: "row" },
+    vehicleColumn: { width: "40%", padding: "0 8", marginVertical: 10 },
+    customerColumn: { flex: 1, borderLeftWidth: borders.width, borderColor: colors.border, padding: "0 12 0 8", marginVertical: 10 },
+    prismaColumn: {
+      width: "35mm",
+      alignItems: "center",
+      borderLeftWidth: borders.width,
+      borderColor: colors.border,
+      justifyContent: "center",
+    },
+    sectionHeading: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
+    columnTitle: {
+      color: colors.muted,
+      fontFamily: "Helvetica-Bold",
+      fontSize: 5.5,
+      letterSpacing: 0.7,
+      textTransform: "uppercase",
+      marginRight: 8,
+    },
+    sectionHeadingLine: { flex: 1, borderTopWidth: borders.width, borderColor: colors.border },
+    vehicleDetails: { flexDirection: "row", alignItems: "center", gap: 5 },
+    vehicleInfo: { flex: 1 },
+    info: { marginBottom: 4 },
+    infoLabel: { color: colors.muted, fontSize: 5, letterSpacing: 0.5, textTransform: "uppercase", marginBottom: -1.5 },
+    infoValue: { fontFamily: "Helvetica-Bold", fontSize: 9.5 },
+    customerDetails: { flexDirection: "row", gap: 24 },
+    prismaValue: { fontFamily: "Helvetica-Bold", fontSize: 52, lineHeight: 0.85 },
+    prismaOs: { color: colors.muted, fontFamily: "Helvetica-Bold", fontSize: 7, marginTop: 8, alignSelf: "flex-end", marginRight: 8 },
+    bottomBar: {
+      minHeight: 14,
+      borderTopWidth: borders.width,
+      borderColor: colors.border,
+      backgroundColor: colors.bar,
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 4,
+    },
+    cutoffGroup: { flex: 1, flexDirection: "row", alignItems: "center", gap: 4 },
+    cutoffDot: { width: 6, height: 6, borderRadius: 4, backgroundColor: colors.danger },
+    cutoff: { color: colors.danger, fontFamily: "Helvetica-Bold", fontSize: 7.5, letterSpacing: 0.35 },
+    cutoffValue: { color: colors.danger },
+    bottomMeta: { flexDirection: "row", alignItems: "center", marginLeft: 12, gap: 4 },
+    bottomLabel: { color: colors.meta, fontFamily: "Helvetica-Bold", fontSize: 6, letterSpacing: 0.5 },
+    bottomValue: { color: colors.label, fontFamily: "Helvetica-Bold", fontSize: 10 },
+  });
+}

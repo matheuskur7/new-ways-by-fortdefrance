@@ -1,0 +1,97 @@
+import { StyleSheet, Text, View } from "@react-pdf/renderer";
+import type { ComponentProps, ReactNode } from "react";
+import type { PdfTheme } from "./service-order-pdf-document";
+
+type ViewStyle = Exclude<NonNullable<ComponentProps<typeof View>["style"]>, unknown[]>;
+type TablePartProps = { children?: ReactNode; style?: ViewStyle; theme: PdfTheme };
+type CellProps = TablePartProps & { isLast?: boolean; variant?: "default" | "darkened" | "disabled" };
+type HeaderCellProps = TablePartProps & { isLast?: boolean };
+type RowProps = TablePartProps & { striped?: boolean };
+
+function createStyles({ colors, borders }: PdfTheme) {
+  return StyleSheet.create({
+    header: { flexDirection: "row", alignItems: "stretch", backgroundColor: colors.bar },
+    headerCell: {
+      alignSelf: "stretch",
+      borderRightWidth: borders.width,
+      borderColor: colors.border,
+      justifyContent: "center",
+    },
+    headerText: {
+      color: colors.tableText,
+      fontFamily: "Helvetica-Bold",
+      fontSize: 7.5,
+      paddingVertical: 2,
+      textAlign: "center",
+      textTransform: "uppercase",
+    },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      borderTopWidth: borders.width,
+      borderColor: colors.border,
+      backgroundColor: colors.paper,
+    },
+    stripedRow: { backgroundColor: colors.rowStripe },
+    cell: {
+      alignSelf: "stretch",
+      borderRightWidth: borders.width,
+      borderColor: colors.border,
+      justifyContent: "center",
+    },
+    lastCell: { borderRightWidth: 0 },
+    darkenedCell: { backgroundColor: colors.bar },
+    disabledCell: { backgroundColor: colors.border },
+    footer: {
+      borderTopWidth: borders.width,
+      borderColor: colors.border,
+      backgroundColor: colors.bar,
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    footerCell: { alignSelf: "stretch", borderRightWidth: borders.width, borderColor: colors.border, justifyContent: "center" },
+  });
+}
+
+export function PdfTableHeader({ children, style, theme }: TablePartProps) {
+  const styles = createStyles(theme);
+  return <View style={style ? [styles.header, style] : styles.header}>{children}</View>;
+}
+
+export function PdfTableHeaderCell({ children, isLast = false, style, theme }: HeaderCellProps) {
+  const styles = createStyles(theme);
+  const cellStyle = isLast ? { ...styles.headerCell, ...styles.lastCell } : styles.headerCell;
+  return (
+    <View style={style ? [cellStyle, style] : cellStyle}>
+      <Text style={styles.headerText}>{children}</Text>
+    </View>
+  );
+}
+
+export function PdfTableRow({ children, striped = false, style, theme }: RowProps) {
+  const styles = createStyles(theme);
+  const rowStyle = striped ? { ...styles.row, ...styles.stripedRow } : styles.row;
+  return <View style={style ? [rowStyle, style] : rowStyle}>{children}</View>;
+}
+
+export function PdfTableCell({ children, isLast = false, style, theme, variant = "default" }: CellProps) {
+  const styles = createStyles(theme);
+  if (variant !== "default") {
+    const variantStyle = variant === "disabled" ? styles.disabledCell : styles.darkenedCell;
+    const cellStyle = isLast ? { ...styles.cell, ...variantStyle, ...styles.lastCell } : { ...styles.cell, ...variantStyle };
+    return <View style={style ? [cellStyle, style] : cellStyle}>{children}</View>;
+  }
+  const cellStyle = isLast ? { ...styles.cell, ...styles.lastCell } : styles.cell;
+  return <View style={style ? [cellStyle, style] : cellStyle}>{children}</View>;
+}
+
+export function PdfTableFooter({ children, style, theme }: TablePartProps) {
+  const styles = createStyles(theme);
+  return <View style={style ? [styles.footer, style] : styles.footer}>{children}</View>;
+}
+
+export function PdfTableFooterCell({ children, isLast = false, style, theme }: HeaderCellProps) {
+  const styles = createStyles(theme);
+  const cellStyle = isLast ? { ...styles.footerCell, ...styles.lastCell } : styles.footerCell;
+  return <View style={style ? [cellStyle, style] : cellStyle}>{children}</View>;
+}

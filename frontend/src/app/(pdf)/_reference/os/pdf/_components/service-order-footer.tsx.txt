@@ -1,0 +1,100 @@
+import { StyleSheet, Text, View } from "@react-pdf/renderer";
+import type { Customer } from "@/api/customers";
+import type { ServiceOrder } from "@/api/service-orders";
+import { formatKilometers } from "@/lib/formatters";
+import { formatPhone } from "@/lib/utils";
+import type { PdfTheme } from "./service-order-pdf-document";
+import { formatVehiclePlate } from "./vehicle-plate";
+
+type Props = {
+  customer?: Customer;
+  positioned?: boolean;
+  serviceOrder: ServiceOrder;
+  theme: PdfTheme;
+};
+
+export function ServiceOrderFooter({ customer, positioned = false, serviceOrder, theme }: Props) {
+  const styles = createStyles(theme);
+  return (
+    <View style={positioned ? [styles.footer, styles.positioned] : styles.footer}>
+      <View style={styles.vehicle}>
+        <View style={styles.plate}>
+          <Text style={styles.plateText}>{formatVehiclePlate(serviceOrder.vehiclePlate)}</Text>
+        </View>
+        <Text style={styles.model}>{serviceOrder.vehicleBrandModel?.toUpperCase() || "—"}</Text>
+        <Text style={styles.km}>{formatKilometers(serviceOrder.odometer, "KM")}</Text>
+      </View>
+      <View style={styles.customer}>
+        <Text style={styles.customerName}>{customer?.name.toUpperCase() || "—"}</Text>
+        <Text style={styles.phone}>{customer?.phone ? formatPhone(customer.phone) : "—"}</Text>
+      </View>
+      <Meta label="OS" styles={styles} value={serviceOrder.externalSystemNumber} valueStyle={styles.osValue} />
+      <Meta label="Prisma" styles={styles} value={serviceOrder.prismaNumber} valueStyle={styles.prismaValue} />
+    </View>
+  );
+}
+
+function Meta({
+  label,
+  styles,
+  value,
+  valueStyle,
+}: {
+  label: string;
+  styles: ReturnType<typeof createStyles>;
+  value: string | number | null;
+  valueStyle: ReturnType<typeof createStyles>["osValue"];
+}) {
+  return (
+    <View style={styles.meta}>
+      <Text style={styles.metaLabel}>{label}</Text>
+      <Text style={valueStyle}>{value ?? ""}</Text>
+    </View>
+  );
+}
+
+function createStyles({ colors, borders, layout }: PdfTheme) {
+  return StyleSheet.create({
+    footer: {
+      minHeight: 22,
+      marginTop: layout.reviewControls.marginTop,
+      borderWidth: borders.width,
+      borderColor: colors.border,
+      borderRadius: borders.radius,
+      backgroundColor: colors.bar,
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 4,
+    },
+    positioned: {
+      marginTop: 0,
+    },
+    vehicle: { flex: 1, flexDirection: "row", alignItems: "center", gap: 6 },
+    plate: {
+      borderWidth: borders.width,
+      borderColor: colors.border,
+      borderRadius: 4,
+      backgroundColor: colors.paper,
+      paddingHorizontal: 5,
+      paddingVertical: 1.5,
+    },
+    plateText: { fontFamily: "Helvetica-Bold", fontSize: 7, letterSpacing: 0.8 },
+    model: { fontFamily: "Helvetica-Bold", fontSize: 7 },
+    km: { color: colors.muted, fontFamily: "Helvetica-Bold", fontSize: 6 },
+    customer: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      borderLeftWidth: borders.width,
+      borderColor: colors.border,
+      paddingLeft: 6,
+    },
+    customerName: { fontFamily: "Helvetica-Bold", fontSize: 7 },
+    phone: { color: colors.muted, fontFamily: "Helvetica-Bold", fontSize: 6 },
+    meta: { width: "12mm", alignItems: "center", borderLeftWidth: borders.width, borderColor: colors.border },
+    metaLabel: { color: colors.muted, fontFamily: "Helvetica-Bold", fontSize: 4, textTransform: "uppercase" },
+    osValue: { fontFamily: "Helvetica-Bold", fontSize: 10, lineHeight: 0.95 },
+    prismaValue: { fontFamily: "Helvetica-Bold", fontSize: 12, lineHeight: 1 },
+  });
+}

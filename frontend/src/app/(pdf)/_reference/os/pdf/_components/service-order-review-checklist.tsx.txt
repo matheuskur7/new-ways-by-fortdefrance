@@ -1,0 +1,123 @@
+import { StyleSheet, Text, View } from "@react-pdf/renderer";
+import type { ServiceOrderReviewItem } from "@/api/service-order-review-items";
+import type { PdfTheme } from "./service-order-pdf-document";
+import { PdfTableCell, PdfTableFooter, PdfTableFooterCell, PdfTableHeader, PdfTableHeaderCell, PdfTableRow } from "./pdf-table";
+import { PdfSection } from "./pdf-section";
+
+type Props = { break?: boolean; items: ServiceOrderReviewItem[]; theme: PdfTheme };
+type ChecklistStyles = ReturnType<typeof createStyles>;
+
+function ResultChecks({ styles }: { styles: ChecklistStyles }) {
+  return (
+    <View style={styles.resultChecks}>
+      {[
+        ["OK", "ok"],
+        ["NÃO OK", "not-ok"],
+        ["NÃO POSSUI", "not-applicable"],
+      ].map(([label, key]) => (
+        <View key={key} style={styles.resultOption}>
+          <View style={styles.checkbox} />
+          <Text style={styles.resultOptionText}>{label}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function ChecklistRow({
+  item,
+  index,
+  styles,
+  theme,
+}: {
+  item: ServiceOrderReviewItem;
+  index: number;
+  styles: ChecklistStyles;
+  theme: PdfTheme;
+}) {
+  const itemTextStyle =
+    item.emphasis === "strong" ? styles.itemTextStrong : item.emphasis === "history" ? styles.itemTextHistory : styles.itemText;
+  return (
+    <PdfTableRow striped={Boolean(index % 2)} theme={theme} style={styles.row}>
+      <PdfTableCell theme={theme} variant="darkened" style={styles.numberCell}>
+        <Text style={styles.numberText}>R{index + 1}</Text>
+      </PdfTableCell>
+      <PdfTableCell theme={theme} style={styles.reviewCell} />
+      <PdfTableCell theme={theme} style={styles.itemCell}>
+        <Text style={[styles.itemText, itemTextStyle]}>{item.label.toUpperCase()}</Text>
+      </PdfTableCell>
+      <PdfTableCell isLast theme={theme} style={styles.resultCell}>
+        {item.resultType === "Check" && <ResultChecks styles={styles} />}
+        {item.resultType === "Question" && <Text style={styles.questionText}>{item.resultLabel?.toUpperCase()}</Text>}
+      </PdfTableCell>
+    </PdfTableRow>
+  );
+}
+
+export function ServiceOrderReviewChecklist({ break: shouldBreak, items, theme }: Props) {
+  const styles = createStyles(theme);
+  return (
+    <PdfSection break={shouldBreak} label="Checklist de revisão" theme={theme}>
+      <PdfTableHeader theme={theme}>
+        <PdfTableHeaderCell style={styles.numberCell} theme={theme}>
+          Nº
+        </PdfTableHeaderCell>
+        <PdfTableHeaderCell style={styles.reviewCell} theme={theme}>
+          R
+        </PdfTableHeaderCell>
+        <PdfTableHeaderCell style={styles.itemCell} theme={theme}>
+          Item / verificação
+        </PdfTableHeaderCell>
+        <PdfTableHeaderCell isLast style={styles.resultCell} theme={theme}>
+          Resultado
+        </PdfTableHeaderCell>
+      </PdfTableHeader>
+      {items.map((item, index) => (
+        <ChecklistRow key={item.id} item={item} index={index} styles={styles} theme={theme} />
+      ))}
+      <PdfTableFooter style={styles.footer} theme={theme}>
+        <PdfTableFooterCell isLast style={styles.footerText} theme={theme}>
+          <Text style={styles.footerOffice}>Verificado no escritório</Text>
+          <Text style={styles.footerSeparator}>•</Text>
+          <Text style={styles.footerAction}>Executar sem passar orçamento</Text>
+        </PdfTableFooterCell>
+      </PdfTableFooter>
+    </PdfSection>
+  );
+}
+
+function createStyles({ colors, borders, layout }: PdfTheme) {
+  const table = layout.reportTable;
+  return StyleSheet.create({
+    row: {
+      minHeight: table.rowHeight,
+    },
+    numberCell: { width: table.columnWidth },
+    numberText: { color: colors.tableText, fontFamily: "Helvetica-Bold", fontSize: 7, textAlign: "center" },
+    reviewCell: { width: table.columnWidth },
+    itemCell: { flex: 1 },
+    resultCell: { width: "31%", justifyContent: "center" },
+    itemText: { color: colors.tableText, fontFamily: "Helvetica", fontSize: 8, paddingHorizontal: 2, paddingTop: 1.5 },
+    itemTextStrong: { fontFamily: "Helvetica-Bold" },
+    itemTextHistory: { fontFamily: "Helvetica-Oblique", textDecoration: "underline" },
+    resultChecks: { flexDirection: "row", justifyContent: "space-evenly", alignItems: "center", paddingHorizontal: 3 },
+    resultOption: { flexDirection: "row", alignItems: "center", gap: 2 },
+    checkbox: { width: 10, height: 10, borderWidth: borders.width, borderColor: colors.border },
+    resultOptionText: { color: colors.tableText, fontFamily: "Helvetica-Bold", fontSize: 5.5 },
+    questionText: { color: colors.tableText, fontFamily: "Helvetica-Bold", fontSize: 5.5, paddingLeft: 3 },
+    footer: {
+      minHeight: 14,
+      paddingHorizontal: 8,
+    },
+    footerText: { flexDirection: "row", alignItems: "center", gap: 7 },
+    footerOffice: {
+      color: colors.muted,
+      fontFamily: "Helvetica-Oblique",
+      fontSize: 6,
+      textTransform: "uppercase",
+      textDecoration: "underline",
+    },
+    footerSeparator: { color: colors.tableText, fontSize: 6 },
+    footerAction: { color: colors.tableText, fontFamily: "Helvetica-Bold", fontSize: 6, textTransform: "uppercase" },
+  });
+}

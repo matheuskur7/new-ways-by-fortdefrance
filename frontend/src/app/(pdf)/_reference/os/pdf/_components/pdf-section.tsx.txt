@@ -1,0 +1,20 @@
+import { StyleSheet, View } from "@react-pdf/renderer";
+import type { ReactNode } from "react";
+import type { PdfTheme } from "./service-order-pdf-document";
+import { PdfSectionLabel } from "./pdf-section-label";
+
+type Props = { break?: boolean; children: ReactNode; label: string; theme: PdfTheme };
+
+export function PdfSection({ break: shouldBreak, children, label, theme }: Props) {
+  const { borders, colors, layout } = theme;
+  const styles = StyleSheet.create({
+    section: { marginTop: layout.reportTable.sectionMarginTop, position: "relative" },
+    content: { borderWidth: borders.width, borderColor: colors.border, borderRadius: borders.radius, backgroundColor: colors.paper },
+  });
+  return (
+    <View break={shouldBreak} style={styles.section}>
+      <View style={styles.content}>{children}</View>
+      <PdfSectionLabel theme={theme}>{label}</PdfSectionLabel>
+    </View>
+  );
+}

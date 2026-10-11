@@ -1,0 +1,153 @@
+import { StyleSheet, Text } from "@react-pdf/renderer";
+import type { ReactNode } from "react";
+import type { ServiceOrder, ServiceOrderCustomerReportItem, ServiceOrderNumberedInfoItem } from "@/api/service-orders";
+import type { ServiceOrderConfigType } from "@/api/service-order-types";
+import { getDisabledCellsByCategory, getDisabledCellsForCategory } from "@/lib/service-order-config";
+import type { PdfTheme } from "./service-order-pdf-document";
+import { PdfTableCell, PdfTableFooter, PdfTableFooterCell, PdfTableHeader, PdfTableHeaderCell, PdfTableRow } from "./pdf-table";
+import { PdfSection } from "./pdf-section";
+
+type Props = { serviceOrder: ServiceOrder; types: ServiceOrderConfigType[]; theme: PdfTheme };
+type CellKind = "number" | "mark" | "description";
+type ReportStyles = ReturnType<typeof createStyles>;
+const descriptionCharactersPerLine = 100;
+const columns: { kind: CellKind; label: string }[] = [
+  { kind: "number", label: "Nº" },
+  { kind: "mark", label: "V" },
+  { kind: "mark", label: "S" },
+  { kind: "description", label: "Itens Relatados pelo Cliente" },
+];
+
+export function ServiceOrderCustomerReport({ serviceOrder, types, theme }: Props) {
+  const styles = createStyles(theme);
+  const items = serviceOrder.customerReport ?? [];
+  const disabledCellsByCategory = getDisabledCellsByCategory(types);
+  const blankRows = Math.max(
+    theme.layout.reportTable.minimumBlankRows,
+    theme.layout.reportTable.minimumRows - getCustomerReportLineCount(items),
+  );
+  const rows = [...items, ...Array.from({ length: blankRows }, () => undefined)];
+
+  return (
+    <PdfSection label="Relato / solicitação do cliente" theme={theme}>
+      <PdfTableHeader theme={theme}>
+        {columns.map(({ kind, label }, index) => (
+          <PdfTableHeaderCell
+            key={`${kind}-${index}`}
+            isLast={kind === "description"}
+            style={kind === "number" ? styles.numberCell : kind === "mark" ? styles.markCell : styles.descriptionCell}
+            theme={theme}
+          >
+            {label}
+          </PdfTableHeaderCell>
+        ))}
+      </PdfTableHeader>
+      {rows.map((item, index) => (
+        <ReportRow key={index} item={item} index={index} disabledCellsByCategory={disabledCellsByCategory} styles={styles} theme={theme} />
+      ))}
+      <PdfTableFooter style={styles.legend} theme={theme}>
+        <PdfTableFooterCell isLast style={styles.legendContent} theme={theme}>
+          <Text style={styles.legendText}>V · Marcar suas iniciais quando terminar verificação do relato</Text>
+          <Text style={styles.legendText}>S · Marcar suas iniciais quando problema tiver sido solucionado ou item resolvido</Text>
+        </PdfTableFooterCell>
+      </PdfTableFooter>
+    </PdfSection>
+  );
+}
+
+export function getCustomerReportLineCount(items: ServiceOrderNumberedInfoItem[]) {
+  return items.reduce((total, item) => total + Math.max(1, Math.ceil(item.description.length / descriptionCharactersPerLine)), 0);
+}
+
+function Cell({
+  children,
+  kind,
+  hidden = false,
+  styles,
+  theme,
+}: {
+  children?: ReactNode;
+  kind: CellKind;
+  hidden?: boolean;
+  styles: ReportStyles;
+  theme: PdfTheme;
+}) {
+  const variant = kind === "number" ? styles.numberCell : kind === "mark" ? styles.markCell : styles.descriptionCell;
+  return (
+    <PdfTableCell
+      isLast={kind === "description"}
+      theme={theme}
+      variant={hidden ? "disabled" : kind === "number" ? "darkened" : "default"}
+      style={variant}
+    >
+      <Text style={kind === "description" ? styles.descriptionText : kind === "number" ? styles.numberText : styles.cellText}>
+        {children}
+      </Text>
+    </PdfTableCell>
+  );
+}
+
+function ReportRow({
+  item,
+  index,
+  styles,
+  theme,
+  disabledCellsByCategory,
+}: {
+  item?: ServiceOrderCustomerReportItem;
+  index: number;
+  styles: ReportStyles;
+  theme: PdfTheme;
+  disabledCellsByCategory: Map<string, Set<string>>;
+}) {
+  const disabledCells = getDisabledCellsForCategory(disabledCellsByCategory, item?.category);
+  return (
+    <PdfTableRow striped={Boolean(index % 2)} theme={theme} style={styles.row}>
+      <Cell kind="number" styles={styles} theme={theme}>
+        {index + 1}
+      </Cell>
+      <Cell kind="mark" hidden={disabledCells?.has("verification")} styles={styles} theme={theme} />
+      <Cell kind="mark" hidden={disabledCells?.has("resolution")} styles={styles} theme={theme} />
+      <Cell kind="description" styles={styles} theme={theme}>
+        {item?.description?.toUpperCase() ?? ""}
+      </Cell>
+    </PdfTableRow>
+  );
+}
+
+function createStyles({ colors, borders, layout }: PdfTheme) {
+  const table = layout.reportTable;
+  const styles = StyleSheet.create({
+    row: { minHeight: table.rowHeight },
+    numberCell: {
+      width: table.columnWidth,
+    },
+    markCell: {
+      width: table.columnWidth,
+    },
+    descriptionCell: {
+      flex: 1,
+    },
+    cellText: { color: colors.tableText, fontFamily: "Helvetica", fontSize: 7, textAlign: "center" },
+    numberText: { color: colors.tableText, fontFamily: "Helvetica-Bold", fontSize: 7, textAlign: "center" },
+    descriptionText: {
+      color: colors.tableText,
+      fontFamily: "Helvetica",
+      fontSize: 8,
+      paddingHorizontal: 2,
+      paddingTop: 1.5,
+      textTransform: "uppercase",
+    },
+    legend: {
+      height: 12,
+    },
+    legendContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: layout.legendGap,
+      paddingHorizontal: 8,
+    },
+    legendText: { color: colors.tableText, fontFamily: "Helvetica-Bold", fontSize: 5, textTransform: "uppercase" },
+  });
+  return styles;
+}

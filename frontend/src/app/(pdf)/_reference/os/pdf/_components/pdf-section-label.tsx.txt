@@ -1,0 +1,27 @@
+import { StyleSheet, Text, View } from "@react-pdf/renderer";
+import type { PdfTheme } from "./service-order-pdf-document";
+
+type Props = { children: string; theme: PdfTheme };
+
+export function PdfSectionLabel({ children, theme }: Props) {
+  const { colors, borders, layout } = theme;
+  const styles = StyleSheet.create({
+    label: {
+      alignSelf: "flex-start",
+      position: "absolute",
+      top: layout.reportTable.labelOffset,
+      left: layout.reportTable.labelInset,
+      backgroundColor: colors.label,
+      borderRadius: borders.radius,
+      paddingHorizontal: 8,
+      paddingVertical: 2.5,
+    },
+    text: { color: colors.labelText, fontFamily: "Helvetica-Bold", fontSize: 6.5, letterSpacing: 0.4, textTransform: "uppercase" },
+  });
+
+  return (
+    <View style={styles.label}>
+      <Text style={styles.text}>{children}</Text>
+    </View>
+  );
+}
