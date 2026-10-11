@@ -11,6 +11,8 @@ import {
 import {
   ApiBadRequestResponse,
   ApiBody,
+  ApiCookieAuth,
+  ApiUnauthorizedResponse,
   ApiCreatedResponse,
   ApiInternalServerErrorResponse,
   ApiNotFoundResponse,
@@ -31,6 +33,8 @@ import { ImageTagDto } from './dto/image-tag.dto.js';
 import type { PaginatedResponse } from '../../shared/pagination/paginated-response.dto.js';
 
 @ApiTags('Images')
+@ApiCookieAuth()
+@ApiUnauthorizedResponse({ type: ErrorResponseDto })
 @Controller(['image', 'car-image'])
 export class ImageController {
   constructor(private readonly service: ImageService) {}

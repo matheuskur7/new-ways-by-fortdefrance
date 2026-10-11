@@ -16,6 +16,7 @@ export function configureApplication(app: INestApplication): void {
     .setTitle('New Ways API')
     .setDescription('API de imagens com organização por tags no S3.')
     .setVersion('1.0')
+    .addCookieAuth('better-auth.session_token')
     .build();
 
   SwaggerModule.setup('docs', app, () =>
