@@ -16,11 +16,12 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Organização de páginas
 
-- Organize as páginas de `src/app/` em grupos de rotas: `(public)` para páginas públicas, `(private)` para páginas que exigem sessão e `(pdf)` para futuras páginas destinadas à geração ou visualização de PDFs.
+- Organize as páginas de `src/app/` em grupos de rotas: `(auth)` para login, cadastro e seleção de empresa, `(private)` para as páginas do sistema com sidebar e `(pdf)` para futuras páginas destinadas à geração ou visualização de PDFs.
 - Os nomes dos grupos não fazem parte das URLs. Preserve os caminhos públicos ao mover páginas e evite rotas de grupos diferentes que resolvam para a mesma URL.
 - Mantenha o layout raiz compartilhado em `src/app/layout.tsx` e os estilos globais em `src/app/globals.css`. Crie layouts por grupo somente quando houver necessidade de apresentação específica.
 - O dashboard é a página inicial do sistema (`/`), definida em `src/app/(private)/page.tsx`. Use `src/app/(private)/layout.tsx` como layout exclusivo compartilhado das páginas privadas.
-- O grupo `(private)` organiza as páginas, mas não valida acesso automaticamente. Preserve a validação de sessão e de vínculo com a empresa no servidor, conforme a necessidade de cada página. Defina também a autorização das futuras páginas de `(pdf)` conforme os dados acessados.
+- A seleção de empresa (`/organizations`) usa `AuthShell` no grupo `(auth)`, sem sidebar, e exige sessão no servidor.
+- Os grupos de rotas organizam as páginas, mas não validam acesso automaticamente. Preserve a validação de sessão e de vínculo com a empresa no servidor, conforme a necessidade de cada página. Defina também a autorização das futuras páginas de `(pdf)` conforme os dados acessados.
 - Reserve `(pdf)` sem implementar páginas ou fluxos enquanto não houver uma funcionalidade solicitada.
 
 ## Requisições à API

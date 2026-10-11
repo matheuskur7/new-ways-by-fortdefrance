@@ -1,9 +1,17 @@
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
+import { requireSession } from "@/lib/auth-server";
+import { PrivateShell } from "@/components/private-shell";
+import { PrivateShellSkeleton } from "@/components/private-shell-skeleton";
+
+async function AuthenticatedShell({ children }: { children: ReactNode }) {
+  const context = await requireSession();
+  return <PrivateShell context={context}>{children}</PrivateShell>;
+}
 
 export default function PrivateLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-dvh flex-1 flex-col bg-background text-foreground">
-      {children}
-    </div>
+    <Suspense fallback={<PrivateShellSkeleton />}>
+      <AuthenticatedShell>{children}</AuthenticatedShell>
+    </Suspense>
   );
 }
