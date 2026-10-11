@@ -133,3 +133,24 @@ model Invitation {
   @@index([email])
   @@map("organization_invitation")
 }
+
+model CardFeeGroup {
+  id           String    @id @default(cuid())
+  seedKey      String?   @unique
+  name         String
+  channel      String
+  displayOrder Int       @default(100)
+  logoSvg      String?   @db.Text
+  rates        CardFee[]
+}
+
+model CardFee {
+  id           String       @id @default(cuid())
+  groupId      String
+  group        CardFeeGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  installments Int
+  ratePercent  Decimal      @db.Decimal(5, 2)
+  updatedAt    DateTime     @updatedAt
+
+  @@unique([groupId, installments])
+}

@@ -1,5 +1,6 @@
 import { DbModule } from './shared/db/db.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
+import { CardFeesModule } from './modules/card-fees/card-fees.module.js';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ImageModule } from './modules/image/image.module.js';
@@ -12,6 +13,7 @@ import { AppService } from './app.service.js';
     DbModule,
     AuthModule,
     ImageModule,
+    CardFeesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
