@@ -5,21 +5,21 @@
 :root {
   color-scheme: light;
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: #4a4a4a;
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.505 0.213 27.518);
-  --primary-foreground: oklch(0.971 0.013 17.38);
+  --popover-foreground: #4a4a4a;
+  --primary: #f30014;
+  --primary-foreground: #ffffff;
   --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
+  --secondary-foreground: #4a4a4a;
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
+  --accent: color-mix(in srgb, var(--primary) 6%, white);
+  --accent-foreground: #4a4a4a;
+  --destructive: var(--primary);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --ring: var(--primary);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -27,15 +27,15 @@
   --chart-5: oklch(0.269 0 0);
   --radius: 0.45rem;
   --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.577 0.245 27.325);
-  --sidebar-primary-foreground: oklch(0.971 0.013 17.38);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-foreground: #4a4a4a;
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: #4a4a4a;
   --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-ring: var(--ring);
   --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --foreground: #4a4a4a;
 }
 
 @theme inline {
@@ -80,12 +80,6 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
-}
-
-@layer components {
-  .auth-card { @apply w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm; }
-  .form-control { @apply w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 outline-none focus:border-zinc-600 focus:ring-2 focus:ring-zinc-300; }
-  .primary-button { @apply inline-flex items-center justify-center rounded-lg bg-zinc-900 px-5 py-3 font-medium text-white hover:bg-zinc-700 disabled:cursor-wait disabled:opacity-50; }
 }
 
 @layer base {
