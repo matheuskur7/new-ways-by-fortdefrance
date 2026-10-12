@@ -35,7 +35,7 @@ function FeeTable({ group, amount }: { group: FeeGroup; amount: number | null })
         <CardDescription className="text-xs">{group.channel}</CardDescription>
       </CardHeader>
       <CardContent className="p-0">
-        <Table className="table-fixed text-sm tabular-nums [font-family:sans-serif]">
+        <Table className="table-fixed text-sm">
           <TableCaption className="sr-only">Taxas de {group.name}, {group.channel}</TableCaption>
           <TableHeader>
             <TableRow>
