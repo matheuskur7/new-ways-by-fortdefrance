@@ -27,7 +27,7 @@ export const organizationSchema = z.object({
     ),
 });
 export const authContextSchema = z.object({
-  user: z.object({ id: z.string(), name: z.string(), email: z.email() }),
+  user: z.object({ id: z.string(), name: z.string(), email: z.email(), image: z.string().nullable().optional() }),
   organization: z
     .object({
       id: z.string(),

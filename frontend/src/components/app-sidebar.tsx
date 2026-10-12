@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -36,7 +37,8 @@ const navigation = [
 
 export function AppSidebar({ user }: { user: AuthContext["user"] }) {
   const pathname = usePathname();
-  const { isMobile, setOpenMobile } = useSidebar();
+  const { isMobile, state, setOpenMobile } = useSidebar();
+  const [failedImage, setFailedImage] = useState<string | null>(null);
   const names = user.name.trim().split(/\s+/);
   const displayName = names.length > 1 ? `${names[0]} ${names.at(-1)}` : user.name;
 
@@ -88,21 +90,31 @@ export function AppSidebar({ user }: { user: AuthContext["user"] }) {
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
-              <DropdownMenuTrigger render={<SidebarMenuButton size="lg" tooltip="Opções do perfil" aria-label="Abrir opções do perfil" className="h-auto! cursor-pointer duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:h-auto!" />}>
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-md border bg-background transition-[width,height] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:size-8">
-                  <UserRound className="size-5! transition-[width,height] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:size-4!" aria-hidden="true" />
-                </span>
-                <span className="grid min-w-0 max-w-40 flex-1 overflow-hidden text-left whitespace-nowrap opacity-100 transition-[max-width,opacity] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:max-w-0 group-data-[collapsible=icon]:opacity-0">
-                  <span className="truncate text-sm leading-tight font-medium transition-[font-size] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:text-[0px]">{displayName}</span>
-                  <span className="truncate text-xs leading-normal text-muted-foreground transition-[font-size] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:text-[0px]">{user.email}</span>
-                </span>
-                <ChevronsUpDown className="ml-auto transition-[width,opacity] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:w-0! group-data-[collapsible=icon]:opacity-0" aria-hidden="true" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent side={isMobile ? "top" : "right"} align="end" sideOffset={8} className="min-w-60 scale-100 opacity-100 transition-[opacity,scale] duration-200 ease-out data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0 motion-reduce:transition-none">
+              <Tooltip>
+                <TooltipTrigger render={<DropdownMenuTrigger render={<SidebarMenuButton size="lg" aria-label="Abrir opções do perfil" className="h-auto! cursor-pointer duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:h-auto!" />} />}>
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-md border bg-background transition-[width,height] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:size-8">
+                    <UserRound className="size-5! transition-[width,height] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:size-4!" aria-hidden="true" />
+                  </span>
+                  <span className="grid min-w-0 max-w-40 flex-1 overflow-hidden text-left whitespace-nowrap opacity-100 transition-[max-width,opacity] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:max-w-0 group-data-[collapsible=icon]:opacity-0">
+                    <span className="truncate text-sm leading-tight font-medium transition-[font-size] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:text-[0px]">{displayName}</span>
+                    <span className="truncate text-xs leading-normal text-muted-foreground transition-[font-size] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:text-[0px]">{user.email}</span>
+                  </span>
+                  <ChevronsUpDown className="ml-auto transition-[width,opacity] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:w-0! group-data-[collapsible=icon]:opacity-0" aria-hidden="true" />
+                </TooltipTrigger>
+                <TooltipContent side={!isMobile && state === "collapsed" ? "right" : "top"}>Opções do perfil</TooltipContent>
+              </Tooltip>
+              <DropdownMenuContent side={!isMobile && state === "collapsed" ? "right" : "top"} align="end" sideOffset={!isMobile && state === "collapsed" ? 12 : 8} className={`${!isMobile && state === "collapsed" ? "min-w-60" : "min-w-0"} translate-y-0 opacity-100 transition-[opacity,translate] duration-200 ease-out data-starting-style:translate-y-2 data-starting-style:opacity-0 data-ending-style:translate-y-2 data-ending-style:opacity-0 motion-reduce:transition-none`}>
                 <DropdownMenuGroup>
-                  <DropdownMenuLabel className="grid gap-1">
-                    <span className="truncate text-foreground">{user.name}</span>
-                    <span className="truncate font-normal">{user.email}</span>
+                  <DropdownMenuLabel className="flex items-center gap-2">
+                    <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-background text-foreground">
+                      {user.image && user.image !== failedImage ? (
+                        <Image src={user.image} alt="" width={40} height={40} unoptimized className="size-full object-cover" onError={() => setFailedImage(user.image ?? null)} />
+                      ) : <UserRound className="size-5" aria-hidden="true" />}
+                    </span>
+                    <span className="grid min-w-0 gap-1">
+                      <span className="truncate text-foreground">{user.name}</span>
+                      <span className="truncate font-normal">{user.email}</span>
+                    </span>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem render={<Link href="/organizations" />} className="cursor-pointer" onClick={() => setOpenMobile(false)}>
