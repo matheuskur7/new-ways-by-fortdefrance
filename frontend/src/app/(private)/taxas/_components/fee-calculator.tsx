@@ -102,7 +102,7 @@ export function FeeCalculator() {
               <Label htmlFor="sale-amount" className="justify-start">Valor da venda (R$)</Label>
               <Input id="sale-amount" className="h-10 bg-white text-left text-lg" inputMode="numeric" autoComplete="off" placeholder="0,00" value={input} aria-invalid={!!error} aria-describedby={error ? "amount-error" : undefined} onChange={(event) => setInput(maskBrazilianCurrency(event.target.value))} />
             </div>
-            <Button type="submit" className="h-10 sm:min-w-40" disabled={query.isError || !query.data?.length}>Calcular</Button>
+            <Button type="submit" size="lg" className="sm:min-w-40" disabled={query.isError || !query.data?.length}>Calcular</Button>
           </form>
       </div>
       {error && <p id="amount-error" role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
