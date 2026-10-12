@@ -21,7 +21,11 @@ export function PrivateShellSkeleton() {
         <Skeleton className="mt-auto h-12 w-full" />
       </aside>
       <div className="min-w-0 flex-1">
-        <div className="flex h-12 items-center gap-3 border-b bg-background px-4"><Skeleton className="size-8" /><Skeleton className="ml-auto h-5 w-40" /></div>
+        <div className="flex h-12 items-center gap-3 border-b bg-background px-2 sm:px-2.5">
+          <Skeleton className="size-8" />
+          <Skeleton className="ml-auto h-5 w-40 max-w-full" />
+          <Skeleton className="size-10 shrink-0" />
+        </div>
         <PageSkeleton />
       </div>
     </div>

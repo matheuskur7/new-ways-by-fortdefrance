@@ -35,7 +35,7 @@ const navigation = [
   { href: "/taxas", label: "Calculadora de Taxas", icon: Calculator },
 ];
 
-export function AppSidebar({ user }: { user: AuthContext["user"] }) {
+export function AppSidebar({ user, onSwitchOrganization }: { user: AuthContext["user"]; onSwitchOrganization: () => void }) {
   const pathname = usePathname();
   const { isMobile, state, setOpenMobile } = useSidebar();
   const [failedImage, setFailedImage] = useState<string | null>(null);
@@ -117,9 +117,9 @@ export function AppSidebar({ user }: { user: AuthContext["user"] }) {
                     </span>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem render={<Link href="/organizations" />} className="cursor-pointer" onClick={() => setOpenMobile(false)}>
+                  <DropdownMenuItem className="cursor-pointer" onClick={() => { setOpenMobile(false); onSwitchOrganization(); }}>
                     <Building2 aria-hidden="true" />
-                    Trocar empresa
+                    Ir para outra empresa
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <SignOutButton variant="menu" />
