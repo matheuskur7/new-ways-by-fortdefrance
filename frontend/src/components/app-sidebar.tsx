@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { Building2, Calculator, ChevronsUpDown, House, UserRound, X } from "lucide-react";
 import type { AuthContext } from "@/lib/auth-schemas";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { SidebarDailyIndicators } from "@/components/sidebar-daily-indicators";
 import { IconButton } from "@/components/ui/icon-button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
@@ -61,6 +62,7 @@ export function AppSidebar({ user, onSwitchOrganization }: { user: AuthContext["
       </SidebarHeader>
       <SidebarSeparator />
       <SidebarContent className="px-3 py-3 group-data-[collapsible=icon]:px-2">
+        <SidebarDailyIndicators />
         <nav aria-label="Navegação principal">
           <SidebarMenu className="gap-1">
             {navigation.map(({ href, label, icon: Icon }) => {

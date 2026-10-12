@@ -16,6 +16,10 @@ export function PrivateShellSkeleton() {
     <div className="flex min-h-dvh bg-muted/40" role="status" aria-label="Carregando navegação">
       <aside className="hidden w-64 shrink-0 flex-col gap-4 border-r bg-sidebar p-3 md:flex">
         <Skeleton className="h-10 w-full" />
+        <div className="grid grid-cols-2 gap-2">
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+        </div>
         <Skeleton className="mt-3 h-8 w-full" />
         <Skeleton className="h-8 w-full" />
         <Skeleton className="mt-auto h-12 w-full" />
