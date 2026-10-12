@@ -8,13 +8,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 async function Organizations() {
   const context = await requireSession();
   return (
-    <div>
-      <header className="flex items-start justify-between gap-4">
+    <div className="grid flex-1 grid-rows-[1fr_auto_1fr] gap-6">
+      <header className="flex self-start items-start justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-primary">
             Olá, {context.user.name}
           </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight">
+          <h1 className="text-3xl font-semibold tracking-tight">
             Escolha sua empresa
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -23,7 +23,9 @@ async function Organizations() {
         </div>
         <SignOutButton variant="button" />
       </header>
-      <OrganizationManager activeId={context.organization?.id} />
+      <div>
+        <OrganizationManager activeId={context.organization?.id} />
+      </div>
     </div>
   );
 }
@@ -40,14 +42,18 @@ export default function Page() {
 
 function OrganizationsSkeleton() {
   return (
-    <div className="grid gap-4" role="status" aria-label="Carregando empresas">
-      <Skeleton className="h-4 w-32" />
-      <Skeleton className="h-9 w-64 max-w-full" />
-      <Skeleton className="h-10 w-full" />
-      <div className="mt-4 grid gap-3 rounded-xl border p-6">
-        <Skeleton className="mb-2 h-6 w-36" />
-        <Skeleton className="h-16 w-full" />
-        <Skeleton className="h-16 w-full" />
+    <div className="grid flex-1 grid-rows-[1fr_auto_1fr] gap-6" role="status" aria-label="Carregando empresas">
+      <div className="grid self-start gap-2">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-9 w-64 max-w-full" />
+        <Skeleton className="h-5 w-full" />
+      </div>
+      <div>
+        <div className="grid gap-3 rounded-xl border p-6">
+          <Skeleton className="mb-2 h-6 w-36" />
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
+        </div>
       </div>
     </div>
   );

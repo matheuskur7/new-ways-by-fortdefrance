@@ -45,30 +45,30 @@ export function OrganizationManager({ activeId }: { activeId?: string }) {
   }
 
   return (
-    <div className="mt-8 grid gap-6">
+    <div className="grid gap-6">
       <Card>
         <CardHeader>
           <h2 className="text-xl font-semibold">Suas empresas</h2>
         </CardHeader>
         <CardContent>
           {loading && (
-            <div className="mt-4 grid gap-3" role="status" aria-label="Carregando empresas">
+            <div className="grid gap-3" role="status" aria-label="Carregando empresas">
               <Skeleton className="h-16 w-full" />
               <Skeleton className="h-16 w-full" />
             </div>
           )}
           {listError && (
-            <p className="mt-4 text-destructive" role="alert">
+            <p className="text-destructive" role="alert">
               Não foi possível carregar as empresas.
             </p>
           )}
           {!loading && !listError && !organizations?.length && (
-            <p className="mt-4 text-muted-foreground">
+            <p className="text-muted-foreground">
               Você ainda não participa de nenhuma empresa. Solicite acesso ao
               responsável.
             </p>
           )}
-          <ul className="mt-4 grid gap-3">
+          <ul className="grid gap-3">
             {organizations?.map((org) => (
               <li key={org.id}>
                 <Tooltip>

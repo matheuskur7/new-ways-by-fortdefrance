@@ -58,8 +58,8 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <div>
+    <div className={signup ? "flex flex-col gap-2" : "grid flex-1 grid-rows-[1fr_auto_1fr] gap-6"}>
+      <header className="self-start">
         <p className="text-xs font-semibold uppercase tracking-widest text-primary">
           {signup ? "Comece por aqui" : "Bem-vindo de volta"}
         </p>
@@ -71,110 +71,114 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
             ? "Crie sua conta para acessar suas empresas e seu espaço de trabalho."
             : "Use seu e-mail e sua senha para acessar o sistema."}
         </p>
-      </div>
+      </header>
 
-      <form onSubmit={submit} className="mt-6 grid gap-5" aria-busy={pending}>
-        {signup && (
-          <div className="grid gap-2">
-            <Label htmlFor="auth-name">Nome</Label>
-            <Input
-              id="auth-name"
-              className="h-12"
-              placeholder="Seu nome completo"
-              disabled={pending}
-              name="name"
-              autoComplete="name"
-              required
-              maxLength={200}
-            />
-          </div>
-        )}
-        <div className="grid gap-2">
-          <Label htmlFor="auth-email">Email</Label>
-          <Input
-            id="auth-email"
-            className="h-12"
-            placeholder="Seu e-mail"
-            disabled={pending}
-            name="email"
-            type="email"
-            autoComplete="email"
-            required
-          />
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="auth-password">Senha</Label>
-          <div className="relative">
-            <Input
-              id="auth-password"
-              className="h-12 pr-12"
-              placeholder="Digite sua senha"
-              disabled={pending}
-              name="password"
-              type={showPassword ? "text" : "password"}
-              autoComplete={signup ? "new-password" : "current-password"}
-              required
-              minLength={signup ? 8 : 1}
-              maxLength={128}
-            />
-            <IconButton
-              type="button"
-              variant="ghost"
-              disabled={pending}
-              className="absolute top-2 right-2"
-              label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-              aria-controls="auth-password"
-              aria-pressed={showPassword}
-              onClick={() => setShowPassword((value) => !value)}
-            >
-              {showPassword ? (
-                <EyeOff aria-hidden="true" />
-              ) : (
-                <Eye aria-hidden="true" />
-              )}
-            </IconButton>
-          </div>
-        </div>
-        {error && (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        <Button
-          size="lg"
-          className="h-12 w-full"
-          disabled={pending}
-          type="submit"
-        >
-          {pending && (
-            <LoaderCircle
-              className="animate-spin motion-reduce:animate-none"
-              aria-hidden="true"
-            />
+      <div>
+        <form onSubmit={submit} className={`grid ${signup ? "mt-6 gap-5" : "gap-4"}`} aria-busy={pending}>
+          {signup && (
+            <div className="grid gap-2">
+              <Label htmlFor="auth-name">Nome</Label>
+              <Input
+                id="auth-name"
+                className="h-12"
+                placeholder="Seu nome completo"
+                disabled={pending}
+                name="name"
+                autoComplete="name"
+                required
+                maxLength={200}
+              />
+            </div>
           )}
-          {pending
-            ? signup
-              ? "Criando conta…"
-              : "Entrando…"
-            : signup
-              ? "Criar conta"
-              : "Entrar"}
-        </Button>
-      </form>
+          <div className="grid gap-2">
+            <Label htmlFor="auth-email">Email</Label>
+            <Input
+              id="auth-email"
+              className="h-12"
+              placeholder="Seu e-mail"
+              disabled={pending}
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="auth-password">Senha</Label>
+            <div className="relative">
+              <Input
+                id="auth-password"
+                className="h-12 pr-12"
+                placeholder="Digite sua senha"
+                disabled={pending}
+                name="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete={signup ? "new-password" : "current-password"}
+                required
+                minLength={signup ? 8 : 1}
+                maxLength={128}
+              />
+              <IconButton
+                type="button"
+                variant="ghost"
+                disabled={pending}
+                className="absolute top-2 right-2"
+                label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                aria-controls="auth-password"
+                aria-pressed={showPassword}
+                onClick={() => setShowPassword((value) => !value)}
+              >
+                {showPassword ? (
+                  <EyeOff aria-hidden="true" />
+                ) : (
+                  <Eye aria-hidden="true" />
+                )}
+              </IconButton>
+            </div>
+          </div>
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          <Button
+            size="lg"
+            className="h-12 w-full"
+            disabled={pending}
+            type="submit"
+          >
+            {pending && (
+              <LoaderCircle
+                className="animate-spin motion-reduce:animate-none"
+                aria-hidden="true"
+              />
+            )}
+            {pending
+              ? signup
+                ? "Criando conta…"
+                : "Entrando…"
+              : signup
+                ? "Criar conta"
+                : "Entrar"}
+          </Button>
+        </form>
 
-      <p className="mt-6 text-center text-sm text-muted-foreground">
-        {signup ? "Já possui uma conta? " : "Ainda não possui uma conta? "}
-        <Link
-          replace
-          className="font-medium text-primary underline underline-offset-4"
-          href={signup ? "/login" : "/signup"}
-        >
-          {signup ? "Entrar" : "Criar conta"}
-        </Link>
-      </p>
-      <p className="mt-16 text-center text-xs text-muted-foreground">
-        Seu acesso é pessoal. Mantenha sua senha em segurança.
-      </p>
+      </div>
+      <footer className={signup ? "mt-6 flex flex-col gap-2" : "grid self-end gap-3"}>
+        <p className="text-center text-sm text-muted-foreground">
+          {signup ? "Já possui uma conta? " : "Ainda não possui uma conta? "}
+          <Link
+            replace
+            className="font-medium text-primary underline underline-offset-4"
+            href={signup ? "/login" : "/signup"}
+          >
+            {signup ? "Entrar" : "Criar conta"}
+          </Link>
+        </p>
+        <p className={`${signup ? "mt-16 " : ""}text-center text-xs text-muted-foreground`}>
+          Seu acesso é pessoal. Mantenha sua senha em segurança.
+        </p>
+      </footer>
     </div>
   );
 }
