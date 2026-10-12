@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Roboto } from "next/font/google";
+import { Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import "react-toastify/dist/ReactToastify.css";
 import { cn } from "@/lib/utils";
@@ -7,9 +7,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryProvider } from "@/components/query-provider";
 import { ToastProvider } from "@/components/toast-provider";
 
-const roboto = Roboto({
-  variable: "--font-roboto",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  fallback: ["sans-serif"],
+  adjustFontFallback: false,
 });
 
 const geistMono = Geist_Mono({
@@ -28,9 +30,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="pt-BR"
       className={cn(
-        "h-full antialiased font-sans",
+        "h-full antialiased",
+        inter.className,
         geistMono.variable,
-        roboto.variable,
+        inter.variable,
       )}
     >
       <body className="min-h-full flex flex-col">
