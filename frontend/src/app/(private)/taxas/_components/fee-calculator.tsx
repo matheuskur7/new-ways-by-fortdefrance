@@ -35,13 +35,13 @@ function FeeTable({ group, amount }: { group: FeeGroup; amount: number | null })
         <CardDescription className="text-xs">{group.channel}</CardDescription>
       </CardHeader>
       <CardContent className="p-0">
-        <Table className="table-fixed text-[13px] tabular-nums">
+        <Table className="table-fixed text-sm tabular-nums">
           <TableCaption className="sr-only">Taxas de {group.name}, {group.channel}</TableCaption>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-1/4 px-2 text-center text-xs">Parcelas</TableHead>
-              <TableHead className="w-3/8 px-2 text-right text-xs">Parcela</TableHead>
-              <TableHead className="w-3/8 px-2 text-right text-xs">Total</TableHead>
+              <TableHead className="w-1/4 px-2 text-center text-[13px]">Parcelas</TableHead>
+              <TableHead className="w-3/8 px-2 text-right text-[13px]">Parcela</TableHead>
+              <TableHead className="w-3/8 px-2 text-right text-[13px]">Total</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -51,7 +51,7 @@ function FeeTable({ group, amount }: { group: FeeGroup; amount: number | null })
                 <TableRow key={rate.installments} className="h-11 odd:bg-muted/25 even:bg-background hover:bg-muted/35">
                   <TableCell className="px-2 py-1 text-center">
                     <span className="block font-medium">{rate.installments}x</span>
-                    <span className="block text-xs leading-tight text-muted-foreground">{rate.ratePercent.replace(".", ",")}%</span>
+                    <span className="block text-[13px] leading-tight text-muted-foreground">{rate.ratePercent.replace(".", ",")}%</span>
                   </TableCell>
                   <TableCell className="px-2 py-1 text-right">
                     {values ? formatMoney(values.installment) : <><Skeleton aria-hidden="true" className="ml-auto h-2.5 w-20 max-w-full animate-none rounded-full bg-muted" /><span className="sr-only">Aguardando cálculo</span></>}
@@ -98,7 +98,7 @@ export function FeeCalculator() {
       </header>
       <div className="w-fit max-w-full text-left">
           <form onSubmit={calculate} className="flex flex-col items-start justify-start gap-3 sm:flex-row sm:items-end">
-            <div className="grid w-96 max-w-full gap-2">
+            <div className="grid w-40 max-w-full gap-2">
               <Label htmlFor="sale-amount" className="justify-start">Valor da venda (R$)</Label>
               <Input id="sale-amount" className="h-10 bg-white text-left text-lg" inputMode="numeric" autoComplete="off" placeholder="0,00" value={input} aria-invalid={!!error} aria-describedby={error ? "amount-error" : undefined} onChange={(event) => setInput(maskBrazilianCurrency(event.target.value))} />
             </div>
