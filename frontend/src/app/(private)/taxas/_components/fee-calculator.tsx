@@ -104,8 +104,8 @@ export function FeeCalculator() {
             </div>
             <Button type="submit" className="h-10 sm:min-w-40" disabled={query.isError || !query.data?.length}>Calcular</Button>
           </form>
-          {error && <p id="amount-error" role="alert" className="mt-3 min-w-full max-w-0 text-sm text-destructive">{error}</p>}
       </div>
+      {error && <p id="amount-error" role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
       {query.isPending && <FeeTablesSkeleton />}
       {query.isError && <Alert variant="destructive" className="mt-6"><AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><span>{query.error.message}</span><Button type="button" variant="outline" onClick={() => void query.refetch()} disabled={query.isFetching}>Tentar novamente</Button></AlertDescription></Alert>}
       {!query.isError && query.data?.length === 0 && <p role="status" className="mt-6 text-center text-sm text-muted-foreground">Nenhum grupo de taxas cadastrado.</p>}
