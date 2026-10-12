@@ -39,9 +39,9 @@ function FeeTable({ group, amount }: { group: FeeGroup; amount: number | null })
           <TableCaption className="sr-only">Taxas de {group.name}, {group.channel}</TableCaption>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-1/4 px-2 text-center text-[13px]">Parcelas</TableHead>
-              <TableHead className="w-3/8 px-2 text-right text-[13px]">Parcela</TableHead>
-              <TableHead className="w-3/8 px-2 text-right text-[13px]">Total</TableHead>
+              <TableHead className="h-8 w-1/4 px-2 pt-0.5 text-center text-[13px]">Parcelas</TableHead>
+              <TableHead className="h-8 w-3/8 px-2 pt-0.5 text-right text-[13px]">Parcela</TableHead>
+              <TableHead className="h-8 w-3/8 px-2 pt-0.5 text-right text-[13px]">Total</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
