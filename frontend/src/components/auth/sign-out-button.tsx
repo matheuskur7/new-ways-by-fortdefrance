@@ -1,6 +1,7 @@
 "use client";
 
 import { IconButton } from "@/components/ui/icon-button";
+import { Button } from "@/components/ui/button";
 import { LogOut, LoaderCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -8,7 +9,7 @@ import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { toast } from "react-toastify";
 import { useSignOut } from "@/api/auth.queries";
 
-export function SignOutButton({ variant = "icon" }: { variant?: "icon" | "menu" }) {
+export function SignOutButton({ variant = "icon" }: { variant?: "icon" | "button" | "menu" }) {
   const router = useRouter();
   const mutation = useSignOut();
   const pending = mutation.isPending;
@@ -35,23 +36,30 @@ export function SignOutButton({ variant = "icon" }: { variant?: "icon" | "menu" 
   }
   return (
     <div>
-      <IconButton
-        label={pending ? "Saindo…" : "Sair"}
-        type="button"
-        variant="ghost"
-        onClick={signOut}
-        disabled={pending}
-        aria-busy={pending}
-      >
-        {pending ? (
-          <LoaderCircle
-            className="animate-spin motion-reduce:animate-none"
-            aria-hidden="true"
-          />
-        ) : (
-          <LogOut aria-hidden="true" />
-        )}
-      </IconButton>
+      {variant === "button" ? (
+        <Button type="button" variant="ghost" onClick={signOut} disabled={pending} aria-busy={pending}>
+          <span>{pending ? "Saindo…" : "Sair"}</span>
+          {pending ? <LoaderCircle className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <LogOut aria-hidden="true" />}
+        </Button>
+      ) : (
+        <IconButton
+          label={pending ? "Saindo…" : "Sair"}
+          type="button"
+          variant="ghost"
+          onClick={signOut}
+          disabled={pending}
+          aria-busy={pending}
+        >
+          {pending ? (
+            <LoaderCircle
+              className="animate-spin motion-reduce:animate-none"
+              aria-hidden="true"
+            />
+          ) : (
+            <LogOut aria-hidden="true" />
+          )}
+        </IconButton>
+      )}
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}

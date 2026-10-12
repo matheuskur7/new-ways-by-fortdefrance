@@ -21,7 +21,7 @@ async function Organizations() {
             Selecione seu espaço de trabalho para continuar.
           </p>
         </div>
-        <SignOutButton />
+        <SignOutButton variant="button" />
       </header>
       <OrganizationManager activeId={context.organization?.id} />
     </div>

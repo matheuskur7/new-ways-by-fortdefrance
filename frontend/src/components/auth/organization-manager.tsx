@@ -1,6 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useRouter } from "next/navigation";
@@ -69,20 +71,28 @@ export function OrganizationManager({ activeId }: { activeId?: string }) {
           <ul className="mt-4 grid gap-3">
             {organizations?.map((org) => (
               <li key={org.id}>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={pending}
-                  onClick={() => select(org.id)}
-                  className="h-auto w-full flex-col items-start gap-0.5 whitespace-normal px-4 py-2 text-left"
-                >
-                  <span className="text-lg leading-tight font-semibold">
-                    {org.name}
-                  </span>
-                  <span className="block text-sm leading-tight text-muted-foreground">
-                    {org.id === activeId ? "Empresa ativa" : org.slug}
-                  </span>
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger render={
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={pending}
+                      onClick={() => select(org.id)}
+                      className="h-auto w-full justify-between gap-3 whitespace-normal px-4 py-2 text-left"
+                    />
+                  }>
+                    <span className="grid min-w-0 gap-0.5">
+                      <span className="text-lg leading-tight font-semibold">
+                        {org.name}
+                      </span>
+                      <span className="block text-sm leading-tight text-muted-foreground">
+                        {org.id === activeId ? "Empresa ativa" : org.slug}
+                      </span>
+                    </span>
+                    <ArrowRight className="size-5" aria-hidden="true" />
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Entrar</TooltipContent>
+                </Tooltip>
               </li>
             ))}
           </ul>
