@@ -14,7 +14,7 @@
   --secondary-foreground: #4a4a4a;
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
-  --accent: color-mix(in srgb, var(--primary) 6%, white);
+  --accent: oklch(0.97 0 0);
   --accent-foreground: #4a4a4a;
   --destructive: var(--primary);
   --border: oklch(0.922 0 0);
