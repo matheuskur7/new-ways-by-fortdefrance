@@ -4,6 +4,7 @@ export class AuthUserResponse {
   @ApiProperty({ type: String }) id: string;
   @ApiProperty({ type: String }) name: string;
   @ApiProperty({ type: String, format: 'email' }) email: string;
+  @ApiProperty({ type: String, nullable: true }) image: string | null;
 }
 
 export class AuthOrganizationResponse {

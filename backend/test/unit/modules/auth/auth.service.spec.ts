@@ -33,7 +33,7 @@ describe('AuthService organization context', () => {
   it('checks the current user membership, rather than trusting the session organization ID', async () => {
     const { service, member } = setup();
     expect(await service.getContext(session)).toEqual({
-      user: session.user,
+      user: { ...session.user, image: null },
       organization: { id: 'org-1', name: 'Org', slug: 'org', role: 'owner' },
     });
     expect(member.findUnique).toHaveBeenCalledWith({
@@ -42,6 +42,15 @@ describe('AuthService organization context', () => {
       },
       include: { organization: true },
     });
+  });
+  it('includes the user photo in the authenticated context', async () => {
+    const { service } = setup();
+    const image = 'https://example.com/avatar.jpg';
+    const context = await service.getContext({
+      ...session,
+      user: { ...session.user, image },
+    });
+    expect(context.user.image).toBe(image);
   });
   it('returns no organization when the membership has been revoked', async () => {
     const { service, member } = setup();
