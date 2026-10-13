@@ -3,6 +3,7 @@
 import * as React from "react"
 import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog"
 import { cn } from "cn"
+import { Info, Trash2, TriangleAlert, type LucideIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 
@@ -61,19 +62,33 @@ function AlertDialogContent({
   )
 }
 
+type AlertDialogVariant = "info" | "alert" | "destructive"
+
+const dialogVariants = {
+  info: { icon: Info, className: "border-blue-600 bg-blue-600/10 text-blue-600" },
+  alert: { icon: TriangleAlert, className: "border-amber-600 bg-amber-600/10 text-amber-600" },
+  destructive: { icon: Trash2, className: "border-destructive bg-destructive/10 text-destructive" },
+} as const
+
 function AlertDialogHeader({
   className,
+  variant = "info",
+  icon,
+  children,
   ...props
-}: React.ComponentProps<"div">) {
+}: React.ComponentProps<"div"> & { variant?: AlertDialogVariant; icon?: LucideIcon }) {
+  const { icon: DefaultIcon, className: color } = dialogVariants[variant]
+  const Icon = icon ?? DefaultIcon
   return (
     <div
       data-slot="alert-dialog-header"
-      className={cn(
-        "grid grid-rows-[auto_1fr] place-items-center gap-1.5 text-center has-data-[slot=alert-dialog-media]:grid-rows-[auto_auto_1fr] has-data-[slot=alert-dialog-media]:gap-x-4 sm:group-data-[size=default]/alert-dialog-content:place-items-start sm:group-data-[size=default]/alert-dialog-content:text-left sm:group-data-[size=default]/alert-dialog-content:has-data-[slot=alert-dialog-media]:grid-rows-[auto_1fr]",
-        className
-      )}
+      data-variant={variant}
+      className={cn("grid justify-items-center gap-2 pt-2 text-center", className)}
       {...props}
-    />
+    >
+      <AlertDialogMedia className={color}><Icon aria-hidden="true" /></AlertDialogMedia>
+      {children}
+    </div>
   )
 }
 
@@ -85,7 +100,7 @@ function AlertDialogFooter({
     <div
       data-slot="alert-dialog-footer"
       className={cn(
-        "-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 group-data-[size=sm]/alert-dialog-content:grid group-data-[size=sm]/alert-dialog-content:grid-cols-2 sm:flex-row sm:justify-end",
+        "-mx-4 -mb-4 flex flex-row flex-wrap justify-end gap-2 rounded-b-xl border-t bg-muted/50 p-4 [&>[data-slot=alert-dialog-action]]:order-last",
         className
       )}
       {...props}
@@ -101,7 +116,7 @@ function AlertDialogMedia({
     <div
       data-slot="alert-dialog-media"
       className={cn(
-        "mb-2 inline-flex size-10 items-center justify-center rounded-md bg-muted sm:group-data-[size=default]/alert-dialog-content:row-span-2 *:[svg:not([class*='size-'])]:size-6",
+        "mb-2 inline-flex size-25 items-center justify-center rounded-full border-2 bg-muted [&>svg]:size-[49.5px]",
         className
       )}
       {...props}
@@ -117,7 +132,7 @@ function AlertDialogTitle({
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
       className={cn(
-        "font-heading text-base font-medium sm:group-data-[size=default]/alert-dialog-content:group-has-data-[slot=alert-dialog-media]/alert-dialog-content:col-start-2",
+        "font-heading text-lg font-semibold",
         className
       )}
       {...props}

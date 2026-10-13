@@ -55,6 +55,10 @@ Before the final response, run one reporting pass. If candidates remain, from th
 
 ## Aparência
 
+- Nos modais de confirmação, use `AlertDialogHeader` com `variant="info"` (azul), `variant="alert"` (âmbar) ou `variant="destructive"` (tokens dos botões destructive). Personalize o símbolo com a prop `icon`. O ícone deve ficar centralizado em um círculo com borda, acima do título.
+
+- Em modais, mantenha os botões de confirmação à direita, depois das ações de cancelar ou voltar. Use os rodapés compartilhados para preservar essa ordem em todas as larguras de tela.
+
 - Exiba o nome New Ways e a assinatura “by Fort de France” sempre em Arial, com Helvetica e sans-serif como alternativas.
 
 - Use somente o tema claro (light). Não implemente tema escuro, seleção de tema ou adaptação ao tema do sistema.

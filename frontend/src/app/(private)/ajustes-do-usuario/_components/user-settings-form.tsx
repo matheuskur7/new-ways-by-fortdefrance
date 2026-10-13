@@ -149,7 +149,7 @@ export function UserSettingsForm({ user }: { user: AuthContext["user"] }) {
       </div>
       <AlertDialog open={confirmRemovePhoto} onOpenChange={(open) => { if (!removeAvatar.isPending) setConfirmRemovePhoto(open); }}>
         <AlertDialogContent>
-          <AlertDialogHeader>
+          <AlertDialogHeader variant="destructive">
             <AlertDialogTitle>Remover foto de perfil?</AlertDialogTitle>
             <AlertDialogDescription>Sua foto será removida do perfil. Você poderá adicionar outra depois.</AlertDialogDescription>
           </AlertDialogHeader>

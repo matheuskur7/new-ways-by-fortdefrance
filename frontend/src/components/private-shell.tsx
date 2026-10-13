@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Building2, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { ArrowRightLeft, Building2, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import type { AuthContext } from "@/lib/auth-schemas";
 import { AppSidebar } from "@/components/app-sidebar";
 import { IconButton } from "@/components/ui/icon-button";
@@ -44,7 +44,7 @@ export function PrivateShell({ children, context }: { children: ReactNode; conte
       </SidebarInset>
       <AlertDialog open={confirmSwitch} onOpenChange={setConfirmSwitch}>
         <AlertDialogContent>
-          <AlertDialogHeader>
+          <AlertDialogHeader variant="info" icon={ArrowRightLeft}>
             <AlertDialogTitle>Ir para outra empresa?</AlertDialogTitle>
             <AlertDialogDescription>Tem certeza de que deseja ir para outra empresa? Você será direcionado para a seleção de empresas.</AlertDialogDescription>
           </AlertDialogHeader>
