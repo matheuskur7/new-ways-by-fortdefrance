@@ -3,17 +3,26 @@ import { requireSession } from "@/lib/auth-server";
 import { OrganizationManager } from "@/components/auth/organization-manager";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { UserAvatar } from "@/components/user-avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 
 async function Organizations() {
   const context = await requireSession();
   return (
     <div className="grid flex-1 grid-rows-[1fr_auto_1fr] gap-6">
-      <header className="flex self-start items-start justify-between gap-4">
+      <header className="grid self-start gap-6">
+        <div className="flex items-center gap-4 rounded-xl border bg-muted/40 p-4">
+          <UserAvatar image={context.user.image} name={context.user.name} size="lg" />
+          <div className="min-w-0 flex-1">
+            <p className="text-xs leading-tight font-medium text-red-600">Olá,</p>
+            <p className="-mt-0.5 break-words text-lg leading-tight font-semibold tracking-tight">
+              {context.user.name}
+            </p>
+            <p className="mt-1 break-all text-sm text-muted-foreground">{context.user.email}</p>
+          </div>
+          <SignOutButton variant="button" />
+        </div>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-primary">
-            Olá, {context.user.name}
-          </p>
           <h1 className="text-3xl font-semibold tracking-tight">
             Escolha sua empresa
           </h1>
@@ -21,7 +30,6 @@ async function Organizations() {
             Selecione seu espaço de trabalho para continuar.
           </p>
         </div>
-        <SignOutButton variant="button" />
       </header>
       <div>
         <OrganizationManager activeId={context.organization?.id} />
@@ -43,13 +51,23 @@ export default function Page() {
 function OrganizationsSkeleton() {
   return (
     <div className="grid flex-1 grid-rows-[1fr_auto_1fr] gap-6" role="status" aria-label="Carregando empresas">
-      <div className="grid self-start gap-2">
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className="h-9 w-64 max-w-full" />
-        <Skeleton className="h-5 w-full" />
+      <div className="grid self-start gap-6">
+        <div className="flex items-center gap-4 rounded-xl border bg-muted/40 p-4">
+          <Skeleton className="size-18 shrink-0 rounded-md" />
+          <div className="grid min-w-0 flex-1 gap-2">
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-5 w-36 max-w-full" />
+            <Skeleton className="h-4 w-44 max-w-full" />
+          </div>
+          <Skeleton className="size-8 shrink-0 rounded-md" />
+        </div>
+        <div className="grid gap-2">
+          <Skeleton className="h-9 w-64 max-w-full" />
+          <Skeleton className="h-5 w-full" />
+        </div>
       </div>
       <div>
-        <div className="grid gap-3 rounded-xl border p-6">
+        <div className="grid gap-3 rounded-xl border bg-muted/40 p-6">
           <Skeleton className="mb-2 h-6 w-36" />
           <Skeleton className="h-16 w-full" />
           <Skeleton className="h-16 w-full" />

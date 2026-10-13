@@ -46,7 +46,7 @@ export function OrganizationManager({ activeId }: { activeId?: string }) {
 
   return (
     <div className="grid gap-6">
-      <Card>
+      <Card className="bg-muted/40">
         <CardHeader>
           <h2 className="text-xl font-semibold">Suas empresas</h2>
         </CardHeader>

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Building2, Calculator, ChevronsUpDown, House, UserRound, X } from "lucide-react";
+import { Building2, Calculator, ChevronsUpDown, House, UserRoundCog, UserRound, X } from "lucide-react";
 import type { AuthContext } from "@/lib/auth-schemas";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { SidebarDailyIndicators } from "@/components/sidebar-daily-indicators";
@@ -107,7 +107,7 @@ function UserDropdown({ user, onSwitchOrganization }: { user: AuthContext["user"
       <Tooltip>
         <TooltipTrigger render={<DropdownMenuTrigger render={<SidebarMenuButton size="lg" aria-label="Abrir opções do perfil" className="h-auto! cursor-pointer duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:h-auto!" />} />}>
           <span className="flex size-10 shrink-0 items-center justify-center rounded-md border bg-background transition-[width,height] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:size-8">
-            <UserRound className="size-5! transition-[width,height] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:size-4!" aria-hidden="true" />
+            {user.image && user.image !== failedImage ? <Image src={user.image} alt="" width={40} height={40} unoptimized className="size-full rounded-md object-cover" onError={() => setFailedImage(user.image ?? null)} /> : <UserRound className="size-5! transition-[width,height] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:size-4!" aria-hidden="true" />}
           </span>
           <span className="grid min-w-0 max-w-40 flex-1 overflow-hidden text-left whitespace-nowrap opacity-100 transition-[max-width,opacity] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:max-w-0 group-data-[collapsible=icon]:opacity-0">
             <span className="truncate text-sm leading-tight font-medium transition-[font-size] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:text-[0px]">{displayName}</span>
@@ -131,11 +131,15 @@ function UserDropdown({ user, onSwitchOrganization }: { user: AuthContext["user"
             </span>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
+          <DropdownMenuItem render={<Link href="/ajustes-do-usuario" />} className="cursor-pointer" onClick={() => setOpenMobile(false)}>
+            <UserRoundCog aria-hidden="true" />
+            Ajustes do Usuário
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem className="cursor-pointer" onClick={() => { setOpenMobile(false); onSwitchOrganization(); }}>
             <Building2 aria-hidden="true" />
             Ir para outra empresa
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
           <SignOutButton variant="menu" />
         </DropdownMenuGroup>
       </DropdownMenuContent>
