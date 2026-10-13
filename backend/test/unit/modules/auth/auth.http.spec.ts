@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import { StorageService } from '../../../../src/shared/storage/storage.service.js';
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
@@ -56,11 +57,17 @@ describe('Better Auth HTTP integration (in-memory database)', () => {
       }),
       rateLimit: { enabled: false },
     });
-    const originService = new AuthService({} as PrismaService, config);
+    const originService = new AuthService(
+      {} as PrismaService,
+      config,
+      {} as StorageService,
+    );
     const module = await Test.createTestingModule({
       imports: [AuthModule],
       controllers: [TestController],
     })
+      .overrideProvider(StorageService)
+      .useValue({})
       .overrideProvider(AuthService)
       .useValue({
         auth,

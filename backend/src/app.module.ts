@@ -1,3 +1,4 @@
+import { UserSettingsModule } from './modules/user-settings/user-settings.module.js';
 import { DbModule } from './shared/db/db.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { CardFeesModule } from './modules/card-fees/card-fees.module.js';
@@ -14,6 +15,7 @@ import { AppService } from './app.service.js';
     AuthModule,
     ImageModule,
     CardFeesModule,
+    UserSettingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

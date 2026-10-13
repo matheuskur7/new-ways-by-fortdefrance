@@ -1,6 +1,8 @@
 // storage.service.ts
 import {
   S3Client,
+  ListObjectsV2Command,
+  HeadObjectCommand,
   PutObjectCommand,
   GetObjectCommand,
   DeleteObjectCommand,
@@ -47,6 +49,22 @@ export class StorageService {
         ContentType: mimetype,
       }),
       { expiresIn },
+    );
+  }
+
+  async inspect(key: string) {
+    return this.s3.send(
+      new HeadObjectCommand({ Bucket: this.bucket, Key: key }),
+    );
+  }
+
+  async list(prefix: string, continuationToken?: string) {
+    return this.s3.send(
+      new ListObjectsV2Command({
+        Bucket: this.bucket,
+        Prefix: prefix,
+        ContinuationToken: continuationToken,
+      }),
     );
   }
 

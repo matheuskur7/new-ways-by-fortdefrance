@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import type { StorageService } from '../../../../src/shared/storage/storage.service.js';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from '../../../../src/modules/auth/auth.service.js';
 import { getAuthOptions } from '../../../../src/modules/auth/auth.config.js';
@@ -25,6 +26,11 @@ function setup() {
   const service = new AuthService(
     { member } as unknown as PrismaService,
     config,
+    {
+      getPresignedUrl: vi
+        .fn()
+        .mockResolvedValue('https://storage.example/avatar'),
+    } as unknown as StorageService,
   );
   return { service, member };
 }
@@ -51,6 +57,19 @@ describe('AuthService organization context', () => {
       user: { ...session.user, image },
     });
     expect(context.user.image).toBe(image);
+  });
+  it('signs stored avatar keys only for their owner', async () => {
+    const { service } = setup();
+    const own = await service.getContext({
+      ...session,
+      user: { ...session.user, image: 'user-avatar/user-1/photo.jpg' },
+    });
+    expect(own.user.image).toBe('https://storage.example/avatar');
+    const foreign = await service.getContext({
+      ...session,
+      user: { ...session.user, image: 'user-avatar/user-2/photo.jpg' },
+    });
+    expect(foreign.user.image).toBeNull();
   });
   it('returns no organization when the membership has been revoked', async () => {
     const { service, member } = setup();

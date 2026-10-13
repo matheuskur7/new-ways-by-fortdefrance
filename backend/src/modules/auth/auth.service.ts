@@ -1,8 +1,10 @@
+import { createHash } from 'node:crypto';
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { fromNodeHeaders } from 'better-auth/node';
 import type { IncomingHttpHeaders } from 'node:http';
 import { PrismaService } from '../../shared/db/prisma.service.js';
+import { StorageService } from '../../shared/storage/storage.service.js';
 import { createAuth } from './auth.config.js';
 import type { Auth, AuthSession } from './auth.config.js';
 
@@ -14,6 +16,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     config: ConfigService,
+    private readonly storage: StorageService,
   ) {
     this.auth = createAuth(prisma, config);
     this.trustedOrigins = new Set([
@@ -48,7 +51,16 @@ export class AuthService {
         id: session.user.id,
         name: session.user.name,
         email: session.user.email,
-        image: session.user.image ?? null,
+        image:
+          session.user.image?.startsWith(`user-avatar/${session.user.id}/`) ||
+          session.user.image?.startsWith(
+            `user-avatar/${createHash('sha256').update(session.user.id).digest('hex')}-`,
+          )
+            ? ((await this.storage.getPresignedUrl(session.user.image, 3600)) ??
+              null)
+            : session.user.image?.startsWith('user-avatar/')
+              ? null
+              : (session.user.image ?? null),
       },
       organization: member
         ? {
