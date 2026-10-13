@@ -5,6 +5,7 @@ import { Calculator } from "lucide-react";
 import { useFeeGroups } from "@/api/card-fees/queries";
 import type { FeeGroup } from "@/api/card-fees/schemas";
 import { calculateCardFee, formatMoney, parseBrazilianAmount, saleAmountSchema } from "@/lib/card-fees/calculator";
+import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,7 +25,7 @@ function maskBrazilianCurrency(value: string) {
 
 function FeeTable({ group, amount }: { group: FeeGroup; amount: number | null }) {
   return (
-    <Card className="gap-0 overflow-hidden py-0">
+    <div className="overflow-hidden rounded-lg border">
       <CardHeader className="flex flex-col items-center justify-center gap-2 border-b bg-muted/50 px-4 py-2! text-center">
         {group.logoSvg && (
           // SVGs dinâmicos do banco são exibidos diretamente, sem otimização do Next.js.
@@ -65,7 +66,7 @@ function FeeTable({ group, amount }: { group: FeeGroup; amount: number | null })
           </TableBody>
         </Table>
       </CardContent>
-    </Card>
+    </div>
   );
 }
 
@@ -88,14 +89,15 @@ export function FeeCalculator() {
   }
 
   return (
-    <section className="w-full">
-      <header className="mb-6 flex items-stretch justify-start gap-3 text-left">
-        <span className="flex w-14 shrink-0 items-center justify-center rounded-xl border bg-background text-foreground"><Calculator className="size-8" aria-hidden="true" /></span>
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Calculadora de Taxas de Cartão</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Informe o valor da venda para calcular as opções de parcelamento.</p>
-        </div>
-      </header>
+    <section className="mx-auto w-full max-w-6xl">
+      <PageHeader
+        icon={Calculator}
+        title="Calculadora de Taxas de Cartão"
+        subtitle="Informe o valor da venda para calcular as opções de parcelamento."
+        className="mb-3"
+      />
+      <Card>
+      <CardContent>
       <div className="w-fit max-w-full text-left">
           <form onSubmit={calculate} className="flex flex-col items-start justify-start gap-3 sm:flex-row sm:items-end">
             <div className="grid w-40 max-w-full gap-2">
@@ -107,9 +109,11 @@ export function FeeCalculator() {
       </div>
       {error && <p id="amount-error" role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
       {query.isPending && <FeeTablesSkeleton />}
-      {query.isError && <Alert variant="destructive" className="mt-6"><AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><span>{query.error.message}</span><Button type="button" variant="outline" onClick={() => void query.refetch()} disabled={query.isFetching}>Tentar novamente</Button></AlertDescription></Alert>}
-      {!query.isError && query.data?.length === 0 && <p role="status" className="mt-6 text-center text-sm text-muted-foreground">Nenhum grupo de taxas cadastrado.</p>}
-      {!query.isError && query.data && <div className="mt-6 grid w-full max-w-6xl gap-4 lg:grid-cols-3">{query.data.map((group) => <FeeTable key={group.id} group={group} amount={amount} />)}</div>}
+      {query.isError && <Alert variant="destructive" className="mt-3"><AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><span>{query.error.message}</span><Button type="button" variant="outline" onClick={() => void query.refetch()} disabled={query.isFetching}>Tentar novamente</Button></AlertDescription></Alert>}
+      {!query.isError && query.data?.length === 0 && <p role="status" className="mt-3 text-center text-sm text-muted-foreground">Nenhum grupo de taxas cadastrado.</p>}
+      {!query.isError && query.data && <div className="mt-3 grid w-full max-w-6xl gap-2 lg:grid-cols-3">{query.data.map((group) => <FeeTable key={group.id} group={group} amount={amount} />)}</div>}
+      </CardContent>
+      </Card>
     </section>
   );
 }

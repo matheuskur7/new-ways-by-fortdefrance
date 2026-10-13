@@ -40,7 +40,7 @@ export function PrivateShell({ children, context }: { children: ReactNode; conte
       <AppSidebar user={context.user} onSwitchOrganization={() => setConfirmSwitch(true)} />
       <SidebarInset className="min-w-0 bg-muted/40">
         <NavigationHeader organization={context.organization} onSwitchOrganization={() => setConfirmSwitch(true)} />
-        <main id="page-content" tabIndex={-1} className="flex-1 p-3 outline-none sm:p-4 lg:p-5">{children}</main>
+        <main id="page-content" tabIndex={-1} className="flex-1 p-1.5 outline-none sm:p-2 lg:p-2.5">{children}</main>
       </SidebarInset>
       <AlertDialog open={confirmSwitch} onOpenChange={setConfirmSwitch}>
         <AlertDialogContent>
