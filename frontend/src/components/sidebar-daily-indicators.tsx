@@ -9,11 +9,12 @@ const indicators = [
 
 export function SidebarDailyIndicators() {
   return (
-    <section aria-label="Indicadores de veículos de hoje" className="mb-4 grid grid-cols-2 gap-2 group-data-[collapsible=icon]:hidden">
+    <section aria-label="Indicadores de veículos de hoje" className="mb-4 h-18 shrink-0 overflow-hidden px-3 transition-[height,margin] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:mb-0 group-data-[collapsible=icon]:h-0">
+      <div className="grid w-[calc(var(--sidebar-width)-1.5rem-1px)] grid-cols-2 gap-2 p-0.5 opacity-100 transition-opacity duration-100 ease-linear delay-200 motion-reduce:transition-none motion-reduce:delay-0 group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:delay-0">
       {indicators.map(({ label, value, icon: Icon, color }) => (
         <Card key={label} size="sm" className="gap-0 rounded-lg py-2.5 shadow-none">
           <CardContent className="grid gap-2 px-2.5">
-            <p className="text-xs text-muted-foreground">{label}</p>
+            <p className="text-xs whitespace-nowrap text-muted-foreground">{label}</p>
             <div className="flex items-center gap-2">
               <span className={`flex size-6 shrink-0 items-center justify-center rounded-md ${color}`}>
                 <Icon className="size-3.5" aria-hidden="true" />
@@ -23,6 +24,7 @@ export function SidebarDailyIndicators() {
           </CardContent>
         </Card>
       ))}
+      </div>
     </section>
   );
 }

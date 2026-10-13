@@ -58,9 +58,9 @@ export function AppSidebar({ user, onSwitchOrganization }: { user: AuthContext["
         </IconButton>
       </SidebarHeader>
       <SidebarSeparator />
-      <SidebarContent className="px-3 py-3 group-data-[collapsible=icon]:px-2">
+      <SidebarContent className="py-3">
         <SidebarDailyIndicators />
-        <nav aria-label="Navegação principal">
+        <nav aria-label="Navegação principal" className="px-3 transition-[padding] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:px-2">
           <SidebarMenu className="gap-1">
             {navigation.map(({ href, label, icon: Icon }) => {
               const active = pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
