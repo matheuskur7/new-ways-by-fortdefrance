@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { Building2, Calculator, ChevronsUpDown, House, UserRoundCog, UserRound, X } from "lucide-react";
 import type { AuthContext } from "@/lib/auth-schemas";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { BrandWordmark } from "@/components/brand-wordmark";
 import { SidebarDailyIndicators } from "@/components/sidebar-daily-indicators";
 import { IconButton } from "@/components/ui/icon-button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -46,10 +47,7 @@ export function AppSidebar({ user, onSwitchOrganization }: { user: AuthContext["
         <Tooltip>
           <TooltipTrigger render={<Link href="/" aria-label="New Ways — Início" onClick={() => setOpenMobile(false)} className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden" />}>
             <Image src="/brand/logo.png" alt="" width={48} height={48} className="size-12 shrink-0 object-contain transition-[width,height] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:size-8" />
-            <div className="min-w-0 max-w-48 shrink-0 overflow-hidden whitespace-nowrap opacity-100 transition-[max-width,opacity] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:max-w-0 group-data-[collapsible=icon]:opacity-0">
-              <p className="text-2xl leading-tight font-bold tracking-tight transition-[font-size] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:text-[0px]"><span className="text-primary italic">New</span> Ways</p>
-              <p className="text-xs leading-normal text-muted-foreground transition-[font-size] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:text-[0px]">by Fort de France</p>
-            </div>
+            <BrandWordmark variant="sidebar" />
           </TooltipTrigger>
           <TooltipContent side="right">voltar à home</TooltipContent>
         </Tooltip>

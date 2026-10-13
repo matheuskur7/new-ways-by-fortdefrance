@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
+import { BrandWordmark } from "@/components/brand-wordmark";
 import { Card } from "@/components/ui/card";
 
 function CompanyIdentity() {
@@ -62,17 +63,7 @@ export function AuthShell({
       >
         <aside className="relative flex flex-col justify-between gap-12 overflow-hidden border-b bg-muted p-8 text-center sm:p-12 lg:min-h-96 lg:border-r lg:border-b-0 lg:text-left">
           <div className="relative z-10">
-            <div
-              className="inline-flex flex-col"
-              style={{ fontFamily: "Arial, Helvetica, sans-serif" }}
-            >
-              <span className="text-5xl font-bold leading-none tracking-tighter sm:text-6xl">
-                <span className="text-primary italic">New</span> Ways
-              </span>
-              <span className="mt-1 text-sm italic">
-                by <span className="font-semibold">Fort de France</span>
-              </span>
-            </div>
+            <BrandWordmark />
             <div
               aria-hidden="true"
               className="mx-auto my-5 h-1 w-12 rounded-full bg-primary lg:mx-0"
