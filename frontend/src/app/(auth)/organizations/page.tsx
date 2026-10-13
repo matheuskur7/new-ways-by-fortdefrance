@@ -15,7 +15,7 @@ async function Organizations() {
           <UserAvatar image={context.user.image} name={context.user.name} size="lg" />
           <div className="min-w-0 flex-1">
             <p className="text-xs leading-tight font-medium text-red-600">Olá,</p>
-            <p className="-mt-0.5 break-words text-lg leading-tight font-semibold tracking-tight">
+            <p className="-mt-0.5 wrap-break-word text-lg leading-tight font-semibold tracking-tight">
               {context.user.name}
             </p>
             <p className="mt-1 break-all text-sm text-muted-foreground">{context.user.email}</p>
