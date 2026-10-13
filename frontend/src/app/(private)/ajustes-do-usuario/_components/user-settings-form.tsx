@@ -13,7 +13,7 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -109,32 +109,34 @@ export function UserSettingsForm({ user }: { user: AuthContext["user"] }) {
       <Card className="h-full">
         <CardHeader><CardTitle>Perfil</CardTitle><CardDescription>Escolha como você aparece no sistema: seu nome e sua foto.</CardDescription></CardHeader>
         <CardContent className="flex flex-1 flex-col">
-          <form onSubmit={submitProfile} className="flex flex-1 flex-col gap-5" aria-busy={pending}>
+          <form id="profile-form" onSubmit={submitProfile} className="flex flex-1 flex-col gap-5" aria-busy={pending}>
+            <div className="grid gap-2"><Label htmlFor="profile-name">Nome</Label><Input id="profile-name" name="name" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} required maxLength={200} disabled={pending} /></div>
             <div className="flex flex-wrap items-center gap-4">
               <div className="w-24 shrink-0">
                 <div className="relative z-10 flex aspect-square items-center justify-center overflow-hidden rounded-md bg-muted">
                 {photo && photo !== failedImage ? <Image src={photo} alt="Foto de perfil" width={96} height={96} unoptimized className="size-full object-cover" onError={() => setFailedImage(photo)} /> : <UserRound className="size-8 text-muted-foreground" aria-hidden="true" />}
                 </div>
-                {photo && <Button type="button" variant="destructive" size="sm" className="-mt-2 h-9 w-full rounded-md border-0 bg-clip-border px-1 pt-2 text-xs active:not-aria-[haspopup]:translate-y-0" disabled={pending} onClick={() => setConfirmRemovePhoto(true)}>{removeAvatar.isPending ? "Removendo…" : "Remover foto"}</Button>}
+                {photo && <Button type="button" variant="outline" size="sm" className="-mt-2 h-9 w-full rounded-md bg-clip-border px-1 pt-2 text-xs active:not-aria-[haspopup]:translate-y-0" disabled={pending} onClick={() => setConfirmRemovePhoto(true)}>{removeAvatar.isPending ? "Removendo…" : "Remover foto"}</Button>}
               </div>
               <div className="grid min-w-0 flex-1 gap-2">
+                <div className="grid gap-2"><Label htmlFor="profile-email">E-mail</Label><Input id="profile-email" type="email" value={user.email} disabled /></div>
                 <Label htmlFor="profile-photo">Imagem de perfil</Label>
                 <Input id="profile-photo" type="file" accept="image/jpeg,image/png,image/webp" disabled={pending} aria-describedby="photo-help" onChange={(event) => { void selectFile(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
                 <p id="photo-help" className="text-xs text-muted-foreground">JPEG, PNG ou WebP de até 10 MB.</p>
                 {preparing && <p role="status" className="text-xs text-muted-foreground">Preparando foto…</p>}
               </div>
             </div>
-            <div className="grid gap-2"><Label htmlFor="profile-name">Nome</Label><Input id="profile-name" name="name" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} required maxLength={200} disabled={pending} /></div>
-            <p className="text-sm text-muted-foreground">{user.email}</p>
             {profileError && <Alert variant="destructive" role="alert"><AlertDescription>{profileError}</AlertDescription></Alert>}
-            <Button type="submit" className="mt-auto self-start" disabled={pending}>{profile.isPending ? "Salvando…" : "Salvar perfil"}</Button>
           </form>
         </CardContent>
+        <CardFooter className="mt-auto justify-end">
+          <Button type="submit" form="profile-form" disabled={pending}>{profile.isPending ? "Salvando…" : "Salvar perfil"}</Button>
+        </CardFooter>
       </Card>
       <Card className="h-full">
         <CardHeader><CardTitle>Senha</CardTitle><CardDescription>Use pelo menos 8 caracteres.</CardDescription></CardHeader>
         <CardContent className="flex flex-1 flex-col">
-          <form onSubmit={submitPassword} className="flex flex-1 flex-col gap-4" aria-busy={password.isPending}>
+          <form id="password-form" onSubmit={submitPassword} className="flex flex-1 flex-col gap-4" aria-busy={password.isPending}>
             {[
               { name: "currentPassword", label: "Senha atual", autoComplete: "current-password", minLength: 1 },
               { name: "newPassword", label: "Nova senha", autoComplete: "new-password", minLength: 8 },
@@ -142,9 +144,11 @@ export function UserSettingsForm({ user }: { user: AuthContext["user"] }) {
             ].map((field) => <div className="grid gap-2" key={field.name}><Label htmlFor={field.name}>{field.label}</Label><Input {...field} id={field.name} type="password" required maxLength={128} disabled={password.isPending} /></div>)}
             <p className="text-sm text-muted-foreground">Ao alterar sua senha, as outras sessões serão encerradas.</p>
             {passwordError && <Alert variant="destructive" role="alert"><AlertDescription>{passwordError}</AlertDescription></Alert>}
-            <Button type="submit" className="mt-auto self-start" disabled={password.isPending}>{password.isPending ? "Alterando…" : "Alterar senha"}</Button>
           </form>
         </CardContent>
+        <CardFooter className="mt-auto justify-end">
+          <Button type="submit" form="password-form" disabled={password.isPending}>{password.isPending ? "Alterando…" : "Alterar senha"}</Button>
+        </CardFooter>
       </Card>
       </div>
       <AlertDialog open={confirmRemovePhoto} onOpenChange={(open) => { if (!removeAvatar.isPending) setConfirmRemovePhoto(open); }}>
