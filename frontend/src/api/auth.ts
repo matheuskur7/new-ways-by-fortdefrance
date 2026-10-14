@@ -1,6 +1,7 @@
 "use client";
 
 import { authClient } from "./auth-client";
+import { setSigningOut } from "./session";
 import { signInSchema, signUpSchema } from "@/lib/auth-schemas";
 
 export async function authenticate({ mode, values }: {
@@ -22,10 +23,17 @@ export async function authenticate({ mode, values }: {
       mode === "signup" ? "Não foi possível criar sua conta." : "Email ou senha inválidos."
     ));
   }
+  setSigningOut(false);
   return result.data;
 }
 
 export async function signOut() {
-  const result = await authClient.signOut();
-  if (result.error) throw new Error("Não foi possível sair. Tente novamente.");
+  setSigningOut(true);
+  try {
+    const result = await authClient.signOut();
+    if (result.error) throw new Error("Não foi possível sair. Tente novamente.");
+  } catch (error) {
+    setSigningOut(false);
+    throw error;
+  }
 }

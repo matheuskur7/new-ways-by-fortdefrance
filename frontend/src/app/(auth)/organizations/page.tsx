@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { requireSession } from "@/lib/auth-server";
 import { OrganizationManager } from "@/components/auth/organization-manager";
+import { SessionMonitor } from "@/components/auth/session-monitor";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { UserAvatar } from "@/components/user-avatar";
@@ -10,6 +11,7 @@ async function Organizations() {
   const context = await requireSession();
   return (
     <div className="flex flex-1 flex-col gap-6">
+      <SessionMonitor />
       <header>
 
         <div>

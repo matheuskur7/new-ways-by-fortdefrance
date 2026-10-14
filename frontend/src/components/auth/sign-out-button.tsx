@@ -19,6 +19,7 @@ export function SignOutButton({ variant = "icon" }: { variant?: "icon" | "button
     setError("");
     try {
       await mutation.mutateAsync();
+      toast.info("Você Saiu");
       router.replace("/login");
       router.refresh();
     } catch {

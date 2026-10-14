@@ -3,9 +3,11 @@
 import { z } from "zod";
 import imageCompression from "browser-image-compression";
 import { authClient } from "@/api/auth-client";
+import { notifySessionExpired } from "../session";
 import { avatarFileSchema, passwordSchema, profileSchema } from "./schemas";
 
 async function readResponse(response: Response) {
+  if (response.status === 401) notifySessionExpired();
   const body: unknown = await response.json();
   if (!response.ok) {
     const error = z.object({ message: z.union([z.string(), z.array(z.string())]) }).safeParse(body);

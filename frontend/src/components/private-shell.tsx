@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRightLeft, Building2, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import type { AuthContext } from "@/lib/auth-schemas";
 import { AppSidebar } from "@/components/app-sidebar";
+import { SessionMonitor } from "@/components/auth/session-monitor";
 import { IconButton } from "@/components/ui/icon-button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { SidebarInset, SidebarProvider, useSidebar } from "@/components/ui/sidebar";
@@ -34,6 +35,7 @@ export function PrivateShell({ children, context }: { children: ReactNode; conte
   const [confirmSwitch, setConfirmSwitch] = useState(false);
   return (
     <SidebarProvider>
+      <SessionMonitor />
       <a href="#page-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-background focus:p-3 focus:ring-2 focus:ring-primary">
         Ir para o conteúdo
       </a>
