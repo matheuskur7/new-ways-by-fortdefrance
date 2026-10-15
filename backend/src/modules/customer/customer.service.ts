@@ -15,7 +15,7 @@ import type { UpdateCustomerDto } from './dto/update-customer.dto.js';
 export class CustomerService {
   constructor(private readonly repository: CustomerRepository) {}
 
-  private async context(session: AuthSession) {
+  private async requireOrganization(session: AuthSession) {
     const organizationId = session.session.activeOrganizationId;
     const actorId = session.user.id;
     if (
@@ -26,27 +26,27 @@ export class CustomerService {
         'Selecione uma empresa da qual você faz parte.',
       );
     }
-    return { organizationId, actorId };
+    return organizationId;
   }
 
   async create(session: AuthSession, dto: CreateCustomerDto) {
-    const { organizationId, actorId } = await this.context(session);
+    const organizationId = await this.requireOrganization(session);
     try {
-      return await this.repository.create(organizationId, actorId, dto);
+      return await this.repository.create(organizationId, dto);
     } catch (error) {
       this.rethrow(error);
     }
   }
 
   async findOne(session: AuthSession, id: string) {
-    const { organizationId } = await this.context(session);
+    const organizationId = await this.requireOrganization(session);
     const customer = await this.repository.findOne(organizationId, id);
     if (!customer) throw new NotFoundException('Cliente não encontrado.');
     return customer;
   }
 
   async update(session: AuthSession, id: string, dto: UpdateCustomerDto) {
-    const { organizationId, actorId } = await this.context(session);
+    const organizationId = await this.requireOrganization(session);
     if (
       ![dto.name, dto.cpfCnpj, dto.phone, dto.type].some(
         (value) => value !== undefined,
@@ -57,7 +57,7 @@ export class CustomerService {
       );
     }
     try {
-      return await this.repository.update(organizationId, actorId, id, dto);
+      return await this.repository.update(organizationId, id, dto);
     } catch (error) {
       this.rethrow(error);
     }

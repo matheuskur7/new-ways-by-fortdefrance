@@ -5,6 +5,7 @@ import type { Request } from 'express';
 import { AuthService } from './auth.service.js';
 import type { AuthSession } from './auth.config.js';
 import { PUBLIC_ROUTE } from './public.decorator.js';
+import { getRequestSession } from './request-session.js';
 
 export type AuthenticatedRequest = Request & { authSession: AuthSession };
 
@@ -24,7 +25,7 @@ export class AuthGuard implements CanActivate {
     )
       return true;
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
-    const session = await this.service.getSession(request.headers);
+    const session = await getRequestSession(request, this.service);
     if (!session) throw new UnauthorizedException('Autenticação necessária.');
     if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
       this.service.assertTrustedOrigin(request.headers);

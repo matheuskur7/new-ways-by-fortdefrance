@@ -5,12 +5,14 @@ import { configureAuth } from './modules/auth/configure-auth.js';
 import { AppModule } from './app.module.js';
 import { AuthService } from './modules/auth/auth.service.js';
 import { configureApplication } from './shared/http/configure-application.js';
+import { configureAudit } from './shared/audit/configure-audit.js';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bodyParser: false,
   });
   const config = app.get(ConfigService);
+  configureAudit(app, app.get(AuthService));
   configureAuth(
     app,
     app.get(AuthService).auth,

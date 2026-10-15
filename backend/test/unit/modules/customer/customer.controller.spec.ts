@@ -129,13 +129,11 @@ describe('Customer HTTP validation and session authorship', () => {
     await post(dto).expect(201);
     expect(repository.create).toHaveBeenCalledWith(
       'company-a',
-      'alice',
       expect.objectContaining(dto),
     );
     await patch({ name: 'Outro cliente' }).expect(200);
     expect(repository.update).toHaveBeenCalledWith(
       'company-a',
-      'alice',
       id,
       expect.objectContaining({ name: 'Outro cliente' }),
     );

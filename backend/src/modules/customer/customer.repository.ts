@@ -18,21 +18,20 @@ export class CustomerRepository {
     );
   }
 
-  async create(
-    organizationId: string,
-    actorId: string,
-    dto: CreateCustomerDto,
-  ) {
+  create(organizationId: string, dto: CreateCustomerDto) {
+    const data = {
+      name: dto.name,
+      cpfCnpj: dto.cpfCnpj,
+      phone: dto.phone,
+      type: dto.type,
+      organizationId,
+    } satisfies Omit<
+      Prisma.CustomerUncheckedCreateInput,
+      'createdBy' | 'updatedBy'
+    >;
     return this.prisma.customer.create({
-      data: {
-        name: dto.name,
-        cpfCnpj: dto.cpfCnpj,
-        phone: dto.phone,
-        type: dto.type,
-        organizationId,
-        createdBy: actorId,
-        updatedBy: actorId,
-      },
+      // Generated inputs require authors; the mandatory Prisma extension supplies them.
+      data: data as Prisma.CustomerUncheckedCreateInput,
     });
   }
 
@@ -42,23 +41,16 @@ export class CustomerRepository {
     });
   }
 
-  async update(
-    organizationId: string,
-    actorId: string,
-    id: string,
-    dto: UpdateCustomerDto,
-  ) {
+  update(organizationId: string, id: string, dto: UpdateCustomerDto) {
     const data: Prisma.CustomerUncheckedUpdateInput = {
       ...(dto.name !== undefined ? { name: dto.name } : {}),
       ...(dto.cpfCnpj !== undefined ? { cpfCnpj: dto.cpfCnpj } : {}),
       ...(dto.phone !== undefined ? { phone: dto.phone } : {}),
       ...(dto.type !== undefined ? { type: dto.type } : {}),
-      updatedBy: actorId,
     };
-    const args = {
+    return this.prisma.customer.update({
       where: { id, organizationId },
       data,
-    } as const;
-    return this.prisma.customer.update(args);
+    });
   }
 }

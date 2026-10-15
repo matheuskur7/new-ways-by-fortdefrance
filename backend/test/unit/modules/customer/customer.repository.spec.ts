@@ -22,7 +22,7 @@ describe('CustomerRepository audit and tenant boundaries (mocked database)', () 
   });
 
   it('ignores forged actor, company and legacy owner fields even from internal callers', async () => {
-    await repository.create('company-a', 'alice', {
+    await repository.create('company-a', {
       ...dto,
       createdBy: 'mallory',
       updatedBy: 'mallory',
@@ -34,8 +34,6 @@ describe('CustomerRepository audit and tenant boundaries (mocked database)', () 
         ...dto,
 
         organizationId: 'company-a',
-        createdBy: 'alice',
-        updatedBy: 'alice',
       },
     });
   });
@@ -49,14 +47,14 @@ describe('CustomerRepository audit and tenant boundaries (mocked database)', () 
   });
 
   it('preserves the creator and tenant when only the name changes', async () => {
-    await repository.update('company-a', 'bob', 'customer', {
+    await repository.update('company-a', 'customer', {
       name: 'Novo',
       createdBy: 'mallory',
       organizationId: 'company-b',
     } as { name: string });
     expect(prisma.customer.update).toHaveBeenCalledWith({
       where: { id: 'customer', organizationId: 'company-a' },
-      data: { name: 'Novo', updatedBy: 'bob' },
+      data: { name: 'Novo' },
     });
   });
 });

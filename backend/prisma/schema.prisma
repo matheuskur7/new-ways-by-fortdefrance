@@ -16,20 +16,41 @@ datasource db {
 // ============================================================================
 
 model User {
-  id               String       @id
-  name             String
-  email            String       @unique
-  emailVerified    Boolean      @default(false)
-  image            String?
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
-  sessions         Session[]
-  accounts         Account[]
-  memberships      Member[]
-  invitations      Invitation[]
-  createdCustomers Customer[]   @relation("CustomerCreatedBy")
-  updatedCustomers Customer[]   @relation("CustomerUpdatedBy")
+  id                   String         @id
+  name                 String
+  email                String         @unique
+  emailVerified        Boolean        @default(false)
+  image                String?
+  sessions             Session[]
+  accounts             Account[]
+  memberships          Member[]
+  invitations          Invitation[]
+  createdCustomers     Customer[]     @relation("CustomerCreatedBy")
+  updatedCustomers     Customer[]     @relation("CustomerUpdatedBy")
+  createdUsers         User[]         @relation("UserCreatedBy")
+  updatedUsers         User[]         @relation("UserUpdatedBy")
+  createdOrganizations Organization[] @relation("OrganizationCreatedBy")
+  updatedOrganizations Organization[] @relation("OrganizationUpdatedBy")
+  createdMembers       Member[]       @relation("MemberCreatedBy")
+  updatedMembers       Member[]       @relation("MemberUpdatedBy")
+  createdInvitations   Invitation[]   @relation("InvitationCreatedBy")
+  updatedInvitations   Invitation[]   @relation("InvitationUpdatedBy")
+  createdImages        Image[]        @relation("ImageCreatedBy")
+  updatedImages        Image[]        @relation("ImageUpdatedBy")
+  createdCardFeeGroups CardFeeGroup[] @relation("CardFeeGroupCreatedBy")
+  updatedCardFeeGroups CardFeeGroup[] @relation("CardFeeGroupUpdatedBy")
+  createdCardFees      CardFee[]      @relation("CardFeeCreatedBy")
+  updatedCardFees      CardFee[]      @relation("CardFeeUpdatedBy")
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String?  @map("created_by")
+  updatedBy String?  @map("updated_by")
+  creator   User?    @relation("UserCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  updater   User?    @relation("UserUpdatedBy", fields: [updatedBy], references: [id], onDelete: Restrict)
+
+  @@index([createdBy])
+  @@index([updatedBy])
   @@map("auth_user")
 }
 
@@ -37,20 +58,21 @@ model Session {
   id                   String   @id
   expiresAt            DateTime
   token                String   @unique
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
   ipAddress            String?
   userAgent            String?
   userId               String
   activeOrganizationId String?
   user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([userId])
   @@map("auth_session")
 }
 
 model Account {
-  id                    String   @id
+  id                    String    @id
   accountId             String
   providerId            String
   userId                String
@@ -61,12 +83,13 @@ model Account {
   refreshTokenExpiresAt DateTime?
   scope                 String?
   password              String?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@unique([providerId, accountId])
+  @@index([userId])
   @@map("auth_account")
 }
 
@@ -75,8 +98,9 @@ model Verification {
   identifier String
   value      String
   expiresAt  DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([identifier])
   @@map("auth_verification")
@@ -92,11 +116,19 @@ model Organization {
   slug        String       @unique
   logo        String?
   metadata    String?
-  createdAt   DateTime     @default(now())
   members     Member[]
   invitations Invitation[]
   customers   Customer[]
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  createdBy String?  @map("created_by")
+  updatedBy String?  @map("updated_by")
+  creator   User?    @relation("OrganizationCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  updater   User?    @relation("OrganizationUpdatedBy", fields: [updatedBy], references: [id], onDelete: Restrict)
+
+  @@index([createdBy])
+  @@index([updatedBy])
   @@map("organization")
 }
 
@@ -105,12 +137,20 @@ model Member {
   organizationId String
   userId         String
   role           String       @default("member")
-  createdAt      DateTime     @default(now())
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  createdBy String?  @map("created_by")
+  updatedBy String?  @map("updated_by")
+  creator   User?    @relation("MemberCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  updater   User?    @relation("MemberUpdatedBy", fields: [updatedBy], references: [id], onDelete: Restrict)
+
   @@unique([organizationId, userId])
+  @@index([userId])
+  @@index([createdBy])
+  @@index([updatedBy])
   @@map("organization_member")
 }
 
@@ -121,13 +161,21 @@ model Invitation {
   role           String?
   status         String       @default("pending")
   expiresAt      DateTime
-  createdAt      DateTime     @default(now())
   inviterId      String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   inviter        User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  createdBy String?  @map("created_by")
+  updatedBy String?  @map("updated_by")
+  creator   User?    @relation("InvitationCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  updater   User?    @relation("InvitationUpdatedBy", fields: [updatedBy], references: [id], onDelete: Restrict)
+
   @@index([organizationId])
   @@index([email])
+  @@index([createdBy])
+  @@index([updatedBy])
   @@map("organization_invitation")
 }
 
@@ -136,20 +184,21 @@ model Invitation {
 // ============================================================================
 
 model Customer {
-  id             String            @id @default(uuid(7)) @db.Uuid
-  name           String            @db.VarChar(255)
-  cpfCnpj        String           @map("cpf_cnpj") @db.VarChar(14)
-  phone          String            @db.VarChar(20)
-  createdAt      DateTime          @default(now()) @map("created_at")
-  updatedAt      DateTime          @updatedAt @map("updated_at")
+  id             String       @id @default(uuid(7)) @db.Uuid
+  name           String       @db.VarChar(255)
+  cpfCnpj        String       @map("cpf_cnpj") @db.VarChar(14)
+  phone          String       @db.VarChar(20)
   type           CustomerType
-  createdBy      String            @map("created_by")
-  updatedBy      String            @map("updated_by")
-  organizationId String            @map("organization_id")
+  organizationId String       @map("organization_id")
 
-  creator      User         @relation("CustomerCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
-  updater      User         @relation("CustomerUpdatedBy", fields: [updatedBy], references: [id], onDelete: Restrict)
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String   @map("created_by")
+  updatedBy String   @map("updated_by")
+  creator   User     @relation("CustomerCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  updater   User     @relation("CustomerUpdatedBy", fields: [updatedBy], references: [id], onDelete: Restrict)
 
   @@unique([organizationId, cpfCnpj])
   @@index([createdBy])
@@ -167,15 +216,22 @@ enum CustomerType {
 // ============================================================================
 
 model Image {
-  id             String   @id @default(uuid(7)) @db.Uuid
-  tag            String   @db.VarChar(100)
-  key            String   @db.VarChar(255)
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-  userId         String?  @map("user_id") @db.Uuid
-  serviceOrderId String?  @map("service_order_id") @db.Uuid
+  id             String  @id @default(uuid(7)) @db.Uuid
+  tag            String  @db.VarChar(100)
+  key            String  @db.VarChar(255)
+  userId         String? @map("user_id") @db.Uuid
+  serviceOrderId String? @map("service_order_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+  updatedBy String?  @map("updated_by")
+  creator   User?    @relation("ImageCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  updater   User?    @relation("ImageUpdatedBy", fields: [updatedBy], references: [id], onDelete: Restrict)
 
   @@index([tag])
+  @@index([createdBy])
+  @@index([updatedBy])
   @@map("image")
 }
 
@@ -191,6 +247,16 @@ model CardFeeGroup {
   displayOrder Int       @default(100)
   logoSvg      String?   @db.Text
   rates        CardFee[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  createdBy String?  @map("created_by")
+  updatedBy String?  @map("updated_by")
+  creator   User?    @relation("CardFeeGroupCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  updater   User?    @relation("CardFeeGroupUpdatedBy", fields: [updatedBy], references: [id], onDelete: Restrict)
+
+  @@index([createdBy])
+  @@index([updatedBy])
 }
 
 model CardFee {
@@ -199,7 +265,15 @@ model CardFee {
   group        CardFeeGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
   installments Int
   ratePercent  Decimal      @db.Decimal(5, 2)
-  updatedAt    DateTime     @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String?  @map("created_by")
+  updatedBy String?  @map("updated_by")
+  creator   User?    @relation("CardFeeCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  updater   User?    @relation("CardFeeUpdatedBy", fields: [updatedBy], references: [id], onDelete: Restrict)
 
   @@unique([groupId, installments])
+  @@index([createdBy])
+  @@index([updatedBy])
 }

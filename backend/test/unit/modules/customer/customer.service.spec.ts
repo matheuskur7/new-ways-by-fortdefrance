@@ -34,10 +34,10 @@ describe('CustomerService (mocked database)', () => {
     repository.hasMembership.mockResolvedValue(true);
   });
 
-  it('derives both tenant and actor from the validated session', async () => {
+  it('validates membership before resolving the company from the session', async () => {
     await service.create(session, dto);
     expect(repository.hasMembership).toHaveBeenCalledWith('company-a', 'alice');
-    expect(repository.create).toHaveBeenCalledWith('company-a', 'alice', dto);
+    expect(repository.create).toHaveBeenCalledWith('company-a', dto);
   });
 
   it('rechecks membership for every write, including a stale active company', async () => {
@@ -71,10 +71,11 @@ describe('CustomerService (mocked database)', () => {
     expect(repository.findOne).toHaveBeenCalledWith('company-a', 'foreign-id');
   });
 
-  it('passes the editing user from the session and rejects empty patches', async () => {
+  it('checks the editing user membership and rejects empty patches', async () => {
     const editor = { ...session, user: { ...session.user, id: 'bob' } };
     await service.update(editor, 'id', { name: 'Novo nome' });
-    expect(repository.update).toHaveBeenCalledWith('company-a', 'bob', 'id', {
+    expect(repository.hasMembership).toHaveBeenCalledWith('company-a', 'bob');
+    expect(repository.update).toHaveBeenCalledWith('company-a', 'id', {
       name: 'Novo nome',
     });
     repository.update.mockClear();
@@ -106,11 +107,8 @@ describe('CustomerService (mocked database)', () => {
     await expect(
       service.update(session, 'foreign-id', { name: 'Novo' }),
     ).rejects.toThrow(NotFoundException);
-    expect(repository.update).toHaveBeenCalledWith(
-      'company-a',
-      'alice',
-      'foreign-id',
-      { name: 'Novo' },
-    );
+    expect(repository.update).toHaveBeenCalledWith('company-a', 'foreign-id', {
+      name: 'Novo',
+    });
   });
 });
