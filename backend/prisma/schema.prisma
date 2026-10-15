@@ -1,7 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// ============================================================================
+// Configuração do Prisma
+// ============================================================================
 
 generator client {
   provider = "prisma-client"
@@ -12,31 +11,24 @@ datasource db {
   provider = "postgresql"
 }
 
-model Image {
-  id             String   @id @default(uuid(7)) @db.Uuid
-  tag            String   @db.VarChar(100)
-  key            String   @db.VarChar(255)
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-  userId         String?  @map("user_id") @db.Uuid
-  serviceOrderId String?  @map("service_order_id") @db.Uuid
-
-  @@index([tag])
-  @@map("image")
-}
+// ============================================================================
+// Usuários e autenticação
+// ============================================================================
 
 model User {
-  id            String       @id
-  name          String
-  email         String       @unique
-  emailVerified Boolean      @default(false)
-  image         String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-  memberships   Member[]
-  invitations   Invitation[]
+  id               String       @id
+  name             String
+  email            String       @unique
+  emailVerified    Boolean      @default(false)
+  image            String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  sessions         Session[]
+  accounts         Account[]
+  memberships      Member[]
+  invitations      Invitation[]
+  createdCustomers Customer[]   @relation("CustomerCreatedBy")
+  updatedCustomers Customer[]   @relation("CustomerUpdatedBy")
 
   @@map("auth_user")
 }
@@ -90,6 +82,10 @@ model Verification {
   @@map("auth_verification")
 }
 
+// ============================================================================
+// Empresas, membros e convites
+// ============================================================================
+
 model Organization {
   id          String       @id
   name        String
@@ -99,6 +95,7 @@ model Organization {
   createdAt   DateTime     @default(now())
   members     Member[]
   invitations Invitation[]
+  customers   Customer[]
 
   @@map("organization")
 }
@@ -133,6 +130,58 @@ model Invitation {
   @@index([email])
   @@map("organization_invitation")
 }
+
+// ============================================================================
+// Clientes
+// ============================================================================
+
+model Customer {
+  id             String            @id @default(uuid(7)) @db.Uuid
+  name           String            @db.VarChar(255)
+  cpfCnpj        String           @map("cpf_cnpj") @db.VarChar(14)
+  phone          String            @db.VarChar(20)
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+  type           CustomerType
+  createdBy      String            @map("created_by")
+  updatedBy      String            @map("updated_by")
+  organizationId String            @map("organization_id")
+
+  creator      User         @relation("CustomerCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  updater      User         @relation("CustomerUpdatedBy", fields: [updatedBy], references: [id], onDelete: Restrict)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  @@unique([organizationId, cpfCnpj])
+  @@index([createdBy])
+  @@index([updatedBy])
+  @@map("customer")
+}
+
+enum CustomerType {
+  PERSON
+  COMPANY
+}
+
+// ============================================================================
+// Imagens
+// ============================================================================
+
+model Image {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  tag            String   @db.VarChar(100)
+  key            String   @db.VarChar(255)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  userId         String?  @map("user_id") @db.Uuid
+  serviceOrderId String?  @map("service_order_id") @db.Uuid
+
+  @@index([tag])
+  @@map("image")
+}
+
+// ============================================================================
+// Taxas de cartão
+// ============================================================================
 
 model CardFeeGroup {
   id           String    @id @default(cuid())

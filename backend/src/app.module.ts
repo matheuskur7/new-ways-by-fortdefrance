@@ -7,6 +7,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ImageModule } from './modules/image/image.module.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
+import { CustomerModule } from './modules/customer/customer.module.js';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { AppService } from './app.service.js';
     ImageModule,
     CardFeesModule,
     UserSettingsModule,
+    CustomerModule,
   ],
   controllers: [AppController],
   providers: [AppService],
