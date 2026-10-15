@@ -21,6 +21,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Mantenha o layout raiz compartilhado em `src/app/layout.tsx` e os estilos globais em `src/app/globals.css`. Crie layouts por grupo somente quando houver necessidade de apresentação específica.
 - O dashboard é a página inicial do sistema (`/`), definida em `src/app/(private)/page.tsx`. Use `src/app/(private)/layout.tsx` como layout exclusivo compartilhado das páginas privadas.
 - A seleção de empresa (`/organizations`) usa `AuthShell` no grupo `(auth)`, sem sidebar, e exige sessão no servidor.
+- Após o login, sempre abra `/organizations` e aguarde a escolha explícita do usuário, mesmo quando houver somente uma empresa. Não ative empresas automaticamente.
 - Os grupos de rotas organizam as páginas, mas não validam acesso automaticamente. Preserve a validação de sessão e de vínculo com a empresa no servidor, conforme a necessidade de cada página. Defina também a autorização das futuras páginas de `(pdf)` conforme os dados acessados.
 - Reserve `(pdf)` sem implementar páginas ou fluxos enquanto não houver uma funcionalidade solicitada.
 

@@ -10,10 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { SubmitEvent } from "react";
-import { useAuthenticate, useSetActiveOrganization } from "@/api/auth.queries";
-import { listOrganizations } from "@/api/organizations";
-import { toast } from "react-toastify";
-import { CompanyEntryToast } from "@/components/auth/company-entry-toast";
+import { useAuthenticate } from "@/api/auth.queries";
 import { EmailNotVerifiedError } from "@/api/auth";
 import { EmailRequestForm } from "./email-request-form";
 
@@ -21,7 +18,6 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const router = useRouter();
   const [error, setError] = useState("");
   const authentication = useAuthenticate();
-  const activation = useSetActiveOrganization();
   const [pending, setPending] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const signup = mode === "signup";
@@ -42,19 +38,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
         setVerification({ email: String(values.email), sent: true });
         return;
       }
-      let destination = "/organizations";
-      // Only a fresh login may skip company selection.
-      try {
-        const companies = await listOrganizations();
-        if (companies.length === 1) {
-          await activation.mutateAsync(companies[0].id);
-          destination = "/";
-          toast.info(<CompanyEntryToast name={companies[0].name} />);
-        }
-      } catch {
-        // Keep the authenticated session and allow manual selection on failure.
-      }
-      router.push(destination);
+      router.replace("/organizations");
       router.refresh();
     } catch (cause) {
       if (cause instanceof EmailNotVerifiedError) {
