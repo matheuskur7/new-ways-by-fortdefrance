@@ -31,6 +31,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Mantenha consultas e validações de acesso do servidor em módulos `*.server.ts` com `server-only`, sem cache compartilhado de sessão entre usuários. Os helpers de autorização ficam em `src/lib/auth-server.ts`.
 - Valide respostas externas com Zod. Ao alterar dados, invalide as consultas relacionadas; ao autenticar, sair ou trocar de empresa, cancele consultas em andamento e limpe dados da sessão ou empresa anterior.
 - Não repita mutations automaticamente. Preserve o cliente do Better Auth como transporte de autenticação, evitando duplicar o gerenciamento de sessão.
+- Antes de exibir o toast de sessão expirada e redirecionar ao login, confirme a ausência da sessão em uma consulta atual ao servidor. Estado nulo em cache ou respostas antigas de requisições não bastam; falhas de rede, limite de tentativas e erros do servidor não devem encerrar a sessão.
 
 <!-- BEGIN:nextjs-agent-feedback -->
 

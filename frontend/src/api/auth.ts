@@ -1,7 +1,7 @@
 "use client";
 
 import { authClient } from "./auth-client";
-import { setSigningOut } from "./session";
+import { confirmSessionExpired, setSigningOut } from "./session";
 import {
   authStatusSchema,
   emailRequestSchema,
@@ -113,4 +113,12 @@ export async function resetPassword(values: Record<string, unknown>) {
     );
   }
   authStatusSchema.parse(result.data);
+}
+
+export function checkSessionExpired() {
+  return confirmSessionExpired(() =>
+    authClient.getSession({
+      fetchOptions: { cache: "no-store" },
+    }),
+  );
 }
