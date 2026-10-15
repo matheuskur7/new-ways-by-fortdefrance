@@ -21,17 +21,7 @@ export class ImageRepository {
     tag?: string,
   ): Promise<ImageListResult> {
     const where: Prisma.ImageWhereInput = tag === undefined ? {} : { tag };
-    const [data, total] = await this.prismaService.$transaction([
-      this.prismaService.image.findMany({
-        where,
-        skip: pagination.skip,
-        take: pagination.take,
-        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-      }),
-      this.prismaService.image.count({ where }),
-    ]);
-
-    return { data, total };
+    return this.findPage(pagination, where);
   }
 
   async findAllUnlinked(
@@ -42,7 +32,13 @@ export class ImageRepository {
       serviceOrderId: null,
       ...(tag === undefined ? {} : { tag }),
     };
+    return this.findPage(pagination, where);
+  }
 
+  private async findPage(
+    pagination: PaginationParams,
+    where: Prisma.ImageWhereInput,
+  ): Promise<ImageListResult> {
     const [data, total] = await this.prismaService.$transaction([
       this.prismaService.image.findMany({
         where,

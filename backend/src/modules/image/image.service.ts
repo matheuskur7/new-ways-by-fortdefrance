@@ -36,28 +36,28 @@ export class ImageService {
     page: number,
     tag?: string,
   ): Promise<PaginatedResponse<GetImageResponse>> {
-    const pagination = getPaginationParams(page, IMAGE_PAGE_SIZE);
-    const { data, total } = await this.repository.findAll(pagination, tag);
-    const images = await this.toGetResponseList(data);
-
-    return createPaginatedResponse(
-      images,
-      pagination.page,
-      pagination.perPage,
-      total,
-    );
+    return this.findPage(page, tag, false);
   }
 
   async findAllUnlinked(
     page: number,
     tag?: string,
   ): Promise<PaginatedResponse<GetImageResponse>> {
+    return this.findPage(page, tag, true);
+  }
+
+  private async findPage(
+    page: number,
+    tag: string | undefined,
+    onlyUnlinked: boolean,
+  ): Promise<PaginatedResponse<GetImageResponse>> {
     const pagination = getPaginationParams(page, IMAGE_PAGE_SIZE);
-    const { data, total } = await this.repository.findAllUnlinked(
-      pagination,
-      tag,
+    const { data, total } = onlyUnlinked
+      ? await this.repository.findAllUnlinked(pagination, tag)
+      : await this.repository.findAll(pagination, tag);
+    const images = await Promise.all(
+      data.map((image) => this.toGetResponse(image)),
     );
-    const images = await this.toGetResponseList(data);
 
     return createPaginatedResponse(
       images,
@@ -75,14 +75,10 @@ export class ImageService {
     return this.repository.remove(id);
   }
 
-  async toGetResponse(image: Image): Promise<GetImageResponse> {
+  private async toGetResponse(image: Image): Promise<GetImageResponse> {
     return {
       ...image,
       url: await this.storageService.getPresignedUrl(image.key, 900),
     };
-  }
-
-  async toGetResponseList(images: Image[]): Promise<GetImageResponse[]> {
-    return Promise.all(images.map((image) => this.toGetResponse(image)));
   }
 }

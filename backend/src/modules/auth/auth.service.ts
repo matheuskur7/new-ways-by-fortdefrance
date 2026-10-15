@@ -1,10 +1,10 @@
-import { createHash } from 'node:crypto';
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { fromNodeHeaders } from 'better-auth/node';
 import type { IncomingHttpHeaders } from 'node:http';
 import { PrismaService } from '../../shared/db/prisma.service.js';
 import { StorageService } from '../../shared/storage/storage.service.js';
+import { getAvatarPrefix } from '../../shared/storage/avatar-key.js';
 import { createAuth } from './auth.config.js';
 import type { Auth, AuthSession } from './auth.config.js';
 
@@ -53,9 +53,7 @@ export class AuthService {
         email: session.user.email,
         image:
           session.user.image?.startsWith(`user-avatar/${session.user.id}/`) ||
-          session.user.image?.startsWith(
-            `user-avatar/${createHash('sha256').update(session.user.id).digest('hex')}-`,
-          )
+          session.user.image?.startsWith(getAvatarPrefix(session.user.id))
             ? ((await this.storage.getPresignedUrl(session.user.image, 3600)) ??
               null)
             : session.user.image?.startsWith('user-avatar/')

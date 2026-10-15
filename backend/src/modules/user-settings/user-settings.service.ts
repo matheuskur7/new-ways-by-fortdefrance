@@ -1,9 +1,10 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import type { OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { createHash, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { StorageService } from '../../shared/storage/storage.service.js';
 import { PrismaService } from '../../shared/db/prisma.service.js';
 import type { UpdateProfileDto } from './dto/update-profile.dto.js';
+import { getAvatarPrefix } from '../../shared/storage/avatar-key.js';
 
 @Injectable()
 export class UserSettingsService implements OnModuleInit, OnModuleDestroy {
@@ -64,8 +65,16 @@ export class UserSettingsService implements OnModuleInit, OnModuleDestroy {
     private readonly prisma: PrismaService,
   ) {}
 
-  private avatarPrefix(userId: string) {
-    return `user-avatar/${createHash('sha256').update(userId).digest('hex')}-`;
+  private async cleanupPreviousImage(
+    key: string | null | undefined,
+    message: string,
+  ) {
+    if (!key?.startsWith('user-avatar/')) return;
+    try {
+      await this.deleteUnreferenced(key);
+    } catch {
+      this.logger.warn(message);
+    }
   }
 
   async removeImage(userId: string) {
@@ -77,18 +86,15 @@ export class UserSettingsService implements OnModuleInit, OnModuleDestroy {
       where: { id: userId },
       data: { image: null },
     });
-    if (previous?.image?.startsWith('user-avatar/')) {
-      try {
-        await this.deleteUnreferenced(previous.image);
-      } catch {
-        this.logger.warn('Foto removida será excluída pela rotina de limpeza.');
-      }
-    }
+    await this.cleanupPreviousImage(
+      previous?.image,
+      'Foto removida será excluída pela rotina de limpeza.',
+    );
     return { success: true };
   }
 
   async createUpload(userId: string) {
-    const imageKey = `${this.avatarPrefix(userId)}${randomUUID()}.jpg`;
+    const imageKey = `${getAvatarPrefix(userId)}${randomUUID()}.jpg`;
     return {
       imageKey,
       uploadUrl: await this.storage.getPresignedUploadUrl(
@@ -101,7 +107,7 @@ export class UserSettingsService implements OnModuleInit, OnModuleDestroy {
 
   async update(userId: string, dto: UpdateProfileDto) {
     if (dto.imageKey) {
-      if (!dto.imageKey.startsWith(this.avatarPrefix(userId))) {
+      if (!dto.imageKey.startsWith(getAvatarPrefix(userId))) {
         throw new BadRequestException('A imagem não pertence a este usuário.');
       }
       let object;
@@ -137,18 +143,11 @@ export class UserSettingsService implements OnModuleInit, OnModuleDestroy {
         ...(dto.imageKey ? { image: dto.imageKey } : {}),
       },
     });
-    if (
-      previous?.image &&
-      previous.image !== dto.imageKey &&
-      previous.image.startsWith('user-avatar/')
-    ) {
-      try {
-        await this.deleteUnreferenced(previous.image);
-      } catch {
-        this.logger.warn(
-          'Foto substituída será removida pela rotina de limpeza.',
-        );
-      }
+    if (previous?.image !== dto.imageKey) {
+      await this.cleanupPreviousImage(
+        previous?.image,
+        'Foto substituída será removida pela rotina de limpeza.',
+      );
     }
     return { success: true };
   }

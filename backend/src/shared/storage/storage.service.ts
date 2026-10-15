@@ -1,4 +1,3 @@
-// storage.service.ts
 import {
   S3Client,
   ListObjectsV2Command,
@@ -16,7 +15,7 @@ export class StorageService {
   private readonly s3: S3Client;
   private readonly bucket: string;
 
-  constructor(private configService: ConfigService) {
+  constructor(configService: ConfigService) {
     this.s3 = new S3Client({
       region: configService.getOrThrow<string>('S3_REGION'),
       endpoint: configService.getOrThrow<string>('S3_ENDPOINT'),
