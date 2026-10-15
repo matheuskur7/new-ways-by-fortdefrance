@@ -336,11 +336,15 @@ describe('PrismaService audit extension (database execution mocked)', () => {
           updatedBy: 'alice',
         },
       });
-      captured = undefined;
-      await expect(repository.create('company-a', dto)).rejects.toThrow(
-        'contexto de auditoria',
-      );
-      expect(captured).toBeUndefined();
+      await repository.create('company-a', dto);
+      expect(captured).toMatchObject({
+        data: {
+          ...dto,
+          organizationId: 'company-a',
+          createdBy: null,
+          updatedBy: null,
+        },
+      });
       expect(typeof prisma.onModuleDestroy).toBe('function');
     } finally {
       await prisma.onModuleDestroy();

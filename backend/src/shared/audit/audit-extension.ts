@@ -76,11 +76,6 @@ function stamp(
   actorId: string | null,
 ): Input {
   const data = { ...input };
-  if (model === 'Customer' && !actorId) {
-    throw new Error(
-      'A gravação de clientes exige um usuário no contexto de auditoria.',
-    );
-  }
   if (auditedModels.has(model)) {
     // Neither scalar author IDs nor relation writes can impersonate an actor.
     delete data.creator;

@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../shared/db/prisma.service.js';
-import type { Prisma } from '../../generated/prisma/client.js';
 import type { CreateCustomerDto } from './dto/create-customer.dto.js';
 import type { UpdateCustomerDto } from './dto/update-customer.dto.js';
 
@@ -19,19 +18,14 @@ export class CustomerRepository {
   }
 
   create(organizationId: string, dto: CreateCustomerDto) {
-    const data = {
-      name: dto.name,
-      cpfCnpj: dto.cpfCnpj,
-      phone: dto.phone,
-      type: dto.type,
-      organizationId,
-    } satisfies Omit<
-      Prisma.CustomerUncheckedCreateInput,
-      'createdBy' | 'updatedBy'
-    >;
     return this.prisma.customer.create({
-      // Generated inputs require authors; the mandatory Prisma extension supplies them.
-      data: data as Prisma.CustomerUncheckedCreateInput,
+      data: {
+        name: dto.name,
+        cpfCnpj: dto.cpfCnpj,
+        phone: dto.phone,
+        type: dto.type,
+        organizationId,
+      },
     });
   }
 
@@ -42,7 +36,7 @@ export class CustomerRepository {
   }
 
   update(organizationId: string, id: string, dto: UpdateCustomerDto) {
-    const data: Prisma.CustomerUncheckedUpdateInput = {
+    const data = {
       ...(dto.name !== undefined ? { name: dto.name } : {}),
       ...(dto.cpfCnpj !== undefined ? { cpfCnpj: dto.cpfCnpj } : {}),
       ...(dto.phone !== undefined ? { phone: dto.phone } : {}),

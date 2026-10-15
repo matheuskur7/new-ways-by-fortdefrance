@@ -32,7 +32,7 @@ como `Member.organization`, continuam permitidas.
 
 ## Operações sem sessão e registros antigos
 
-Os novos autores são opcionais para representar registros antigos e ações
+Os campos `createdBy` e `updatedBy` são opcionais em todas as entidades auditadas para representar registros antigos e ações
 automáticas sem pessoa identificada. Não há backfill presumido de autoria.
 Novos timestamps adicionados a tabelas existentes recebem o momento da migração;
 eles não reconstituem datas históricas que não eram armazenadas.
@@ -51,4 +51,6 @@ de exclusões. SQL direto e clientes Prisma independentes não passam pela exten
 ## Migração
 
 `20261014010000_add_entity_audit` adiciona campos, índices e referências às
-entidades existentes. Não foi aplicada automaticamente ao banco.
+entidades existentes. `20261014020000_make_customer_audit_optional` torna os
+autores de clientes opcionais, preservando os valores existentes. Nenhuma dessas
+migrações foi aplicada automaticamente ao banco.
