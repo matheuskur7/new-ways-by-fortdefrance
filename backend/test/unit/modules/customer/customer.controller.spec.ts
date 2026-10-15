@@ -7,6 +7,7 @@ import request from 'supertest';
 import { AuthGuard } from '../../../../src/modules/auth/auth.guard.js';
 import { AuthService } from '../../../../src/modules/auth/auth.service.js';
 import { CustomerModule } from '../../../../src/modules/customer/customer.module.js';
+import { OrganizationRepository } from '../../../../src/modules/organization/organization.repository.js';
 import { CustomerRepository } from '../../../../src/modules/customer/customer.repository.js';
 import { configureApplication } from '../../../../src/shared/http/configure-application.js';
 
@@ -15,11 +16,11 @@ describe('Customer HTTP validation and session authorship', () => {
   let app: NestExpressApplication;
   const id = '0199eac0-7000-7000-8000-000000000001';
   const repository = {
-    hasMembership: vi.fn(),
     create: vi.fn(),
     findOne: vi.fn(),
     update: vi.fn(),
   };
+  const organizationRepository = { hasMembership: vi.fn() };
   const dto = {
     name: 'Cliente',
     cpfCnpj: '12345678901',
@@ -53,6 +54,8 @@ describe('Customer HTTP validation and session authorship', () => {
     })
       .overrideProvider(CustomerRepository)
       .useValue(repository)
+      .overrideProvider(OrganizationRepository)
+      .useValue(organizationRepository)
       .compile();
     app = module.createNestApplication<NestExpressApplication>();
     configureApplication(app);
@@ -61,7 +64,7 @@ describe('Customer HTTP validation and session authorship', () => {
   afterAll(async () => app?.close());
   beforeEach(() => {
     vi.clearAllMocks();
-    repository.hasMembership.mockResolvedValue(true);
+    organizationRepository.hasMembership.mockResolvedValue(true);
     repository.create.mockResolvedValue({ id });
     repository.update.mockResolvedValue({ id });
     repository.findOne.mockResolvedValue({
@@ -197,7 +200,7 @@ describe('Customer HTTP validation and session authorship', () => {
   });
 
   it('rejects stale membership on both create and update', async () => {
-    repository.hasMembership.mockResolvedValue(false);
+    organizationRepository.hasMembership.mockResolvedValue(false);
     await post(dto).expect(403);
     await patch({ name: 'Outro' }).expect(403);
     expect(repository.create).not.toHaveBeenCalled();

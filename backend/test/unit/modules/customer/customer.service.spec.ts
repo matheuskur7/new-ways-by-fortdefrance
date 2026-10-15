@@ -7,15 +7,20 @@ import {
 import { Prisma } from '../../../../src/generated/prisma/client.js';
 import type { AuthSession } from '../../../../src/modules/auth/auth.config.js';
 import { CustomerRepository } from '../../../../src/modules/customer/customer.repository.js';
+import { OrganizationAccessService } from '../../../../src/modules/organization/organization-access.service.js';
+import type { OrganizationRepository } from '../../../../src/modules/organization/organization.repository.js';
 import { CustomerService } from '../../../../src/modules/customer/customer.service.js';
 
 describe('CustomerService (mocked database)', () => {
   const repository = {
-    hasMembership: vi.fn(),
     create: vi.fn(),
     findOne: vi.fn(),
     update: vi.fn(),
   };
+  const organizationRepository = { hasMembership: vi.fn() };
+  const access = new OrganizationAccessService(
+    organizationRepository as unknown as OrganizationRepository,
+  );
   const session = {
     user: { id: 'alice' },
     session: { activeOrganizationId: 'company-a' },
@@ -28,20 +33,24 @@ describe('CustomerService (mocked database)', () => {
   };
   const service = new CustomerService(
     repository as unknown as CustomerRepository,
+    access,
   );
   beforeEach(() => {
     vi.resetAllMocks();
-    repository.hasMembership.mockResolvedValue(true);
+    organizationRepository.hasMembership.mockResolvedValue(true);
   });
 
   it('validates membership before resolving the company from the session', async () => {
     await service.create(session, dto);
-    expect(repository.hasMembership).toHaveBeenCalledWith('company-a', 'alice');
+    expect(organizationRepository.hasMembership).toHaveBeenCalledWith(
+      'company-a',
+      'alice',
+    );
     expect(repository.create).toHaveBeenCalledWith('company-a', dto);
   });
 
   it('rechecks membership for every write, including a stale active company', async () => {
-    repository.hasMembership.mockResolvedValue(false);
+    organizationRepository.hasMembership.mockResolvedValue(false);
     await expect(service.create(session, dto)).rejects.toThrow(
       ForbiddenException,
     );
@@ -74,7 +83,10 @@ describe('CustomerService (mocked database)', () => {
   it('checks the editing user membership and rejects empty patches', async () => {
     const editor = { ...session, user: { ...session.user, id: 'bob' } };
     await service.update(editor, 'id', { name: 'Novo nome' });
-    expect(repository.hasMembership).toHaveBeenCalledWith('company-a', 'bob');
+    expect(organizationRepository.hasMembership).toHaveBeenCalledWith(
+      'company-a',
+      'bob',
+    );
     expect(repository.update).toHaveBeenCalledWith('company-a', 'id', {
       name: 'Novo nome',
     });

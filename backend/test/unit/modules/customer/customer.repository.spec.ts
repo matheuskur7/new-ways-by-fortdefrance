@@ -4,7 +4,6 @@ import type { PrismaService } from '../../../../src/shared/db/prisma.service.js'
 describe('CustomerRepository audit and tenant boundaries (mocked database)', () => {
   const prisma = {
     customer: { create: vi.fn(), update: vi.fn(), findUnique: vi.fn() },
-    member: { findUnique: vi.fn() },
   };
   const repository = new CustomerRepository(prisma as unknown as PrismaService);
   const dto = {

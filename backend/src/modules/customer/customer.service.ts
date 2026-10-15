@@ -1,36 +1,26 @@
 import {
   BadRequestException,
   ConflictException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '../../generated/prisma/client.js';
 import type { AuthSession } from '../auth/auth.config.js';
+import { OrganizationAccessService } from '../organization/organization-access.service.js';
 import { CustomerRepository } from './customer.repository.js';
 import type { CreateCustomerDto } from './dto/create-customer.dto.js';
 import type { UpdateCustomerDto } from './dto/update-customer.dto.js';
 
 @Injectable()
 export class CustomerService {
-  constructor(private readonly repository: CustomerRepository) {}
-
-  private async requireOrganization(session: AuthSession) {
-    const organizationId = session.session.activeOrganizationId;
-    const actorId = session.user.id;
-    if (
-      !organizationId ||
-      !(await this.repository.hasMembership(organizationId, actorId))
-    ) {
-      throw new ForbiddenException(
-        'Selecione uma empresa da qual você faz parte.',
-      );
-    }
-    return organizationId;
-  }
+  constructor(
+    private readonly repository: CustomerRepository,
+    private readonly organizationAccess: OrganizationAccessService,
+  ) {}
 
   async create(session: AuthSession, dto: CreateCustomerDto) {
-    const organizationId = await this.requireOrganization(session);
+    const organizationId =
+      await this.organizationAccess.requireActiveOrganization(session);
     try {
       return await this.repository.create(organizationId, dto);
     } catch (error) {
@@ -39,14 +29,16 @@ export class CustomerService {
   }
 
   async findOne(session: AuthSession, id: string) {
-    const organizationId = await this.requireOrganization(session);
+    const organizationId =
+      await this.organizationAccess.requireActiveOrganization(session);
     const customer = await this.repository.findOne(organizationId, id);
     if (!customer) throw new NotFoundException('Cliente não encontrado.');
     return customer;
   }
 
   async update(session: AuthSession, id: string, dto: UpdateCustomerDto) {
-    const organizationId = await this.requireOrganization(session);
+    const organizationId =
+      await this.organizationAccess.requireActiveOrganization(session);
     if (
       ![dto.name, dto.cpfCnpj, dto.phone, dto.type].some(
         (value) => value !== undefined,

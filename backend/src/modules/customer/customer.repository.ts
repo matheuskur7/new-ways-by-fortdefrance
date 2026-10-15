@@ -8,15 +8,6 @@ import type { UpdateCustomerDto } from './dto/update-customer.dto.js';
 export class CustomerRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async hasMembership(organizationId: string, userId: string) {
-    return Boolean(
-      await this.prisma.member.findUnique({
-        where: { organizationId_userId: { organizationId, userId } },
-        select: { id: true },
-      }),
-    );
-  }
-
   create(organizationId: string, dto: CreateCustomerDto) {
     return this.prisma.customer.create({
       data: {
