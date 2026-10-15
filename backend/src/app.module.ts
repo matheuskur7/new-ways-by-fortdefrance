@@ -7,6 +7,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ImageModule } from './modules/image/image.module.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
+import { UserModule } from './modules/user/user.module.js';
 import { CustomerModule } from './modules/customer/customer.module.js';
 
 @Module({
@@ -18,6 +19,7 @@ import { CustomerModule } from './modules/customer/customer.module.js';
     CardFeesModule,
     UserSettingsModule,
     CustomerModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [AppService],

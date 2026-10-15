@@ -20,6 +20,7 @@ model User {
   name                 String
   email                String         @unique
   emailVerified        Boolean        @default(false)
+  deletedAt            DateTime?      @map("deleted_at")
   image                String?
   sessions             Session[]
   accounts             Account[]
