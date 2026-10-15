@@ -11,6 +11,7 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bodyParser: false,
   });
+  app.enableShutdownHooks();
   const config = app.get(ConfigService);
   configureAudit(app, app.get(AuthService));
   configureAuth(

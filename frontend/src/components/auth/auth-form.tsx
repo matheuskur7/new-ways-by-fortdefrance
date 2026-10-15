@@ -14,6 +14,8 @@ import { useAuthenticate, useSetActiveOrganization } from "@/api/auth.queries";
 import { listOrganizations } from "@/api/organizations";
 import { toast } from "react-toastify";
 import { CompanyEntryToast } from "@/components/auth/company-entry-toast";
+import { EmailNotVerifiedError } from "@/api/auth";
+import { EmailRequestForm } from "./email-request-form";
 
 export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const router = useRouter();
@@ -23,6 +25,10 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const [pending, setPending] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const signup = mode === "signup";
+  const [verification, setVerification] = useState<{
+    email: string;
+    sent: boolean;
+  } | null>(null);
 
   async function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -32,33 +38,57 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
     setPending(true);
     try {
       await authentication.mutateAsync({ mode, values });
-      let destination = "/organizations";
-      if (!signup) {
-        // Only a fresh login may skip company selection.
-        try {
-          const companies = await listOrganizations();
-          if (companies.length === 1) {
-            await activation.mutateAsync(companies[0].id);
-            destination = "/";
-            toast.info(<CompanyEntryToast name={companies[0].name} />);
-          }
-        } catch {
-          // Keep the authenticated session and allow manual selection on failure.
-        }
-        router.push(destination);
-      } else {
-        router.replace(destination);
+      if (signup) {
+        setVerification({ email: String(values.email), sent: true });
+        return;
       }
+      let destination = "/organizations";
+      // Only a fresh login may skip company selection.
+      try {
+        const companies = await listOrganizations();
+        if (companies.length === 1) {
+          await activation.mutateAsync(companies[0].id);
+          destination = "/";
+          toast.info(<CompanyEntryToast name={companies[0].name} />);
+        }
+      } catch {
+        // Keep the authenticated session and allow manual selection on failure.
+      }
+      router.push(destination);
       router.refresh();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Não foi possível conectar. Tente novamente.");
+      if (cause instanceof EmailNotVerifiedError) {
+        setVerification({ email: String(values.email), sent: false });
+        return;
+      }
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Não foi possível conectar. Tente novamente.",
+      );
     } finally {
       setPending(false);
     }
   }
 
+  if (verification)
+    return (
+      <EmailRequestForm
+        mode="verification"
+        initialEmail={verification.email}
+        initiallySent={verification.sent}
+        onBack={signup ? undefined : () => setVerification(null)}
+      />
+    );
+
   return (
-    <div className={signup ? "flex flex-col gap-2" : "grid flex-1 grid-rows-[1fr_auto_1fr] gap-6"}>
+    <div
+      className={
+        signup
+          ? "flex flex-col gap-2"
+          : "grid flex-1 grid-rows-[1fr_auto_1fr] gap-6"
+      }
+    >
       <header className="self-start">
         <p className="text-xs font-semibold uppercase tracking-widest text-primary">
           {signup ? "Comece por aqui" : "Bem-vindo de volta"}
@@ -74,7 +104,11 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
       </header>
 
       <div>
-        <form onSubmit={submit} className={`grid ${signup ? "mt-6 gap-5" : "gap-4"}`} aria-busy={pending}>
+        <form
+          onSubmit={submit}
+          className={`grid ${signup ? "mt-6 gap-5" : "gap-4"}`}
+          aria-busy={pending}
+        >
           {signup && (
             <div className="grid gap-2">
               <Label htmlFor="auth-name">Nome</Label>
@@ -136,6 +170,14 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
               </IconButton>
             </div>
           </div>
+          {!signup && (
+            <Link
+              href="/forgot-password"
+              className="justify-self-end text-sm font-medium text-primary underline underline-offset-4"
+            >
+              Esqueci minha senha
+            </Link>
+          )}
           {error && (
             <Alert variant="destructive">
               <AlertDescription>{error}</AlertDescription>
@@ -162,9 +204,10 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
                 : "Entrar"}
           </Button>
         </form>
-
       </div>
-      <footer className={signup ? "mt-6 flex flex-col gap-2" : "grid self-end gap-3"}>
+      <footer
+        className={signup ? "mt-6 flex flex-col gap-2" : "grid self-end gap-3"}
+      >
         <p className="text-center text-sm text-muted-foreground">
           {signup ? "Já possui uma conta? " : "Ainda não possui uma conta? "}
           <Link
@@ -175,7 +218,9 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
             {signup ? "Entrar" : "Criar conta"}
           </Link>
         </p>
-        <p className={`${signup ? "mt-16 " : ""}text-center text-xs text-muted-foreground`}>
+        <p
+          className={`${signup ? "mt-16 " : ""}text-center text-xs text-muted-foreground`}
+        >
           Seu acesso é pessoal. Mantenha sua senha em segurança.
         </p>
       </footer>

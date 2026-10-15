@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import type { EmailService } from '../../../../src/shared/email/email.service.js';
 import { StorageService } from '../../../../src/shared/storage/storage.service.js';
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -43,9 +44,36 @@ describe('Better Auth HTTP integration (in-memory database)', () => {
   let app: NestExpressApplication;
   let agent: ReturnType<typeof request.agent>;
   let organizationId: string;
+  const messages: { kind: string; to: string; url: string }[] = [];
+  const email = {
+    sendAuthenticationEmail: vi.fn((kind: string, to: string, url: string) => {
+      messages.push({ kind, to, url });
+    }),
+  };
+  async function verifyAccount(emailAddress: string) {
+    const message = messages.findLast(
+      (message) =>
+        message.kind === 'verification' && message.to === emailAddress,
+    );
+    expect(message).toBeDefined();
+    const url = new URL(message!.url);
+    await request(app.getHttpServer())
+      .get(url.pathname + url.search)
+      .expect(302);
+  }
+  async function loginAccount(
+    client: ReturnType<typeof request.agent>,
+    emailAddress: string,
+  ) {
+    await client
+      .post('/api/auth/sign-in/email')
+      .set('Origin', frontend)
+      .send({ email: emailAddress, password: 'Strong-password-123' })
+      .expect(200);
+  }
   beforeAll(async () => {
     const auth = betterAuth({
-      ...getAuthOptions(config),
+      ...getAuthOptions(config, email),
       database: memoryAdapter({
         user: [],
         session: [],
@@ -61,6 +89,7 @@ describe('Better Auth HTTP integration (in-memory database)', () => {
       {} as PrismaService,
       config,
       {} as StorageService,
+      email as unknown as EmailService,
     );
     const module = await Test.createTestingModule({
       imports: [AuthModule],
@@ -101,6 +130,14 @@ describe('Better Auth HTTP integration (in-memory database)', () => {
         password: 'Strong-password-123',
       })
       .expect(200);
+    await agent.get('/test-auth/private').expect(401);
+    await agent
+      .post('/api/auth/sign-in/email')
+      .set('Origin', frontend)
+      .send({ email: 'test@example.com', password: 'Strong-password-123' })
+      .expect(403);
+    await verifyAccount('test@example.com');
+    await loginAccount(agent, 'test@example.com');
     await agent.get('/test-auth/private').expect(200);
   });
   it('protects Nest mutations and preserves DTO validation after mounting the raw auth handler', async () => {
@@ -162,6 +199,8 @@ describe('Better Auth HTTP integration (in-memory database)', () => {
         password: 'Strong-password-123',
       })
       .expect(200);
+    await verifyAccount('other@example.com');
+    await loginAccount(outsider, 'other@example.com');
     await outsider
       .post('/api/auth/organization/set-active')
       .set('Origin', frontend)
@@ -249,5 +288,167 @@ describe('Better Auth HTTP integration (in-memory database)', () => {
       .get('/test-auth/private')
       .set('Cookie', cookie)
       .expect(401);
+  });
+  it('resends verification with an indistinguishable response for unknown addresses', async () => {
+    const before = messages.length;
+    await request(app.getHttpServer())
+      .post('/api/auth/send-verification-email')
+      .set('Origin', frontend)
+      .send({
+        email: 'missing@example.com',
+        callbackURL: `${frontend}/verify-email`,
+      })
+      .expect(200)
+      .expect({ status: true });
+    expect(messages).toHaveLength(before);
+    await request(app.getHttpServer())
+      .post(
+        '/api/auth/verify-email?token=invalid&callbackURL=' +
+          encodeURIComponent(`${frontend}/verify-email`),
+      )
+      .set('Origin', frontend)
+      .expect(404);
+    const invalid = await request(app.getHttpServer())
+      .get(
+        '/api/auth/verify-email?token=invalid&callbackURL=' +
+          encodeURIComponent(`${frontend}/verify-email`),
+      )
+      .expect(302);
+    expect(invalid.headers.location).toContain('error=');
+  });
+
+  it('resends a confirmation without trusting verification fields from the client', async () => {
+    await request(app.getHttpServer())
+      .post('/api/auth/sign-up/email')
+      .set('Origin', frontend)
+      .send({
+        name: 'Pending',
+        email: 'pending@example.com',
+        password: 'Strong-password-123',
+        emailVerified: true,
+      })
+      .expect(200);
+    await request(app.getHttpServer())
+      .post('/api/auth/sign-in/email')
+      .set('Origin', frontend)
+      .send({ email: 'pending@example.com', password: 'Strong-password-123' })
+      .expect(403);
+    const before = messages.length;
+    await request(app.getHttpServer())
+      .post('/api/auth/send-verification-email')
+      .set('Origin', frontend)
+      .send({
+        email: 'pending@example.com',
+        callbackURL: `${frontend}/verify-email?verified=1`,
+      })
+      .expect(200)
+      .expect({ status: true });
+    expect(messages).toHaveLength(before + 1);
+    expect(messages.at(-1)).toMatchObject({
+      kind: 'verification',
+      to: 'pending@example.com',
+    });
+    await verifyAccount('pending@example.com');
+    const session = await request(app.getHttpServer())
+      .post('/api/auth/sign-in/email')
+      .set('Origin', frontend)
+      .send({ email: 'pending@example.com', password: 'Strong-password-123' })
+      .expect(200);
+    expect(session.body.user.emailVerified).toBe(true);
+  });
+
+  it('resets a password once, rejects reuse and revokes all old sessions', async () => {
+    const authenticated = request.agent(app.getHttpServer());
+    await loginAccount(authenticated, 'test@example.com');
+    const before = messages.length;
+    await request(app.getHttpServer())
+      .post('/api/auth/request-password-reset')
+      .set('Origin', frontend)
+      .send({
+        email: 'test@example.com',
+        redirectTo: `${frontend}/reset-password`,
+      })
+      .expect(200);
+    const message = messages.at(-1)!;
+    expect(message.kind).toBe('password-reset');
+    expect(messages).toHaveLength(before + 1);
+    const resetURL = new URL(message.url);
+    const token = resetURL.pathname.split('/').at(-1)!;
+    const redirect = await request(app.getHttpServer())
+      .get(resetURL.pathname + resetURL.search)
+      .expect(302);
+    expect(redirect.headers.location).toBe(
+      `${frontend}/reset-password?token=${token}`,
+    );
+    await request(app.getHttpServer())
+      .post('/api/auth/reset-password')
+      .set('Origin', frontend)
+      .send({ token, newPassword: 'New-strong-password-123' })
+      .expect(200);
+    await authenticated.get('/test-auth/private').expect(401);
+    await request(app.getHttpServer())
+      .post('/api/auth/reset-password')
+      .set('Origin', frontend)
+      .send({ token, newPassword: 'Other-strong-password-123' })
+      .expect(400);
+    await request(app.getHttpServer())
+      .post('/api/auth/sign-in/email')
+      .set('Origin', frontend)
+      .send({ email: 'test@example.com', password: 'Strong-password-123' })
+      .expect(401);
+    await request(app.getHttpServer())
+      .post('/api/auth/sign-in/email')
+      .set('Origin', frontend)
+      .send({ email: 'test@example.com', password: 'New-strong-password-123' })
+      .expect(200);
+    const sent = messages.length;
+    await request(app.getHttpServer())
+      .post('/api/auth/request-password-reset')
+      .set('Origin', frontend)
+      .send({
+        email: 'missing@example.com',
+        redirectTo: `${frontend}/reset-password`,
+      })
+      .expect(200);
+    expect(messages).toHaveLength(sent);
+  });
+
+  it('rejects expired reset and verification links and untrusted redirect URLs', async () => {
+    await request(app.getHttpServer())
+      .post('/api/auth/request-password-reset')
+      .set('Origin', frontend)
+      .send({
+        email: 'other@example.com',
+        redirectTo: 'https://untrusted.example/reset-password',
+      })
+      .expect(403);
+    await request(app.getHttpServer())
+      .post('/api/auth/request-password-reset')
+      .set('Origin', frontend)
+      .send({
+        email: 'other@example.com',
+        redirectTo: `${frontend}/reset-password`,
+      })
+      .expect(200);
+    const resetURL = new URL(messages.at(-1)!.url);
+    const token = resetURL.pathname.split('/').at(-1)!;
+    const verification = new URL(
+      messages.find((message) => message.to === 'other@example.com')!.url,
+    );
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(Date.now() + 3601_000);
+      await request(app.getHttpServer())
+        .post('/api/auth/reset-password')
+        .set('Origin', frontend)
+        .send({ token, newPassword: 'New-strong-password-123' })
+        .expect(400);
+      const result = await request(app.getHttpServer())
+        .get(verification.pathname + verification.search)
+        .expect(302);
+      expect(result.headers.location).toContain('error=TOKEN_EXPIRED');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

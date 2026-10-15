@@ -26,3 +26,18 @@ test('auth context validates backend data and permits onboarding without an orga
   assert.equal(authContextSchema.safeParse({ user: { id: 'user-1', name: 'Test', email: 'test@example.com' }, organization: null }).success, true);
   assert.equal(authContextSchema.safeParse({ user: { id: 'user-1' } }).success, false);
 });
+
+test('email recovery validates email and ignores injected redirect destinations', async () => {
+  const { emailRequestSchema } = await import('../src/lib/auth-schemas.ts');
+  assert.deepEqual(emailRequestSchema.parse({ email: ' user@example.com ', redirectTo: 'https://attacker.example' }), { email: 'user@example.com' });
+  assert.equal(emailRequestSchema.safeParse({ email: 'invalid' }).success, false);
+});
+
+test('password reset requires a token, matching passwords and the shared password policy', async () => {
+  const { resetPasswordSchema } = await import('../src/lib/auth-schemas.ts');
+  const valid = { token: 'signed-token', newPassword: ' password ', confirmPassword: ' password ' };
+  assert.equal(resetPasswordSchema.parse(valid).newPassword, ' password ');
+  for (const patch of [{ token: '' }, { token: 'x'.repeat(2049) }, { newPassword: 'short', confirmPassword: 'short' }, { confirmPassword: 'different' }, { newPassword: 'a'.repeat(129), confirmPassword: 'a'.repeat(129) }]) {
+    assert.equal(resetPasswordSchema.safeParse({ ...valid, ...patch }).success, false);
+  }
+});

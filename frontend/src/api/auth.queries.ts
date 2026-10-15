@@ -1,7 +1,17 @@
 "use client";
 
-import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { authenticate, signOut } from "./auth";
+import {
+  queryOptions,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import {
+  authenticate,
+  requestAccountEmail,
+  resetPassword,
+  signOut,
+} from "./auth";
 import { listOrganizations, setActiveOrganization } from "./organizations";
 
 export const organizationsQueryOptions = queryOptions({
@@ -42,6 +52,22 @@ export function useSetActiveOrganization() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: setActiveOrganization,
+    onSuccess: async () => {
+      await client.cancelQueries();
+      client.clear();
+    },
+  });
+}
+
+export function useRequestAccountEmail() {
+  return useMutation({ mutationFn: requestAccountEmail, retry: false });
+}
+
+export function useResetPassword() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: resetPassword,
+    retry: false,
     onSuccess: async () => {
       await client.cancelQueries();
       client.clear();

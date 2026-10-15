@@ -27,7 +27,12 @@ export const organizationSchema = z.object({
     ),
 });
 export const authContextSchema = z.object({
-  user: z.object({ id: z.string(), name: z.string(), email: z.email(), image: z.string().nullable().optional() }),
+  user: z.object({
+    id: z.string(),
+    name: z.string(),
+    email: z.email(),
+    image: z.string().nullable().optional(),
+  }),
   organization: z
     .object({
       id: z.string(),
@@ -38,3 +43,19 @@ export const authContextSchema = z.object({
     .nullable(),
 });
 export type AuthContext = z.infer<typeof authContextSchema>;
+
+export const emailRequestSchema = z.object({ email });
+export const resetPasswordSchema = z
+  .object({
+    token: z
+      .string()
+      .min(1, "Link inválido. Solicite um novo e-mail.")
+      .max(2048),
+    newPassword: password,
+    confirmPassword: z.string(),
+  })
+  .refine((input) => input.newPassword === input.confirmPassword, {
+    message: "As senhas devem ser iguais.",
+    path: ["confirmPassword"],
+  });
+export const authStatusSchema = z.object({ status: z.boolean() });

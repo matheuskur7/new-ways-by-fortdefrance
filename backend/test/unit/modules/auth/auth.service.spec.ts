@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import type { EmailService } from '../../../../src/shared/email/email.service.js';
 import type { StorageService } from '../../../../src/shared/storage/storage.service.js';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from '../../../../src/modules/auth/auth.service.js';
@@ -31,6 +32,7 @@ function setup() {
         .fn()
         .mockResolvedValue('https://storage.example/avatar'),
     } as unknown as StorageService,
+    { sendAuthenticationEmail: vi.fn() } as unknown as EmailService,
   );
   return { service, member };
 }
@@ -106,6 +108,7 @@ describe('AuthService organization context', () => {
           BETTER_AUTH_SECRET:
             'replace-with-a-random-secret-of-at-least-32-characters',
         }),
+        { sendAuthenticationEmail: vi.fn() },
       ),
     ).toThrow('BETTER_AUTH_SECRET');
   });

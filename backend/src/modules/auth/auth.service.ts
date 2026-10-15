@@ -5,6 +5,7 @@ import type { IncomingHttpHeaders } from 'node:http';
 import { PrismaService } from '../../shared/db/prisma.service.js';
 import { StorageService } from '../../shared/storage/storage.service.js';
 import { getAvatarPrefix } from '../../shared/storage/avatar-key.js';
+import { EmailService } from '../../shared/email/email.service.js';
 import { createAuth } from './auth.config.js';
 import type { Auth, AuthSession } from './auth.config.js';
 
@@ -17,8 +18,9 @@ export class AuthService {
     private readonly prisma: PrismaService,
     config: ConfigService,
     private readonly storage: StorageService,
+    email: EmailService,
   ) {
-    this.auth = createAuth(prisma, config);
+    this.auth = createAuth(prisma, config, email);
     this.trustedOrigins = new Set([
       new URL(config.getOrThrow<string>('FRONTEND_URL')).origin,
       new URL(config.getOrThrow<string>('BETTER_AUTH_URL')).origin,
