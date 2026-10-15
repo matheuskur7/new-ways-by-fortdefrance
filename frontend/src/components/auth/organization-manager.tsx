@@ -2,7 +2,11 @@
 
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useRouter } from "next/navigation";
@@ -52,7 +56,11 @@ export function OrganizationManager({ activeId }: { activeId?: string }) {
         </CardHeader>
         <CardContent>
           {loading && (
-            <div className="grid gap-3" role="status" aria-label="Carregando empresas">
+            <div
+              className="grid gap-3"
+              role="status"
+              aria-label="Carregando empresas"
+            >
               <Skeleton className="h-16 w-full" />
               <Skeleton className="h-16 w-full" />
             </div>
@@ -72,21 +80,42 @@ export function OrganizationManager({ activeId }: { activeId?: string }) {
             {organizations?.map((org) => (
               <li key={org.id}>
                 <Tooltip>
-                  <TooltipTrigger render={
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={pending}
-                      onClick={() => select(org.id)}
-                      className="h-auto w-full justify-between gap-3 whitespace-normal px-4 py-2 text-left"
-                    />
-                  }>
-                    <span className="grid min-w-0 gap-0.5">
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={pending}
+                        onClick={() => select(org.id)}
+                        className="h-auto w-full justify-between gap-3 whitespace-normal px-4 py-2 text-left"
+                      />
+                    }
+                  >
+                    <span className="grid min-w-0 gap-1">
+                      {(org.id === activeId ||
+                        org.role
+                          .split(",")
+                          .some((role) => role.trim() === "owner")) && (
+                        <span className="flex flex-wrap items-center gap-1.5">
+                          {org.id === activeId && (
+                            <span className="inline-flex h-4 items-center justify-center rounded border border-border/70 bg-muted/50 px-1.5 text-[10px] leading-none font-normal text-muted-foreground">
+                              Empresa ativa
+                            </span>
+                          )}
+                          {org.role
+                            .split(",")
+                            .some((role) => role.trim() === "owner") && (
+                            <span className="inline-flex h-4 items-center justify-center rounded border border-primary/15 bg-primary/5 px-1.5 text-[10px] leading-none font-medium text-primary/80">
+                              Proprietário
+                            </span>
+                          )}
+                        </span>
+                      )}
                       <span className="text-lg leading-tight font-semibold">
                         {org.name}
                       </span>
-                      <span className="block text-sm leading-tight text-muted-foreground">
-                        {org.id === activeId ? "Empresa ativa" : org.slug}
+                      <span className="text-xs leading-tight text-muted-foreground">
+                        {org.slug}
                       </span>
                     </span>
                     <ArrowRight className="size-5" aria-hidden="true" />
