@@ -18,7 +18,6 @@ export const images = pgTable(
       }),
 
     keyPrefix: text('key_prefix').notNull(),
-
     key: text('key')
       .notNull()
       .unique()
@@ -27,11 +26,8 @@ export const images = pgTable(
       ),
 
     contentType: text('content_type'),
-
     size: integer('size'),
-
     status: imageStatus('status').notNull().default('pending'),
-
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
 
