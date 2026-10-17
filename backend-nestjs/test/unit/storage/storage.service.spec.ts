@@ -20,35 +20,20 @@ describe('StorageService: assinatura local sem acesso ao S3', () => {
     }),
   );
 
-  it('assina PUT com as credenciais e endpoint existentes e vincula tamanho, MIME e checksum', async () => {
+  it('assina PUT com as credenciais e endpoint existentes e exige escrita condicional sem parâmetros de arquivo', async () => {
     const service = new StorageService(config);
     try {
-      const checksum = Buffer.alloc(32).toString('base64');
-      const url = new URL(
-        await service.presignUpload(
-          'images/example',
-          'image/png',
-          123,
-          checksum,
-        ),
-      );
+      const url = new URL(await service.presignUpload('images/example'));
       expect(url.origin).toBe('http://localhost:9000');
       expect(url.pathname).toBe('/test-images/images/example');
-      expect(url.searchParams.get('X-Amz-Credential')).toContain(
-        'example-key/',
-      );
-      expect(url.searchParams.get('X-Amz-Credential')).toContain(
-        '/us-east-1/s3/',
-      );
+      expect(url.searchParams.get('X-Amz-Credential')).toContain('example-key/');
+      expect(url.searchParams.get('X-Amz-Credential')).toContain('/us-east-1/s3/');
       expect(url.searchParams.get('X-Amz-Expires')).toBe('120');
       const signed = url.searchParams.get('X-Amz-SignedHeaders')!.split(';');
-      expect(signed).toEqual(
-        expect.arrayContaining([
-          'content-type',
-          'content-length',
-          'x-amz-checksum-sha256',
-        ]),
-      );
+      expect(signed).toContain('if-none-match');
+      expect(signed).not.toContain('content-type');
+      expect(signed).not.toContain('content-length');
+      expect([...url.searchParams.keys()].some((key) => /checksum/i.test(key))).toBe(false);
       expect(url.searchParams.has('X-Amz-Signature')).toBe(true);
     } finally {
       service.onApplicationShutdown();

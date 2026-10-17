@@ -18,6 +18,7 @@ export class StorageService implements OnApplicationShutdown {
 
   constructor(@Inject(ConfigService) config: ConfigService<Environment, true>) {
     this.client = new S3Client({
+      requestChecksumCalculation: 'WHEN_REQUIRED',
       region: config.get('S3_REGION', { infer: true }),
       credentials: config.get('S3_KEY_ID', { infer: true })
         ? {
@@ -32,25 +33,17 @@ export class StorageService implements OnApplicationShutdown {
     this.expiresIn = config.get('S3_URL_TTL_SECONDS', { infer: true });
   }
 
-  presignUpload(
-    key: string,
-    contentType: string,
-    size: number,
-    checksum: string,
-  ) {
+  presignUpload(key: string) {
     return getSignedUrl(
       this.client,
       new PutObjectCommand({
         Bucket: this.bucket,
         Key: key,
-        ContentType: contentType,
-        ContentLength: size,
-        ChecksumSHA256: checksum,
+        IfNoneMatch: '*',
       }),
       {
         expiresIn: this.expiresIn,
-        signableHeaders: new Set(['content-type', 'content-length']),
-        unhoistableHeaders: new Set(['x-amz-checksum-sha256']),
+        signableHeaders: new Set(['if-none-match']),
       },
     );
   }
@@ -60,7 +53,6 @@ export class StorageService implements OnApplicationShutdown {
       new HeadObjectCommand({
         Bucket: this.bucket,
         Key: key,
-        ChecksumMode: 'ENABLED',
       }),
     );
   }

@@ -1,12 +1,6 @@
 import type { AuthSession } from '../auth/auth.factory.js';
 import { OrganizationAccessService } from '../organization/organization-access.service.js';
-import { randomUUID } from 'node:crypto';
-import {
-  Inject,
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { S3ServiceException } from '@aws-sdk/client-s3';
 import type { Environment } from '../../shared/config/env.js';
@@ -27,72 +21,62 @@ export class ImagesService {
   ) {}
 
   async createUpload(dto: UploadImageDto, session: AuthSession) {
-    const organizationId =
-      await this.organizations.requireActiveOrganization(session);
-    if (dto.size > this.config.get('MAX_IMAGE_SIZE_BYTES', { infer: true })) {
-      throw new BadRequestException('Imagem excede o tamanho permitido.');
-    }
-    const id = randomUUID();
-    const key = `images/${organizationId}/${id}`;
-    const url = await this.storage.presignUpload(
-      key,
-      dto.contentType,
-      dto.size,
-      dto.checksum,
-    );
-    await this.repository.create(organizationId, { id, key, ...dto });
+    const organizationId = await this.organizations.requireActiveOrganization(session);
+    const image = await this.repository.create(organizationId, dto.key);
+    const url = await this.storage.presignUpload(image.key);
     return {
-      id,
+      id: image.id,
+      key: image.key,
+      status: 'pending' as const,
       url,
       method: 'PUT' as const,
       expiresIn: this.storage.expiresIn,
-      headers: {
-        'Content-Type': dto.contentType,
-        'Content-Length': String(dto.size),
-        'x-amz-checksum-sha256': dto.checksum,
-      },
+      headers: { 'If-None-Match': '*' as const },
     };
   }
 
   async complete(id: string, session: AuthSession) {
-    const organizationId =
-      await this.organizations.requireActiveOrganization(session);
+    const organizationId = await this.organizations.requireActiveOrganization(session);
     const image = await this.requireImage(organizationId, id);
     if (image.status === 'ready') return this.toResponse(image);
     let object;
     try {
       object = await this.storage.head(image.key);
     } catch (error) {
-      if (
-        error instanceof S3ServiceException &&
-        error.$metadata.httpStatusCode === 404
-      ) {
+      if (error instanceof S3ServiceException && error.$metadata.httpStatusCode === 404) {
         throw new BadRequestException('Upload ainda não encontrado no S3.');
       }
       throw error;
     }
-    if (
-      object.ContentLength !== image.size ||
-      object.ContentType !== image.contentType ||
-      object.ChecksumSHA256 !== image.checksum
-    ) {
+    const contentType = object.ContentType;
+    const size = object.ContentLength;
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!contentType || !allowedTypes.includes(contentType)) {
       throw new BadRequestException(
-        'Metadados do objeto não correspondem ao upload solicitado.',
+        'O arquivo enviado deve ser uma imagem JPEG, PNG, WebP ou GIF.',
       );
     }
-    const ready = await this.repository.markReady(organizationId, id);
+    if (
+      size === undefined ||
+      !Number.isSafeInteger(size) ||
+      size <= 0 ||
+      size > this.config.get('MAX_IMAGE_SIZE_BYTES', { infer: true })
+    ) {
+      throw new BadRequestException('Imagem vazia ou acima do tamanho permitido.');
+    }
+    const ready = await this.repository.markReady(organizationId, id, {
+      contentType,
+      size,
+    });
     if (!ready) throw new NotFoundException('Imagem não encontrada.');
     return this.toResponse(ready);
   }
 
   async createDownload(id: string, session: AuthSession) {
-    const organizationId =
-      await this.organizations.requireActiveOrganization(session);
+    const organizationId = await this.organizations.requireActiveOrganization(session);
     const image = await this.requireImage(organizationId, id);
     if (image.status !== 'ready') {
-      throw new BadRequestException(
-        'O upload da imagem ainda não foi confirmado.',
-      );
+      throw new BadRequestException('O upload da imagem ainda não foi confirmado.');
     }
     return {
       url: await this.storage.presignDownload(image.key),
@@ -109,7 +93,7 @@ export class ImagesService {
   private toResponse(image: Image) {
     return {
       id: image.id,
-      filename: image.filename,
+      key: image.key,
       contentType: image.contentType,
       size: image.size,
       status: image.status,

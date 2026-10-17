@@ -15,6 +15,13 @@
       "when": 1792272477312,
       "tag": "0001_same_excalibur",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792273456649,
+      "tag": "0002_careful_maginty",
+      "breakpoints": true
     }
   ]
 }

@@ -38,36 +38,42 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
   };
   const records = new Map<string, Record<string, unknown>>();
   const repository = {
-    create: vi.fn(async (orgId: string, image: Record<string, unknown>) => {
-      const row = { ...image, organizationId: orgId, status: 'pending' };
-      records.set(String(image.id), row);
+    create: vi.fn(async (orgId: string, prefix: string) => {
+      // Simula o DEFAULT uuidv7() do PostgreSQL.
+      const id = '019a1234-5678-7000-8000-123456789abc';
+      const row = {
+        id,
+        organizationId: orgId,
+        key: `images/${orgId}/${prefix}/${id}`,
+        contentType: null,
+        size: null,
+        status: 'pending',
+      };
+      records.set(id, row);
       return row;
     }),
     findById: vi.fn(async (orgId: string, id: string) => {
       const row = records.get(id);
       return row?.organizationId === orgId ? row : undefined;
     }),
-    markReady: vi.fn(async (orgId: string, id: string) => {
-      const row = records.get(id);
-      if (row?.organizationId !== orgId) return undefined;
-      row.status = 'ready';
-      return row;
-    }),
+    markReady: vi.fn(
+      async (orgId: string, id: string, metadata: { contentType: string; size: number }) => {
+        const row = records.get(id);
+        if (row?.organizationId !== orgId) return undefined;
+        Object.assign(row, metadata, { status: 'ready' });
+        return row;
+      },
+    ),
   };
   const storage = {
     presignUpload: vi.fn().mockResolvedValue('https://s3.example.com/upload'),
     head: vi.fn(),
-    presignDownload: vi
-      .fn()
-      .mockResolvedValue('https://s3.example.com/download'),
+    presignDownload: vi.fn().mockResolvedValue('https://s3.example.com/download'),
     expiresIn: 300,
   };
 
   beforeAll(async () => {
-    vi.stubEnv(
-      'DATABASE_URL',
-      'postgresql://postgres:postgres@localhost:5432/test',
-    );
+    vi.stubEnv('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/test');
     vi.stubEnv('S3_REGION', 'us-east-1');
     vi.stubEnv('S3_BUCKET', 'test-images');
     vi.stubEnv('FRONTEND_URL', 'http://localhost:3000');
@@ -105,8 +111,7 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       .useValue({
         findMembership: async (orgId: string, userId: string) =>
           store.member.find(
-            (member) =>
-              member.organizationId === orgId && member.userId === userId,
+            (member) => member.organizationId === orgId && member.userId === userId,
           ),
       })
       .overrideProvider(ImagesRepository)
@@ -130,22 +135,15 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
   });
 
   it('serve aplicação e documentação incluindo Auth e Organization', async () => {
-    await request(app.getHttpServer())
-      .get('/')
-      .expect(200)
-      .expect('Hello World!');
+    await request(app.getHttpServer()).get('/').expect(200).expect('Hello World!');
     await request(app.getHttpServer()).get('/docs').expect(200);
     await request(app.getHttpServer()).get('/swagger').expect(200);
     await request(app.getHttpServer()).get('/api/auth/ok').expect(200);
-    const response = await request(app.getHttpServer())
-      .get('/openapi.json')
-      .expect(200);
+    const response = await request(app.getHttpServer()).get('/openapi.json').expect(200);
     expect(
-      response.body.paths['/images/upload-url'].post.requestBody.content[
-        'application/json'
-      ].schema,
+      response.body.paths['/images/upload-url'].post.requestBody.content['application/json'].schema,
     ).toMatchObject({
-      required: ['filename', 'contentType', 'size', 'checksum'],
+      required: ['key'],
     });
     const authSchema = await request(app.getHttpServer())
       .get('/api/auth/open-api/generate-schema')
@@ -154,18 +152,13 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
   });
 
   it('exige sessão e permite CORS com cookies somente para a origem configurada', async () => {
-    await request(app.getHttpServer())
-      .post('/images/upload-url')
-      .send({})
-      .expect(401);
+    await request(app.getHttpServer()).post('/images/upload-url').send({}).expect(401);
     const response = await request(app.getHttpServer())
       .options('/api/auth/sign-in/email')
       .set('Origin', 'http://localhost:3000')
       .set('Access-Control-Request-Method', 'POST')
       .expect(204);
-    expect(response.headers['access-control-allow-origin']).toBe(
-      'http://localhost:3000',
-    );
+    expect(response.headers['access-control-allow-origin']).toBe('http://localhost:3000');
     expect(response.headers['access-control-allow-credentials']).toBe('true');
   });
 
@@ -184,15 +177,7 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
     const session = await owner.get('/api/auth/get-session').expect(200);
     expect(session.body.user.email).toBe('owner@example.com');
     await owner.post('/images/upload-url').send({}).expect(400);
-    await owner
-      .post('/images/upload-url')
-      .send({
-        filename: 'x.png',
-        contentType: 'image/png',
-        size: 100,
-        checksum: Buffer.alloc(32).toString('base64'),
-      })
-      .expect(403);
+    await owner.post('/images/upload-url').send({ key: 'user-image' }).expect(403);
     await request(app.getHttpServer())
       .post('/api/auth/sign-in/email')
       .send({ email: 'owner@example.com', password: 'wrong-password' })
@@ -219,42 +204,33 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
   });
 
   it('valida JSON e parâmetros com Zod após autenticar', async () => {
-    await owner
-      .post('/images/upload-url')
-      .send({ filename: 'x.svg', contentType: 'image/svg+xml', size: 1 })
-      .expect(400);
+    await owner.post('/images/upload-url').send({ key: 'car-image' }).expect(400);
+    await owner.post('/images/upload-url').send({ key: 'car-image/rear' }).expect(400);
+    await owner.post('/images/upload-url').send({ key: 'user-image', size: 100 }).expect(400);
+    await owner.post('/images/upload-url').send({ key: 'user-image', id: 'custom' }).expect(400);
     await owner.get('/images/invalid/download-url').expect(400);
     expect(storage.presignUpload).not.toHaveBeenCalled();
     expect(repository.findById).not.toHaveBeenCalled();
   });
 
   it('executa upload, confirmação e leitura no escopo da organização', async () => {
-    const input = {
-      filename: 'photo.png',
-      contentType: 'image/png',
-      size: 100,
-      checksum: Buffer.alloc(32).toString('base64'),
-    };
-    const upload = await owner
-      .post('/images/upload-url')
-      .send(input)
-      .expect(201);
+    const input = { key: 'user-image' };
+    const upload = await owner.post('/images/upload-url').send(input).expect(201);
     imageId = upload.body.id;
-    expect(storage.presignUpload).toHaveBeenCalledWith(
-      `images/${organizationId}/${imageId}`,
-      input.contentType,
-      input.size,
-      input.checksum,
+    expect(upload.body.status).toBe('pending');
+    expect(imageId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
     );
+    expect(storage.presignUpload).toHaveBeenCalledWith(
+      `images/${organizationId}/user-image/${imageId}`,
+    );
+    await owner.get(`/images/${imageId}/download-url`).expect(400);
     storage.head.mockResolvedValue({
-      ContentLength: input.size,
-      ContentType: input.contentType,
-      ChecksumSHA256: input.checksum,
+      ContentLength: 100,
+      ContentType: 'image/png',
     });
     await owner.post(`/images/${imageId}/complete`).expect(200);
-    const download = await owner
-      .get(`/images/${imageId}/download-url`)
-      .expect(200);
+    const download = await owner.get(`/images/${imageId}/download-url`).expect(200);
     expect(download.body.url).toBe('https://s3.example.com/download');
   });
 
@@ -314,8 +290,7 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
 
   it('revoga acesso após remover vínculo e encerra a sessão no logout', async () => {
     const otherMember = store.member.find(
-      (member) =>
-        member.organizationId === organizationId && member.role === 'member',
+      (member) => member.organizationId === organizationId && member.role === 'member',
     );
     await owner
       .post('/api/auth/organization/remove-member')
