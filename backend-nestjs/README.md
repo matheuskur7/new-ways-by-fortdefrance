@@ -4,7 +4,7 @@ Projeto gerado pela CLI oficial do NestJS, em TypeScript ESM/NodeNext. Usa Postg
 
 ## Iniciar
 
-Requisitos: Node.js 22+, pnpm 12, PostgreSQL e um bucket S3 privado (ou serviço compatível com suporte a SHA-256 e URLs assinadas).
+Requisitos: Node.js 22+, pnpm 12, PostgreSQL 18+ (UUIDv7 nativo) e um bucket S3 privado (ou serviço compatível com URLs assinadas e escrita condicional If-None-Match).
 
 Execute dentro de `backend-nestjs/`:
 
@@ -87,43 +87,36 @@ O backend não envia e-mails de convite, verificação ou recuperação de senha
 
 Todas as rotas de imagens exigem uma sessão válida e uma organização ativa com vínculo atual no banco. A organização vem da sessão; não deve ser enviada no corpo. Os metadados e as chaves S3 usam o escopo da organização. Sessão ausente retorna 401, ausência de organização/vínculo retorna 403 e imagem de outra organização retorna 404.
 
-1. Calcule o SHA-256 dos bytes do arquivo e codifique o digest em base64.
-2. Envie `POST /images/upload-url` com JSON:
+1. Envie `POST /images/upload-url` com apenas:
 
 ```json
 {
-  "filename": "foto.png",
-  "contentType": "image/png",
-  "size": 12345,
-  "checksum": "<SHA-256 em base64>"
+  "key": "user-image"
 }
 ```
 
-A resposta contém `id`, `url`, `method: "PUT"`, `headers` e `expiresIn` em segundos. O registro começa como `pending`. Tipos aceitos: JPEG, PNG, WebP e GIF. O limite padrão é 10 MiB, configurável por MAX_IMAGE_SIZE_BYTES (máximo 100 MiB).
+`key` define a pasta/prefixo da imagem no S3. Por enquanto, apenas `user-image` é válido. Outros valores, como `car-image` ou `car-image/rear`, serão adicionados conforme seus domínios forem implementados. A lista central fica em `src/shared/storage/image-keys.ts`. IDs, nomes, tamanho, tipo e checksum não devem ser enviados nessa solicitação.
 
-3. Envie os bytes diretamente à URL S3 com PUT, sem multipart, usando os headers retornados. O checksum vincula a assinatura ao conteúdo e o S3 verifica sua integridade. No navegador, não defina Content-Length manualmente: ele é calculado pelo navegador a partir do arquivo.
+2. O backend insere o registro com status `pending`. O PostgreSQL gera o ID com `DEFAULT uuidv7()`. A coluna calculada do PostgreSQL gera a chave completa `images/<organizationId>/user-image/<uuidv7>`. Organização, prefixo e chave completa são NOT NULL. Após o INSERT, a URL PUT é assinada para essa chave.
+
+A resposta contém `id`, `key` (chave completa), `status: "pending"`, `url`, `method: "PUT"`, `headers` e `expiresIn`. Se a assinatura falhar, o registro continua pendente.
+
+3. Envie os bytes diretamente à URL S3 com PUT, sem multipart, usando os headers retornados. Defina Content-Type com o tipo do arquivo. A URL exige `If-None-Match: *`, impedindo sobrescrever um objeto já enviado à mesma chave. Um upload já concluído no S3 retorna 412 se for repetido; nesses casos, confirme pelo backend ou solicite uma nova URL/registro para outro arquivo.
 
 ```ts
-const digest = await crypto.subtle.digest('SHA-256', await file.arrayBuffer());
-const checksum = btoa(String.fromCharCode(...new Uint8Array(digest)));
 const response = await fetch('http://localhost:5000/images/upload-url', {
   method: 'POST',
   credentials: 'include',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    filename: file.name,
-    contentType: file.type,
-    size: file.size,
-    checksum,
-  }),
+  body: JSON.stringify({ key: 'user-image' }),
 });
 if (!response.ok) throw new Error('Falha ao solicitar upload');
 const upload = await response.json();
 const sent = await fetch(upload.url, {
   method: 'PUT',
   headers: {
-    'Content-Type': upload.headers['Content-Type'],
-    'x-amz-checksum-sha256': upload.headers['x-amz-checksum-sha256'],
+    ...upload.headers,
+    'Content-Type': file.type,
   },
   body: file,
 });
@@ -135,18 +128,18 @@ const complete = await fetch(
 if (!complete.ok) throw new Error('Falha na confirmação');
 ```
 
-4. `POST /images/:id/complete` consulta apenas HeadObject no S3 e compara tamanho, tipo declarado e checksum. A confirmação é idempotente e muda o status para `ready`.
+4. `POST /images/:id/complete` consulta apenas HeadObject no S3, valida o tipo declarado (JPEG, PNG, WebP ou GIF) e o tamanho e preenche esses metadados no banco. O limite padrão é 10 MiB, configurável por MAX_IMAGE_SIZE_BYTES (máximo 100 MiB). Arquivos vazios, tipos incompatíveis e arquivos acima do limite não são confirmados; continuam pendentes. A checagem ocorre depois do envio ao S3, não durante a assinatura. A confirmação é idempotente e muda o status para `ready`.
 5. `GET /images/:id/download-url` retorna uma URL temporária GET para uma imagem pronta. O cliente lê os bytes diretamente do S3.
 
-O backend não inspeciona os bytes nem detecta o formato real da imagem: MIME é declarado pelo cliente. Verificação de conteúdo e antivírus, se necessários, devem ocorrer em processamento externo ao backend.
+O backend não inspeciona os bytes nem detecta o formato real da imagem: MIME é declarado pelo cliente ao S3. Verificação de conteúdo e antivírus, se necessários, devem ocorrer em processamento externo ao backend.
 
-URLs são temporárias (300 segundos por padrão, máximo 3600). Um PUT pode ser repetido enquanto a assinatura for válida, mas deve preservar tamanho, tipo e checksum assinados. Não registre URLs em logs. Uploads abandonados deixam registros pendentes; limpeza de pendências e política de retenção devem ser definidas conforme o produto.
+URLs são temporárias (300 segundos por padrão, máximo 3600). Não registre URLs em logs. Uploads abandonados ou rejeitados deixam registros/objetos pendentes; limpeza e política de retenção devem ser definidas conforme o produto. filename e checksum não fazem parte do schema. Tipo e tamanho podem ser nulos no status pending; CHECK constraints impedem ready sem esses metadados e rejeitam tamanhos não positivos.
 
-A migração adiciona organization_id às imagens existentes sem excluir ou atribuir registros automaticamente. Imagens antigas sem organização ficam inacessíveis pelas rotas; eventual associação deve ser feita explicitamente após identificar o domínio correto. Uma organização com imagens não pode ser excluída por causa da referência de integridade (ON DELETE RESTRICT). URLs S3 já emitidas continuam válidas até a expiração, mesmo após logout ou remoção do vínculo.
+Uma organização com imagens não pode ser excluída por causa da referência de integridade (ON DELETE RESTRICT). URLs S3 já emitidas continuam válidas até a expiração, mesmo após logout ou remoção do vínculo.
 
 ## Configuração S3
 
-Mantenha Block Public Access habilitado. A identidade da API precisa de `s3:PutObject` e `s3:GetObject` no prefixo `images/*` do bucket; HeadObject usa a permissão GetObject. Para objetos com SSE-KMS, a consulta de checksum também requer as permissões KMS correspondentes. Nenhum ACL público é aplicado.
+Mantenha Block Public Access habilitado. A identidade da API precisa de `s3:PutObject` e `s3:GetObject` no prefixo `images/*` do bucket; HeadObject usa a permissão GetObject. Nenhum ACL público é aplicado.
 
 Configure CORS no bucket para as origens do cliente (FRONTEND_URL configura apenas a API). Exemplo para desenvolvimento:
 
@@ -155,8 +148,8 @@ Configure CORS no bucket para as origens do cliente (FRONTEND_URL configura apen
   {
     "AllowedOrigins": ["http://localhost:3000"],
     "AllowedMethods": ["PUT", "GET", "HEAD"],
-    "AllowedHeaders": ["content-type", "content-length", "x-amz-*"],
-    "ExposeHeaders": ["ETag", "x-amz-checksum-sha256"],
+    "AllowedHeaders": ["content-type", "if-none-match", "x-amz-*"],
+    "ExposeHeaders": ["ETag"],
     "MaxAgeSeconds": 300
   }
 ]
