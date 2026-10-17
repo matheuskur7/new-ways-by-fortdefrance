@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { EmailRequestForm } from "./email-request-form";
+import { EmailRequestForm } from "@/components/auth/email-request-form";
 
 export function VerificationResult() {
   const params = useSearchParams();
