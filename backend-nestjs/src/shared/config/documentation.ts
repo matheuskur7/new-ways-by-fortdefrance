@@ -5,9 +5,7 @@ import { apiReference } from '@scalar/nestjs-api-reference';
 export function setupDocumentation(app: INestApplication) {
   const config = new DocumentBuilder()
     .setTitle('Backend NestJS')
-    .setDescription(
-      'API com upload de imagens direto ao S3 por URLs pré-assinadas.',
-    )
+    .setDescription('API com upload de imagens direto ao S3 por URLs pré-assinadas.')
     .setVersion('1.0.0')
     .addCookieAuth('better-auth.session_token')
     .build();

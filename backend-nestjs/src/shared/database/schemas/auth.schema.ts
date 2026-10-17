@@ -23,11 +23,13 @@ export const session = pgTable(
     updatedAt: timestamp('updated_at')
       .$onUpdate(() => /* @__PURE__ */ new Date())
       .notNull(),
+
     ipAddress: text('ip_address'),
     userAgent: text('user_agent'),
     userId: text('user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
+
     activeOrganizationId: text('active_organization_id'),
   },
   (table) => [index('session_userId_idx').on(table.userId)],
@@ -42,6 +44,7 @@ export const account = pgTable(
     userId: text('user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
+
     accessToken: text('access_token'),
     refreshToken: text('refresh_token'),
     idToken: text('id_token'),

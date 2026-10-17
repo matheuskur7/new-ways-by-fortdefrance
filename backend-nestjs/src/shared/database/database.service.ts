@@ -15,9 +15,7 @@ export class DatabaseService implements OnApplicationShutdown {
     this.pool = new Pool({
       connectionString: config.get('DATABASE_URL', { infer: true }),
     });
-    this.pool.on('error', (error) =>
-      new Logger(DatabaseService.name).error(error),
-    );
+    this.pool.on('error', (error) => new Logger(DatabaseService.name).error(error));
     this.db = drizzle(this.pool, { schema });
   }
 

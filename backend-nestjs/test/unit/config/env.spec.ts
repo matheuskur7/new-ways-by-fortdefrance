@@ -28,10 +28,7 @@ describe('Configuração do ambiente', () => {
     expect(config.SMTP_PORT).toBe(465);
     expect(config.SMTP_SECURE).toBe(true);
     expect(config.S3_KEY_ID).toBe('example-id');
-    expect(
-      validateEnv({ ...valid, S3_FORCE_PATH_STYLE: 'true' })
-        .S3_FORCE_PATH_STYLE,
-    ).toBe(true);
+    expect(validateEnv({ ...valid, S3_FORCE_PATH_STYLE: 'true' }).S3_FORCE_PATH_STYLE).toBe(true);
   });
 
   it('aceita variáveis opcionais vazias e credenciais pela cadeia padrão AWS', () => {
@@ -66,8 +63,6 @@ describe('Configuração do ambiente', () => {
     { BETTER_AUTH_URL: 'invalid' },
     { SMTP_SECURE: 'yes' },
   ])('rejeita configuração inválida: %o', (override) => {
-    expect(() => validateEnv({ ...valid, ...override })).toThrow(
-      'Configuração inválida',
-    );
+    expect(() => validateEnv({ ...valid, ...override })).toThrow('Configuração inválida');
   });
 });

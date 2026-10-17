@@ -23,9 +23,7 @@ describe('AuthGuard', () => {
 
   it('rejeita sessão ausente ou expirada', async () => {
     authService.getSession.mockResolvedValue(null);
-    await expect(guard.canActivate(context)).rejects.toThrow(
-      UnauthorizedException,
-    );
+    await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
     expect(request.authSession).toBeUndefined();
   });
 

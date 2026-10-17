@@ -1,16 +1,7 @@
 import { AuthGuard } from '../auth/auth.guard.js';
 import { Session } from '../auth/session.decorator.js';
 import type { AuthSession } from '../auth/auth.factory.js';
-import {
-  Inject,
-  UseGuards,
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  Param,
-  Post,
-} from '@nestjs/common';
+import { Inject, UseGuards, Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiCookieAuth,

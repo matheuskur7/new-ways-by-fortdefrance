@@ -17,9 +17,11 @@ export const member = pgTable(
     organizationId: text('organization_id')
       .notNull()
       .references(() => organization.id, { onDelete: 'cascade' }),
+
     userId: text('user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
+
     role: text('role').default('member').notNull(),
     createdAt: timestamp('created_at').notNull(),
   },
@@ -36,6 +38,7 @@ export const invitation = pgTable(
     organizationId: text('organization_id')
       .notNull()
       .references(() => organization.id, { onDelete: 'cascade' }),
+
     email: text('email').notNull(),
     role: text('role'),
     status: text('status').default('pending').notNull(),

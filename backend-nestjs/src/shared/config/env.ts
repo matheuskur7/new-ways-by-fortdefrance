@@ -1,21 +1,14 @@
 import { z } from 'zod';
 
 const optional = <T extends z.ZodType>(schema: T) =>
-  z.preprocess(
-    (value) => (value === '' ? undefined : value),
-    schema.optional(),
-  );
+  z.preprocess((value) => (value === '' ? undefined : value), schema.optional());
 const port = z.coerce.number().int().min(1).max(65535);
-const booleanString = z
-  .enum(['true', 'false'])
-  .transform((value) => value === 'true');
+const booleanString = z.enum(['true', 'false']).transform((value) => value === 'true');
 const httpUrl = z.url({ protocol: /^https?$/ });
 
 export const envSchema = z
   .object({
-    NODE_ENV: z
-      .enum(['development', 'test', 'production'])
-      .default('development'),
+    NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     PORT: port.default(5000),
     FRONTEND_URL: httpUrl.default('http://localhost:3000'),
     POSTGRES_USER: optional(z.string().min(1)),
@@ -23,9 +16,7 @@ export const envSchema = z
     POSTGRES_DB: optional(z.string().min(1)),
     DATABASE_URL: z
       .url()
-      .refine((url) =>
-        ['postgres:', 'postgresql:'].includes(new URL(url).protocol),
-      ),
+      .refine((url) => ['postgres:', 'postgresql:'].includes(new URL(url).protocol)),
     S3_REGION: z.string().min(1),
     S3_ENDPOINT: optional(httpUrl),
     S3_KEY_ID: optional(z.string().min(1)),
@@ -33,12 +24,7 @@ export const envSchema = z
     S3_BUCKET: z.string().min(1),
     S3_FORCE_PATH_STYLE: booleanString.default(false),
     S3_URL_TTL_SECONDS: z.coerce.number().int().min(1).max(3600).default(300),
-    MAX_IMAGE_SIZE_BYTES: z.coerce
-      .number()
-      .int()
-      .min(1)
-      .max(104857600)
-      .default(10485760),
+    MAX_IMAGE_SIZE_BYTES: z.coerce.number().int().min(1).max(104857600).default(10485760),
     JWT_SECRET: optional(z.string().min(1)),
     JWT_EXPIRES_IN: optional(z.string().min(1)),
     BETTER_AUTH_URL: httpUrl,

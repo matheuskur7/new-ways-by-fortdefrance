@@ -14,10 +14,7 @@ export class OrganizationAccessService {
     if (!organizationId) {
       throw new ForbiddenException('Selecione uma organização ativa.');
     }
-    const membership = await this.repository.findMembership(
-      organizationId,
-      session.user.id,
-    );
+    const membership = await this.repository.findMembership(organizationId, session.user.id);
     if (!membership) {
       throw new ForbiddenException('Você não pertence à organização ativa.');
     }

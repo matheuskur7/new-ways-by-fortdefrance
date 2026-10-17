@@ -13,8 +13,7 @@ export class AuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const session = await this.authService.getSession(request.headers);
-    if (!session)
-      throw new UnauthorizedException('Sessão ausente ou expirada.');
+    if (!session) throw new UnauthorizedException('Sessão ausente ou expirada.');
     request.authSession = session;
     return true;
   }

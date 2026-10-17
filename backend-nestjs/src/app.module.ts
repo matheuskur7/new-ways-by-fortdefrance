@@ -23,9 +23,6 @@ import { UserModule } from './modules/user/user.module.js';
     UserModule,
   ],
   controllers: [AppController],
-  providers: [
-    AppService,
-    { provide: APP_PIPE, useClass: StandardSchemaValidationPipe },
-  ],
+  providers: [AppService, { provide: APP_PIPE, useClass: StandardSchemaValidationPipe }],
 })
 export class AppModule {}
