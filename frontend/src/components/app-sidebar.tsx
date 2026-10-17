@@ -72,6 +72,7 @@ export function AppSidebar({ user }: { user: AuthContext["user"] }) {
           >
             <Image
               src="/brand/logo.png"
+              loading="eager"
               alt=""
               width={48}
               height={48}

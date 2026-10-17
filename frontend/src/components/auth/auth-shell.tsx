@@ -8,6 +8,7 @@ function CompanyIdentity() {
     <div className="relative z-10 flex items-center justify-center gap-3 sm:gap-4 lg:justify-start">
       <Image
         src="/brand/logo.png"
+        loading="eager"
         alt=""
         width={1000}
         height={1000}
@@ -32,6 +33,7 @@ function BrandWatermark() {
   return (
     <Image
       src="/brand/logo.png"
+      loading="eager"
       alt=""
       aria-hidden="true"
       width={1000}
