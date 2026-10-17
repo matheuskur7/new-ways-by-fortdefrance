@@ -8,6 +8,7 @@ import { validateEnv } from './shared/config/env.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { OrganizationModule } from './modules/organization/organization.module.js';
 import { UserModule } from './modules/user/user.module.js';
+import { EmailModule } from './shared/email/email.module.js';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { UserModule } from './modules/user/user.module.js';
     AuthModule,
     OrganizationModule,
     UserModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_PIPE, useClass: StandardSchemaValidationPipe }],

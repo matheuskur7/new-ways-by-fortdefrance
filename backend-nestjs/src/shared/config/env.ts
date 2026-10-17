@@ -6,6 +6,15 @@ const port = z.coerce.number().int().min(1).max(65535);
 const booleanString = z.enum(['true', 'false']).transform((value) => value === 'true');
 const httpUrl = z.url({ protocol: /^https?$/ });
 
+const mailbox = z
+  .string()
+  .trim()
+  .refine((value) => {
+    if (/[\r\n]/.test(value)) return false;
+    const address = value.match(/^[^<>]+<([^<>]+)>$/)?.[1]?.trim() ?? value;
+    return z.email().safeParse(address).success;
+  }, 'Informe um e-mail válido, com nome de exibição opcional.');
+
 export const envSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -32,15 +41,25 @@ export const envSchema = z
     ADMIN_USER_NAME: optional(z.string().min(1)),
     ADMIN_USER_PASSWORD: optional(z.string().min(1)),
     ADMIN_USER_EMAIL: optional(z.email()),
-    SMTP_HOST: optional(z.string().min(1)),
-    SMTP_PORT: optional(port),
-    SMTP_SECURE: optional(booleanString),
+    SMTP_HOST: optional(z.string().trim().min(1)),
+    SMTP_PORT: port.default(465),
+    SMTP_SECURE: booleanString.default(true),
     SMTP_USER: optional(z.string().min(1)),
     SMTP_PASSWORD: optional(z.string().min(1)),
-    SMTP_FROM: optional(z.string().min(1)),
-    SMTP_REPLY_TO: optional(z.email()),
+    SMTP_FROM: optional(mailbox),
+    SMTP_REPLY_TO: optional(mailbox),
   })
   .superRefine((env, context) => {
+    if (env.SMTP_HOST || env.SMTP_USER || env.SMTP_PASSWORD) {
+      for (const field of ['SMTP_HOST', 'SMTP_USER', 'SMTP_PASSWORD', 'SMTP_FROM'] as const) {
+        if (!env[field])
+          context.addIssue({
+            code: 'custom',
+            path: [field],
+            message: 'Campo obrigatório para envio SMTP.',
+          });
+      }
+    }
     if (Boolean(env.S3_KEY_ID) !== Boolean(env.S3_KEY_SECRET)) {
       context.addIssue({
         code: 'custom',

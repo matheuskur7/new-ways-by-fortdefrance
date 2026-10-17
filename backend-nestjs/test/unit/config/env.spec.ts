@@ -16,8 +16,13 @@ describe('Configuração do ambiente', () => {
       PORT: '4000',
       S3_FORCE_PATH_STYLE: 'false',
       FRONTEND_URL: 'https://example.com',
-      SMTP_PORT: '465',
-      SMTP_SECURE: 'true',
+      SMTP_HOST: 'smtp.example.com',
+      SMTP_PORT: '587',
+      SMTP_SECURE: 'false',
+      SMTP_USER: 'sender@example.com',
+      SMTP_PASSWORD: 'test-password',
+      SMTP_FROM: 'New Ways <sender@example.com>',
+      SMTP_REPLY_TO: 'support@example.com',
       S3_KEY_ID: 'example-id',
       S3_KEY_SECRET: 'example-secret',
     });
@@ -25,8 +30,10 @@ describe('Configuração do ambiente', () => {
     expect(config.S3_FORCE_PATH_STYLE).toBe(false);
     expect(config.S3_URL_TTL_SECONDS).toBe(300);
     expect(config.FRONTEND_URL).toBe('https://example.com');
-    expect(config.SMTP_PORT).toBe(465);
-    expect(config.SMTP_SECURE).toBe(true);
+    expect(config.SMTP_PORT).toBe(587);
+    expect(config.SMTP_SECURE).toBe(false);
+    expect(config.SMTP_FROM).toBe('New Ways <sender@example.com>');
+    expect(config.SMTP_REPLY_TO).toBe('support@example.com');
     expect(config.S3_KEY_ID).toBe('example-id');
     expect(validateEnv({ ...valid, S3_FORCE_PATH_STYLE: 'true' }).S3_FORCE_PATH_STYLE).toBe(true);
   });
@@ -37,13 +44,16 @@ describe('Configuração do ambiente', () => {
       S3_ENDPOINT: '',
       S3_KEY_ID: '',
       S3_KEY_SECRET: '',
-      SMTP_PORT: '',
-      SMTP_SECURE: '',
+      SMTP_HOST: '',
+      SMTP_USER: '',
+      SMTP_PASSWORD: '',
+      SMTP_FROM: '',
       SMTP_REPLY_TO: '',
     });
     expect(config.S3_ENDPOINT).toBeUndefined();
     expect(config.S3_KEY_ID).toBeUndefined();
-    expect(config.SMTP_PORT).toBeUndefined();
+    expect(config.SMTP_HOST).toBeUndefined();
+    expect(config.SMTP_FROM).toBeUndefined();
   });
 
   it.each([
@@ -61,7 +71,15 @@ describe('Configuração do ambiente', () => {
     { BETTER_AUTH_SECRET: 'short' },
     { BETTER_AUTH_URL: undefined },
     { BETTER_AUTH_URL: 'invalid' },
+    { SMTP_PORT: '0' },
     { SMTP_SECURE: 'yes' },
+    { SMTP_HOST: 'smtp.example.com' },
+    { SMTP_USER: 'sender@example.com', SMTP_FROM: '' },
+    { SMTP_PASSWORD: 'test-password', SMTP_FROM: undefined },
+    { SMTP_FROM: 'invalid' },
+    { SMTP_FROM: 'Sender <invalid>' },
+    { SMTP_FROM: 'Sender\r\nBcc: hidden@example.com <sender@example.com>' },
+    { SMTP_REPLY_TO: 'invalid' },
   ])('rejeita configuração inválida: %o', (override) => {
     expect(() => validateEnv({ ...valid, ...override })).toThrow('Configuração inválida');
   });
