@@ -9,7 +9,11 @@ import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { toast } from "react-toastify";
 import { useSignOut } from "@/api/auth.queries";
 
-export function SignOutButton({ variant = "icon" }: { variant?: "icon" | "button" | "menu" }) {
+export function SignOutButton({
+  variant = "icon",
+}: {
+  variant?: "icon" | "button" | "menu";
+}) {
   const router = useRouter();
   const mutation = useSignOut();
   const pending = mutation.isPending;
@@ -23,14 +27,26 @@ export function SignOutButton({ variant = "icon" }: { variant?: "icon" | "button
       router.replace("/login");
       router.refresh();
     } catch {
-      if (variant === "menu") toast.error("Não foi possível sair. Tente novamente.");
+      if (variant === "menu")
+        toast.error("Não foi possível sair. Tente novamente.");
       else setError("Não foi possível sair. Tente novamente.");
     }
   }
   if (variant === "menu") {
     return (
-      <DropdownMenuItem className="cursor-pointer" disabled={pending} onClick={() => void signOut()}>
-        {pending ? <LoaderCircle className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <LogOut aria-hidden="true" />}
+      <DropdownMenuItem
+        className="cursor-pointer"
+        disabled={pending}
+        onClick={() => void signOut()}
+      >
+        {pending ? (
+          <LoaderCircle
+            className="animate-spin motion-reduce:animate-none"
+            aria-hidden="true"
+          />
+        ) : (
+          <LogOut aria-hidden="true" />
+        )}
         {pending ? "Saindo…" : "Sair"}
       </DropdownMenuItem>
     );
@@ -38,9 +54,22 @@ export function SignOutButton({ variant = "icon" }: { variant?: "icon" | "button
   return (
     <div>
       {variant === "button" ? (
-        <Button type="button" variant="ghost" onClick={signOut} disabled={pending} aria-busy={pending}>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={signOut}
+          disabled={pending}
+          aria-busy={pending}
+        >
           <span>{pending ? "Saindo…" : "Sair"}</span>
-          {pending ? <LoaderCircle className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <LogOut aria-hidden="true" />}
+          {pending ? (
+            <LoaderCircle
+              className="animate-spin motion-reduce:animate-none"
+              aria-hidden="true"
+            />
+          ) : (
+            <LogOut aria-hidden="true" />
+          )}
         </Button>
       ) : (
         <IconButton

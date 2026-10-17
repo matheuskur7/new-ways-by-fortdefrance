@@ -3,9 +3,7 @@ import { IsIn, IsString, Matches, MaxLength } from 'class-validator';
 
 // Adicione aqui novas tags utilizadas pelas aplicações.
 // Esta lista também controla os filtros de listagem e as opções no Swagger.
-export const ACCEPTED_IMAGE_TAGS = [
-  'car-image'
-] as const;
+export const ACCEPTED_IMAGE_TAGS = ['car-image'] as const;
 
 export class ImageTagDto {
   @ApiProperty({

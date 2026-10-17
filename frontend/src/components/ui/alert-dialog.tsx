@@ -1,26 +1,26 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog"
-import { cn } from "cn"
-import { Info, Trash2, TriangleAlert, type LucideIcon } from "lucide-react"
+import * as React from "react";
+import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog";
+import { cn } from "cn";
+import { Info, Trash2, TriangleAlert, type LucideIcon } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 
 function AlertDialog({ ...props }: AlertDialogPrimitive.Root.Props) {
-  return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />
+  return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />;
 }
 
 function AlertDialogTrigger({ ...props }: AlertDialogPrimitive.Trigger.Props) {
   return (
     <AlertDialogPrimitive.Trigger data-slot="alert-dialog-trigger" {...props} />
-  )
+  );
 }
 
 function AlertDialogPortal({ ...props }: AlertDialogPrimitive.Portal.Props) {
   return (
     <AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" {...props} />
-  )
+  );
 }
 
 function AlertDialogOverlay({
@@ -32,11 +32,11 @@ function AlertDialogOverlay({
       data-slot="alert-dialog-overlay"
       className={cn(
         "fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 function AlertDialogContent({
@@ -44,7 +44,7 @@ function AlertDialogContent({
   size = "default",
   ...props
 }: AlertDialogPrimitive.Popup.Props & {
-  size?: "default" | "sm"
+  size?: "default" | "sm";
 }) {
   return (
     <AlertDialogPortal>
@@ -54,21 +54,30 @@ function AlertDialogContent({
         data-size={size}
         className={cn(
           "group/alert-dialog-content fixed top-1/2 left-1/2 z-50 grid w-full -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
-          className
+          className,
         )}
         {...props}
       />
     </AlertDialogPortal>
-  )
+  );
 }
 
-type AlertDialogVariant = "info" | "alert" | "destructive"
+type AlertDialogVariant = "info" | "alert" | "destructive";
 
 const dialogVariants = {
-  info: { icon: Info, className: "border-blue-600 bg-blue-600/10 text-blue-600" },
-  alert: { icon: TriangleAlert, className: "border-amber-600 bg-amber-600/10 text-amber-600" },
-  destructive: { icon: Trash2, className: "border-destructive bg-destructive/10 text-destructive" },
-} as const
+  info: {
+    icon: Info,
+    className: "border-blue-600 bg-blue-600/10 text-blue-600",
+  },
+  alert: {
+    icon: TriangleAlert,
+    className: "border-amber-600 bg-amber-600/10 text-amber-600",
+  },
+  destructive: {
+    icon: Trash2,
+    className: "border-destructive bg-destructive/10 text-destructive",
+  },
+} as const;
 
 function AlertDialogHeader({
   className,
@@ -76,20 +85,28 @@ function AlertDialogHeader({
   icon,
   children,
   ...props
-}: React.ComponentProps<"div"> & { variant?: AlertDialogVariant; icon?: LucideIcon }) {
-  const { icon: DefaultIcon, className: color } = dialogVariants[variant]
-  const Icon = icon ?? DefaultIcon
+}: React.ComponentProps<"div"> & {
+  variant?: AlertDialogVariant;
+  icon?: LucideIcon;
+}) {
+  const { icon: DefaultIcon, className: color } = dialogVariants[variant];
+  const Icon = icon ?? DefaultIcon;
   return (
     <div
       data-slot="alert-dialog-header"
       data-variant={variant}
-      className={cn("grid justify-items-center gap-2 pt-2 text-center", className)}
+      className={cn(
+        "grid justify-items-center gap-2 pt-2 text-center",
+        className,
+      )}
       {...props}
     >
-      <AlertDialogMedia className={color}><Icon aria-hidden="true" /></AlertDialogMedia>
+      <AlertDialogMedia className={color}>
+        <Icon aria-hidden="true" />
+      </AlertDialogMedia>
       {children}
     </div>
-  )
+  );
 }
 
 function AlertDialogFooter({
@@ -101,11 +118,11 @@ function AlertDialogFooter({
       data-slot="alert-dialog-footer"
       className={cn(
         "-mx-4 -mb-4 flex flex-row flex-wrap justify-end gap-2 rounded-b-xl border-t bg-muted/50 p-4 *:data-[slot=alert-dialog-action]:order-last",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 function AlertDialogMedia({
@@ -117,11 +134,11 @@ function AlertDialogMedia({
       data-slot="alert-dialog-media"
       className={cn(
         "mb-2 inline-flex size-25 items-center justify-center rounded-full border-2 bg-muted [&>svg]:size-[49.5px]",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 function AlertDialogTitle({
@@ -131,13 +148,10 @@ function AlertDialogTitle({
   return (
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
-      className={cn(
-        "font-heading text-lg font-semibold",
-        className
-      )}
+      className={cn("font-heading text-lg font-semibold", className)}
       {...props}
     />
-  )
+  );
 }
 
 function AlertDialogDescription({
@@ -149,11 +163,11 @@ function AlertDialogDescription({
       data-slot="alert-dialog-description"
       className={cn(
         "text-sm text-balance text-muted-foreground md:text-pretty *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 function AlertDialogAction({
@@ -166,7 +180,7 @@ function AlertDialogAction({
       className={cn(className)}
       {...props}
     />
-  )
+  );
 }
 
 function AlertDialogCancel({
@@ -183,7 +197,7 @@ function AlertDialogCancel({
       render={<Button variant={variant} size={size} />}
       {...props}
     />
-  )
+  );
 }
 
 export {
@@ -199,4 +213,4 @@ export {
   AlertDialogPortal,
   AlertDialogTitle,
   AlertDialogTrigger,
-}
+};

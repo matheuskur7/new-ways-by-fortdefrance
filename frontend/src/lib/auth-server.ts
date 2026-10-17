@@ -16,9 +16,11 @@ export async function requireSession() {
   const context = await getAuthContext();
   if (!context) {
     const cookie = (await headers()).get("cookie") ?? "";
-    const hasSessionToken = cookie.split(";").some((entry) =>
-      /^(?:__Secure-)?better-auth\.session_token=/.test(entry.trim()),
-    );
+    const hasSessionToken = cookie
+      .split(";")
+      .some((entry) =>
+        /^(?:__Secure-)?better-auth\.session_token=/.test(entry.trim()),
+      );
     redirect(hasSessionToken ? "/login?reason=session-expired" : "/login");
   }
   return context;

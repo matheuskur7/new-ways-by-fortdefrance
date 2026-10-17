@@ -5,7 +5,11 @@ import { changePassword, removeAvatar, saveProfile } from "./api";
 
 export function useSaveProfile() {
   const client = useQueryClient();
-  return useMutation({ mutationFn: saveProfile, retry: false, onSuccess: () => client.invalidateQueries({ queryKey: ["auth-context"] }) });
+  return useMutation({
+    mutationFn: saveProfile,
+    retry: false,
+    onSuccess: () => client.invalidateQueries({ queryKey: ["auth-context"] }),
+  });
 }
 export function useChangePassword() {
   return useMutation({ mutationFn: changePassword, retry: false });
@@ -13,5 +17,9 @@ export function useChangePassword() {
 
 export function useRemoveAvatar() {
   const client = useQueryClient();
-  return useMutation({ mutationFn: removeAvatar, retry: false, onSuccess: () => client.invalidateQueries({ queryKey: ["auth-context"] }) });
+  return useMutation({
+    mutationFn: removeAvatar,
+    retry: false,
+    onSuccess: () => client.invalidateQueries({ queryKey: ["auth-context"] }),
+  });
 }

@@ -10,9 +10,11 @@ export async function getFeeGroups(signal?: AbortSignal) {
   });
   if (!response.ok) {
     if (response.status === 401) notifySessionExpired();
-    throw new Error(response.status === 401
-      ? "Sua sessão expirou. Entre novamente para consultar as taxas."
-      : "Não foi possível consultar as taxas.");
+    throw new Error(
+      response.status === 401
+        ? "Sua sessão expirou. Entre novamente para consultar as taxas."
+        : "Não foi possível consultar as taxas.",
+    );
   }
   return z.array(feeGroupSchema).parse(await response.json());
 }

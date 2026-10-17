@@ -14,7 +14,10 @@ export function IconButton({
   size = "icon",
   tooltipSide,
   ...props
-}: ComponentProps<typeof Button> & { label: string; tooltipSide?: ComponentProps<typeof TooltipContent>["side"] }) {
+}: ComponentProps<typeof Button> & {
+  label: string;
+  tooltipSide?: ComponentProps<typeof TooltipContent>["side"];
+}) {
   return (
     <Tooltip>
       <TooltipTrigger

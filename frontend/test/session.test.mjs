@@ -1,8 +1,12 @@
-import assert from 'node:assert/strict';
-import test from 'node:test';
-import { notifySessionExpired, SESSION_EXPIRED_EVENT, setSigningOut } from '../src/api/session.ts';
+import assert from "node:assert/strict";
+import test from "node:test";
+import {
+  notifySessionExpired,
+  SESSION_EXPIRED_EVENT,
+  setSigningOut,
+} from "../src/api/session.ts";
 
-test('session expiration is suppressed during voluntary logout and restored afterward', () => {
+test("session expiration is suppressed during voluntary logout and restored afterward", () => {
   const previousWindow = globalThis.window;
   const target = new EventTarget();
   let notifications = 0;
@@ -24,26 +28,70 @@ test('session expiration is suppressed during voluntary logout and restored afte
   }
 });
 
-test('expiration signals require a fresh server confirmation', async () => {
-  const { confirmSessionExpired } = await import('../src/api/session.ts');
-  assert.equal(await confirmSessionExpired(async () => ({ data: { user: { id: 'current-user' } }, error: null })), false);
-  assert.equal(await confirmSessionExpired(async () => ({ data: null, error: null })), true);
-  assert.equal(await confirmSessionExpired(async () => ({ data: null, error: { status: 401 } })), true);
-  assert.equal(await confirmSessionExpired(async () => ({ data: null, error: { status: 500 } })), false);
-  assert.equal(await confirmSessionExpired(async () => ({ data: null, error: { status: 429 } })), false);
-  assert.equal(await confirmSessionExpired(async () => { throw new Error('Network unavailable'); }), false);
+test("expiration signals require a fresh server confirmation", async () => {
+  const { confirmSessionExpired } = await import("../src/api/session.ts");
+  assert.equal(
+    await confirmSessionExpired(async () => ({
+      data: { user: { id: "current-user" } },
+      error: null,
+    })),
+    false,
+  );
+  assert.equal(
+    await confirmSessionExpired(async () => ({ data: null, error: null })),
+    true,
+  );
+  assert.equal(
+    await confirmSessionExpired(async () => ({
+      data: null,
+      error: { status: 401 },
+    })),
+    true,
+  );
+  assert.equal(
+    await confirmSessionExpired(async () => ({
+      data: null,
+      error: { status: 500 },
+    })),
+    false,
+  );
+  assert.equal(
+    await confirmSessionExpired(async () => ({
+      data: null,
+      error: { status: 429 },
+    })),
+    false,
+  );
+  assert.equal(
+    await confirmSessionExpired(async () => {
+      throw new Error("Network unavailable");
+    }),
+    false,
+  );
 });
 
-test('voluntary logout suppresses checks and any pending expiration confirmation', async () => {
-  const { confirmSessionExpired } = await import('../src/api/session.ts');
+test("voluntary logout suppresses checks and any pending expiration confirmation", async () => {
+  const { confirmSessionExpired } = await import("../src/api/session.ts");
   try {
     setSigningOut(true);
-    assert.equal(await confirmSessionExpired(async () => { throw new Error('Must not request'); }), false);
+    assert.equal(
+      await confirmSessionExpired(async () => {
+        throw new Error("Must not request");
+      }),
+      false,
+    );
     setSigningOut(false);
     let resolve;
-    const pending = confirmSessionExpired(() => new Promise((finish) => { resolve = finish; }));
+    const pending = confirmSessionExpired(
+      () =>
+        new Promise((finish) => {
+          resolve = finish;
+        }),
+    );
     setSigningOut(true);
     resolve({ data: null, error: null });
     assert.equal(await pending, false);
-  } finally { setSigningOut(false); }
+  } finally {
+    setSigningOut(false);
+  }
 });
