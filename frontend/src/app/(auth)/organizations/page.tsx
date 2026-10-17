@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { requireSession } from "@/lib/auth-server";
-import { OrganizationManager } from "@/components/auth/organization-manager";
+import { OrganizationManager } from "./components/organization-manager";
 import { SessionMonitor } from "@/components/auth/session-monitor";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { SignOutButton } from "@/components/auth/sign-out-button";
@@ -13,7 +13,6 @@ async function Organizations() {
     <div className="flex flex-1 flex-col gap-6">
       <SessionMonitor />
       <header>
-
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">
             Escolha sua empresa
@@ -28,13 +27,21 @@ async function Organizations() {
       </div>
       <footer className="mt-auto pt-2">
         <div className="flex items-center gap-4 rounded-xl border bg-muted/40 p-4">
-          <UserAvatar image={context.user.image} name={context.user.name} size="lg" />
+          <UserAvatar
+            image={context.user.image}
+            name={context.user.name}
+            size="lg"
+          />
           <div className="min-w-0 flex-1">
-            <p className="text-xs leading-tight font-medium text-red-600">Olá,</p>
+            <p className="text-xs leading-tight font-medium text-red-600">
+              Olá,
+            </p>
             <p className="-mt-0.5 wrap-break-word text-lg leading-tight font-semibold tracking-tight">
               {context.user.name}
             </p>
-            <p className="mt-1 break-all text-sm text-muted-foreground">{context.user.email}</p>
+            <p className="mt-1 break-all text-sm text-muted-foreground">
+              {context.user.email}
+            </p>
           </div>
           <SignOutButton variant="button" />
         </div>
@@ -55,9 +62,12 @@ export default function Page() {
 
 function OrganizationsSkeleton() {
   return (
-    <div className="flex flex-1 flex-col gap-6" role="status" aria-label="Carregando empresas">
+    <div
+      className="flex flex-1 flex-col gap-6"
+      role="status"
+      aria-label="Carregando empresas"
+    >
       <div className="grid self-start gap-6">
-
         <div className="grid gap-2">
           <Skeleton className="h-9 w-64 max-w-full" />
           <Skeleton className="h-5 w-full" />

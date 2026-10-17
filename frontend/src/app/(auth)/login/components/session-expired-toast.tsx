@@ -9,7 +9,11 @@ export function SessionExpiredToast() {
   const router = useRouter();
 
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("reason") !== "session-expired") return;
+    if (
+      new URLSearchParams(window.location.search).get("reason") !==
+      "session-expired"
+    )
+      return;
     toast.warn(SESSION_EXPIRED_MESSAGE, { toastId: SESSION_EXPIRED_EVENT });
     router.replace("/login");
   }, [router]);

@@ -14,7 +14,13 @@ import { useAuthenticate } from "@/api/auth.queries";
 import { EmailNotVerifiedError } from "@/api/auth";
 import { EmailRequestForm } from "./email-request-form";
 
-export function AuthForm({ mode }: { mode: "login" | "signup" }) {
+export function AuthForm({
+  mode,
+  invitationId,
+}: {
+  mode: "login" | "signup";
+  invitationId?: string;
+}) {
   const router = useRouter();
   const [error, setError] = useState("");
   const authentication = useAuthenticate();
@@ -38,7 +44,11 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
         setVerification({ email: String(values.email), sent: true });
         return;
       }
-      router.replace("/organizations");
+      router.replace(
+        invitationId
+          ? `/invitations/${encodeURIComponent(invitationId)}`
+          : "/organizations",
+      );
       router.refresh();
     } catch (cause) {
       if (cause instanceof EmailNotVerifiedError) {
