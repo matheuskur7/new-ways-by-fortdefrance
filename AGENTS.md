@@ -20,24 +20,26 @@ Este arquivo se aplica a todo o monorepo. Orientações em `AGENTS.md` dentro de
 - Respeite os padrões existentes de componentes, estilos e organização de rotas.
 - Para validar alterações, use `pnpm lint` e `pnpm build` conforme o escopo.
 
-## Backend — `backend/`
+## Backend — `backend-nestjs/`
 
-- Stack: NestJS, TypeScript com ESM, Prisma e PostgreSQL.
-- Use extensão `.js` em imports relativos de arquivos TypeScript, conforme a resolução `NodeNext` do projeto; use `import type` para imports exclusivos de tipos.
-- Organize funcionalidades em `src/modules/`, seguindo a divisão existente de controller, service, repository e DTOs. Coloque infraestrutura reutilizável em `src/shared/`.
-- Valide entradas por DTOs e preserve os contratos das rotas existentes.
-- Centralize regras compartilhadas em serviços do domínio responsável e exporte-os pelo módulo correspondente; infraestrutura transversal fica em `src/shared/`. Reutilize essas regras em vez de duplicar validações ou consultas em outros módulos.
-- Para operações vinculadas a uma empresa, importe `OrganizationModule` e use `OrganizationAccessService.requireActiveOrganization(session)` no service antes de acessar os dados. A empresa vem da sessão validada no servidor; o serviço verifica o vínculo atual no banco a cada operação. Não confie apenas em `activeOrganizationId`, não aceite a empresa do corpo da requisição e não implemente verificações locais de membership em repositories de outros domínios.
-- Repositories devem tratar a persistência de seu domínio. Em entidades separadas por empresa, receba o `organizationId` validado pelo service e inclua-o nos filtros de leitura, alteração e exclusão e nos dados de criação. A validação de vínculo não substitui esses filtros; permissões específicas da operação devem ser verificadas adicionalmente quando aplicáveis.
-- Mantenha `createdBy` e `updatedBy` opcionais nas entidades auditadas. O preenchimento deve ocorrer pela extensão do Prisma e pelo contexto de auditoria da sessão, sem receber autoria de DTOs nem propagá-la manualmente pelos repositories. Ao adicionar entidades ou relações graváveis, atualize o mapeamento e os testes da extensão de auditoria.
-- Usuários usam soft delete por `UserService.softDelete`: marque `deletedAt` e revogue todas as sessões na mesma transação, preservando referências e e-mail único. Use sempre `PrismaService`, que filtra usuários e sessões inativos; não exclua usuários fisicamente nem use nested writes para excluí-los ou reativá-los. Consultas relacionais de outros domínios devem filtrar usuários ativos explicitamente quando necessário; a extensão não filtra relações aninhadas automaticamente.
-- O schema Prisma fica em `prisma/schema.prisma`; a configuração fica em `prisma7.config.ts`.
-- Use `pnpm db:generate` para gerar o cliente. Não edite nem versione `src/generated/prisma/`.
-- Para alterações de estrutura do banco, inclua migrações em `prisma/migrations/`. Confira o banco de destino antes de aplicar migrações; não execute operações destrutivas sem autorização explícita.
-- Documente variáveis de banco e armazenamento em `.env.example`, sem credenciais reais.
-- Para validar alterações, use `pnpm build`, `pnpm test` e `pnpm lint` conforme o escopo. Valide o schema com `pnpm exec prisma validate --config prisma7.config.ts` quando ele for alterado.
-- Mantenha todos os testes em `test/`, fora de `src/`: unitários em `test/unit/`, organizados por módulo, e e2e em `test/e2e/`. Não crie pastas `specs` dentro dos módulos.
-- Testes unitários devem usar mocks para banco e armazenamento; testes de integração devem declarar as dependências externas necessárias.
+- Stack: NestJS, TypeScript com ESM, Drizzle ORM, PostgreSQL e Zod.
+- Inicialize projetos e gere módulos, controllers e services com a CLI oficial do NestJS quando aplicável; use a CLI do Drizzle para gerar migrações.
+- Mantenha `type: module` e resolução `NodeNext`. Use extensão `.js` em imports relativos TypeScript e `import type` para tipos.
+- Organize funcionalidades em `src/modules/`, separando controller, service, repository e DTOs. Infraestrutura reutilizável fica em `src/shared/`.
+- Defina schemas Zod e derive os tipos com `z.infer`. Use o suporte nativo Standard Schema do NestJS nos parâmetros de rota, corpo e query, com `StandardSchemaValidationPipe` global.
+- Valide o ambiente no `ConfigModule.forRoot` usando o schema de `src/shared/config/env.ts`. Consuma valores por `ConfigService<Environment, true>` com `infer: true`; não espalhe leituras de `process.env` pela aplicação. Preserve os nomes do ambiente existente: `S3_REGION`, `S3_KEY_ID`, `S3_KEY_SECRET` e `FRONTEND_URL`. Normalize variáveis opcionais vazias para `undefined` e informe as duas chaves S3 juntas; sem elas, use a cadeia padrão AWS.
+- Gere o OpenAPI com Swagger a partir dos schemas de validação. Mantenha Scalar em `/docs`, Swagger UI em `/swagger` e o documento em `/openapi.json`.
+- Mantenha a validação e a tipagem do ambiente em um único arquivo: `src/shared/config/env.ts`.
+- Organize os schemas de banco Drizzle por domínio em `src/shared/database/schemas/` (por exemplo, `storage.schema.ts` para imagens e arquivos e `auth.schema.ts` quando autenticação for implementada). Exporte os grupos em `schemas/index.ts`. Novas tabelas, enums e relações devem ficar no grupo correspondente. A configuração fica em `drizzle.config.ts` e as migrações em `drizzle/`; versione SQL e metadados das migrações.
+- Use `pnpm db:generate` após alterações no schema. Confira o banco de destino antes de executar `pnpm db:migrate`; não aplique migrações destrutivas sem autorização explícita.
+- Repositories tratam persistência via `DatabaseService`; regras de domínio ficam nos services.
+- Images usa URLs pré-assinadas para upload e leitura diretamente no S3. Nunca receba arquivos, multipart, buffers ou streams de arquivos nas rotas do backend.
+- Gere as chaves S3 no servidor; valide tipo declarado, tamanho e checksum SHA-256. Confirme uploads com `HeadObject` antes de marcar metadados como prontos e liberar URLs de leitura.
+- Mantenha o bucket privado, a validade das URLs limitada e as credenciais na configuração validada (chaves S3 ou cadeia padrão AWS). Não persista nem registre URLs assinadas em logs.
+- O scaffold não inclui autenticação. Ao adicionar acesso por usuário ou empresa, valide autorização antes de emitir URLs ou consultar/alterar metadados.
+- Mantenha todos os testes inteiramente em `test/`, inclusive `.spec.ts`: unitários em `test/unit/` por módulo e testes HTTP/e2e em `test/e2e/`. Não crie testes em `src/`.
+- Testes unitários e HTTP isolados devem simular banco e S3; testes de integração reais devem declarar suas dependências externas.
+- Valide com `pnpm build`, `pnpm lint`, `pnpm test` e `pnpm test:e2e`, conforme o escopo. Documente variáveis necessárias em `.env.example`, sem credenciais reais.
 
 ## Commits — Conventional Commits
 
