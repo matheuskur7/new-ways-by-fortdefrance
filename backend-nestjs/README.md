@@ -17,7 +17,7 @@ pnpm db:migrate
 pnpm start:dev
 ```
 
-O ambiente é validado com Zod no ConfigModule. O schema, os helpers de validação e a tipagem do ambiente ficam em um único arquivo, `src/shared/config/env.ts`. Campos numéricos e booleanos são convertidos e consumidos com ConfigService tipado. As credenciais usam S3_KEY_ID e S3_KEY_SECRET, quando ambas são informadas. Se ambas estiverem vazias, o SDK usa a cadeia padrão AWS (IAM role, perfil local ou variáveis AWS_*). FRONTEND_URL define a origem permitida pelo CORS da API. Variáveis opcionais vazias são normalizadas para undefined. BETTER_AUTH_URL e BETTER_AUTH_SECRET são obrigatórios; o segredo deve conter pelo menos 32 caracteres. Variáveis legadas de JWT, seed e SMTP continuam opcionais e não são utilizadas pela autenticação. Não coloque credenciais no código.
+O ambiente é validado com Zod no ConfigModule. O schema, os helpers de validação e a tipagem do ambiente ficam em um único arquivo, `src/shared/config/env.ts`. Campos numéricos e booleanos são convertidos e consumidos com ConfigService tipado. As credenciais usam S3_KEY_ID e S3_KEY_SECRET, quando ambas são informadas. Se ambas estiverem vazias, o SDK usa a cadeia padrão AWS (IAM role, perfil local ou variáveis AWS_*). FRONTEND_URL define a origem permitida pelo CORS da API. Variáveis opcionais vazias são normalizadas para undefined. BETTER_AUTH_URL e BETTER_AUTH_SECRET são obrigatórios; o segredo deve conter pelo menos 32 caracteres. Variáveis legadas de JWT e seed continuam opcionais e não são utilizadas pela autenticação. O módulo de e-mail usa as variáveis SMTP existentes com Nodemailer. Não coloque credenciais no código.
 
 Por padrão, a API usa `http://localhost:5000`:
 
@@ -81,7 +81,46 @@ if (organizations?.[0]) {
 
 Para chamadas diretas por fetch, use `credentials: 'include'` nas requisições ao backend. Não envie cookies da API ao S3. Em produção, use HTTPS e uma implantação compatível com os cookies SameSite padrão (por exemplo, frontend e backend no mesmo site).
 
-O backend não envia e-mails de convite, verificação ou recuperação de senha nesta implementação. Convites são criados/aceitos pelo plugin usando invitationId; a distribuição desse identificador cabe ao cliente até integrar o envio de e-mail. JWT separado, login social, teams e seed de administrador não estão habilitados.
+Os fluxos do Better Auth ainda não estão conectados ao envio de e-mails de convite, verificação ou recuperação de senha. Convites são criados/aceitos pelo plugin usando invitationId; a distribuição desse identificador cabe ao cliente até integrar o envio de e-mail. JWT separado, login social, teams e seed de administrador não estão habilitados.
+
+## E-mail com Nodemailer e SMTP
+
+`EmailModule` em `src/shared/email/` exporta `EmailService` para uso interno por outros módulos. Importe EmailModule no módulo consumidor e injete EmailService. Não há endpoint HTTP de envio genérico.
+
+Configure no `.env` (mesmos nomes usados pelo ambiente existente):
+
+```dotenv
+SMTP_HOST=smtp.seu-provedor.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=nao-responda@seu-dominio.com
+SMTP_PASSWORD=sua-senha-smtp
+SMTP_FROM="New Ways <nao-responda@seu-dominio.com>"
+SMTP_REPLY_TO=suporte@seu-dominio.com
+```
+
+Na porta 465, use SMTP_SECURE=true para TLS direto. Na porta 587, use SMTP_SECURE=false: o transporte exige STARTTLS antes da autenticação. A validação de certificados permanece habilitada. Não há necessidade de chave de API de outro provedor.
+
+SMTP_HOST, SMTP_USER, SMTP_PASSWORD e SMTP_FROM devem ser preenchidos juntos. SMTP_PORT e SMTP_SECURE usam 465 e true como padrão; SMTP_REPLY_TO é opcional. SMTP_FROM e SMTP_REPLY_TO aceitam endereço simples ou nome de exibição. Sem host e credenciais, a aplicação inicia, mas o envio retorna ServiceUnavailableException. Não há conexão SMTP nem envio durante a inicialização: o transporte conecta sob demanda.
+
+Exemplo dentro de um serviço com EmailService injetado:
+
+```ts
+const { id } = await this.email.send({
+  to: 'destinatario@example.com',
+  subject: 'Bem-vindo',
+  text: 'Sua conta foi criada.',
+  html: '<p>Sua conta foi criada.</p>',
+});
+```
+
+Informe text ou html (ou ambos). to, cc e bcc aceitam um endereço ou uma lista, limitados a 50 destinatários no total. replyTo pode sobrescrever o padrão para uma mensagem. O remetente sempre vem de SMTP_FROM. O módulo não oferece idempotência nem faz tentativas automáticas de reenvio.
+
+O retorno id contém o Message-ID da mensagem aceita pelo servidor SMTP; ele não confirma a entrega na caixa de entrada. Se algum destinatário for rejeitado, o serviço retorna BadGatewayException, inclusive em aceitação parcial (os destinatários aceitos podem já ter recebido a mensagem). Falhas de transporte também retornam BadGatewayException, sem expor respostas SMTP, conteúdo, destinatários ou credenciais. O transporte é encerrado no desligamento da aplicação.
+
+Os testes simulam o transporte e não enviam e-mails reais. Os fluxos de convite/verificação/recuperação do Better Auth ainda não estão ligados ao módulo.
+
+Documentação: [Nodemailer SMTP](https://nodemailer.com/smtp).
 
 ## Imagens: fluxo direto para S3
 
@@ -121,10 +160,10 @@ const sent = await fetch(upload.url, {
   body: file,
 });
 if (!sent.ok) throw new Error('Falha no upload ao S3');
-const complete = await fetch(
-  `http://localhost:5000/images/${upload.id}/complete`,
-  { method: 'POST', credentials: 'include' },
-);
+const complete = await fetch(`http://localhost:5000/images/${upload.id}/complete`, {
+  method: 'POST',
+  credentials: 'include',
+});
 if (!complete.ok) throw new Error('Falha na confirmação');
 ```
 
