@@ -8,6 +8,8 @@ describe('StorageService: assinatura local sem acesso ao S3', () => {
   const config = new ConfigService<Environment, true>(
     validateEnv({
       DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/test',
+      BETTER_AUTH_URL: 'http://localhost:5000',
+      BETTER_AUTH_SECRET: 'test-secret-with-at-least-32-characters',
       S3_REGION: 'us-east-1',
       S3_BUCKET: 'test-images',
       S3_ENDPOINT: 'http://localhost:9000',

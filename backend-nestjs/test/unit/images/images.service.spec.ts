@@ -1,3 +1,6 @@
+import { ForbiddenException } from '@nestjs/common';
+import { authSession } from '../../fixtures/auth.js';
+import { OrganizationAccessService } from '../../../src/modules/organization/organization-access.service.js';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { S3ServiceException } from '@aws-sdk/client-s3';
@@ -20,9 +23,11 @@ const image: Image = {
   ...dto,
   status: 'pending',
   createdAt: new Date(),
+  organizationId: 'org-test',
 };
 
 describe('ImagesService', () => {
+  const organizations = { requireActiveOrganization: vi.fn() };
   const repository = {
     create: vi.fn(),
     findById: vi.fn(),
@@ -45,35 +50,68 @@ describe('ImagesService', () => {
       repository as unknown as ImagesRepository,
       storage as unknown as StorageService,
       config,
+      organizations as unknown as OrganizationAccessService,
     );
+    organizations.requireActiveOrganization.mockResolvedValue('org-test');
     repository.findById.mockResolvedValue(image);
     repository.markReady.mockResolvedValue({ ...image, status: 'ready' });
   });
 
   it('gera chave própria e assina os metadados sem receber o arquivo', async () => {
     storage.presignUpload.mockResolvedValue('https://s3.example.com/upload');
-    const result = await service.createUpload(dto);
+    const result = await service.createUpload(dto, authSession);
     expect(result.method).toBe('PUT');
     expect(storage.presignUpload).toHaveBeenCalledWith(
-      `images/${result.id}`,
+      `images/org-test/${result.id}`,
       dto.contentType,
       dto.size,
       dto.checksum,
     );
-    expect(repository.create).toHaveBeenCalledWith({
+    expect(repository.create).toHaveBeenCalledWith('org-test', {
       ...dto,
       id: result.id,
-      key: `images/${result.id}`,
+      key: `images/org-test/${result.id}`,
     });
     expect(result.headers['x-amz-checksum-sha256']).toBe(dto.checksum);
   });
 
   it('rejeita tamanho acima do limite antes de assinar ou persistir', async () => {
-    await expect(service.createUpload({ ...dto, size: 1025 })).rejects.toThrow(
-      BadRequestException,
-    );
+    await expect(
+      service.createUpload({ ...dto, size: 1025 }, authSession),
+    ).rejects.toThrow(BadRequestException);
     expect(storage.presignUpload).not.toHaveBeenCalled();
     expect(repository.create).not.toHaveBeenCalled();
+  });
+
+  it('não acessa banco ou S3 sem vínculo com a organização ativa', async () => {
+    organizations.requireActiveOrganization.mockRejectedValue(
+      new ForbiddenException(),
+    );
+    await expect(service.createUpload(dto, authSession)).rejects.toThrow(
+      ForbiddenException,
+    );
+    await expect(service.complete(image.id, authSession)).rejects.toThrow(
+      ForbiddenException,
+    );
+    await expect(service.createDownload(image.id, authSession)).rejects.toThrow(
+      ForbiddenException,
+    );
+    expect(repository.findById).not.toHaveBeenCalled();
+    expect(repository.create).not.toHaveBeenCalled();
+    expect(storage.presignUpload).not.toHaveBeenCalled();
+    expect(storage.head).not.toHaveBeenCalled();
+    expect(storage.presignDownload).not.toHaveBeenCalled();
+  });
+
+  it('filtra a consulta e a atualização pela organização validada', async () => {
+    storage.head.mockResolvedValue({
+      ContentLength: dto.size,
+      ContentType: dto.contentType,
+      ChecksumSHA256: dto.checksum,
+    });
+    await service.complete(image.id, authSession);
+    expect(repository.findById).toHaveBeenCalledWith('org-test', image.id);
+    expect(repository.markReady).toHaveBeenCalledWith('org-test', image.id);
   });
 
   it('confirma somente após verificar os metadados no S3', async () => {
@@ -82,7 +120,9 @@ describe('ImagesService', () => {
       ContentType: dto.contentType,
       ChecksumSHA256: dto.checksum,
     });
-    expect(await service.complete(image.id)).toMatchObject({ status: 'ready' });
+    expect(await service.complete(image.id, authSession)).toMatchObject({
+      status: 'ready',
+    });
     expect(storage.head).toHaveBeenCalledWith(image.key);
   });
 
@@ -104,7 +144,7 @@ describe('ImagesService', () => {
     },
   ])('rejeita objeto incompatível: %o', async (metadata) => {
     storage.head.mockResolvedValue(metadata);
-    await expect(service.complete(image.id)).rejects.toThrow(
+    await expect(service.complete(image.id, authSession)).rejects.toThrow(
       BadRequestException,
     );
     expect(repository.markReady).not.toHaveBeenCalled();
@@ -118,20 +158,22 @@ describe('ImagesService', () => {
         $metadata: { httpStatusCode: 404 },
       }),
     );
-    await expect(service.complete(image.id)).rejects.toThrow(
+    await expect(service.complete(image.id, authSession)).rejects.toThrow(
       BadRequestException,
     );
     const error = new Error('S3 indisponível');
     storage.head.mockRejectedValue(error);
-    await expect(service.complete(image.id)).rejects.toThrow(error);
+    await expect(service.complete(image.id, authSession)).rejects.toThrow(
+      error,
+    );
   });
 
   it('não assina downloads de imagens pendentes ou inexistentes', async () => {
-    await expect(service.createDownload(image.id)).rejects.toThrow(
+    await expect(service.createDownload(image.id, authSession)).rejects.toThrow(
       BadRequestException,
     );
     repository.findById.mockResolvedValue(undefined);
-    await expect(service.createDownload(image.id)).rejects.toThrow(
+    await expect(service.createDownload(image.id, authSession)).rejects.toThrow(
       NotFoundException,
     );
     expect(storage.presignDownload).not.toHaveBeenCalled();
@@ -142,9 +184,11 @@ describe('ImagesService', () => {
     storage.presignDownload.mockResolvedValue(
       'https://s3.example.com/download',
     );
-    expect(await service.complete(image.id)).toMatchObject({ status: 'ready' });
+    expect(await service.complete(image.id, authSession)).toMatchObject({
+      status: 'ready',
+    });
     expect(storage.head).not.toHaveBeenCalled();
-    expect(await service.createDownload(image.id)).toEqual({
+    expect(await service.createDownload(image.id, authSession)).toEqual({
       url: 'https://s3.example.com/download',
       expiresIn: 300,
     });

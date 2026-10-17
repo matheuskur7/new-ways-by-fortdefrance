@@ -9,11 +9,23 @@ export function setupDocumentation(app: INestApplication) {
       'API com upload de imagens direto ao S3 por URLs pré-assinadas.',
     )
     .setVersion('1.0.0')
+    .addCookieAuth('better-auth.session_token')
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('swagger', app, document, {
     jsonDocumentUrl: '/openapi.json',
   });
-  app.use('/docs', apiReference({ url: '/openapi.json' }));
+  app.use(
+    '/docs',
+    apiReference({
+      sources: [
+        { url: '/openapi.json', title: 'API' },
+        {
+          url: '/api/auth/open-api/generate-schema',
+          title: 'Auth e organizações',
+        },
+      ],
+    }),
+  );
   return document;
 }

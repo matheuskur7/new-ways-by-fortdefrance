@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { DatabaseService } from '../../shared/database/database.service.js';
 import { images } from '../../shared/database/schemas/index.js';
 
@@ -9,28 +9,31 @@ export class ImagesRepository {
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
 
-  async create(data: typeof images.$inferInsert) {
+  async create(
+    organizationId: string,
+    data: Omit<typeof images.$inferInsert, 'organizationId'>,
+  ) {
     const [image] = await this.database.db
       .insert(images)
-      .values(data)
+      .values({ ...data, organizationId })
       .returning();
     return image;
   }
 
-  async findById(id: string) {
+  async findById(organizationId: string, id: string) {
     const [image] = await this.database.db
       .select()
       .from(images)
-      .where(eq(images.id, id))
+      .where(and(eq(images.id, id), eq(images.organizationId, organizationId)))
       .limit(1);
     return image;
   }
 
-  async markReady(id: string) {
+  async markReady(organizationId: string, id: string) {
     const [image] = await this.database.db
       .update(images)
       .set({ status: 'ready' })
-      .where(eq(images.id, id))
+      .where(and(eq(images.id, id), eq(images.organizationId, organizationId)))
       .returning();
     return image;
   }

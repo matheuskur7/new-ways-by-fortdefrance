@@ -1,3 +1,5 @@
+import type { AuthSession } from '../auth/auth.factory.js';
+import { OrganizationAccessService } from '../organization/organization-access.service.js';
 import { randomUUID } from 'node:crypto';
 import {
   Inject,
@@ -20,21 +22,25 @@ export class ImagesService {
     @Inject(StorageService) private readonly storage: StorageService,
     @Inject(ConfigService)
     private readonly config: ConfigService<Environment, true>,
+    @Inject(OrganizationAccessService)
+    private readonly organizations: OrganizationAccessService,
   ) {}
 
-  async createUpload(dto: UploadImageDto) {
+  async createUpload(dto: UploadImageDto, session: AuthSession) {
+    const organizationId =
+      await this.organizations.requireActiveOrganization(session);
     if (dto.size > this.config.get('MAX_IMAGE_SIZE_BYTES', { infer: true })) {
       throw new BadRequestException('Imagem excede o tamanho permitido.');
     }
     const id = randomUUID();
-    const key = `images/${id}`;
+    const key = `images/${organizationId}/${id}`;
     const url = await this.storage.presignUpload(
       key,
       dto.contentType,
       dto.size,
       dto.checksum,
     );
-    await this.repository.create({ id, key, ...dto });
+    await this.repository.create(organizationId, { id, key, ...dto });
     return {
       id,
       url,
@@ -48,8 +54,10 @@ export class ImagesService {
     };
   }
 
-  async complete(id: string) {
-    const image = await this.requireImage(id);
+  async complete(id: string, session: AuthSession) {
+    const organizationId =
+      await this.organizations.requireActiveOrganization(session);
+    const image = await this.requireImage(organizationId, id);
     if (image.status === 'ready') return this.toResponse(image);
     let object;
     try {
@@ -72,13 +80,15 @@ export class ImagesService {
         'Metadados do objeto não correspondem ao upload solicitado.',
       );
     }
-    const ready = await this.repository.markReady(id);
+    const ready = await this.repository.markReady(organizationId, id);
     if (!ready) throw new NotFoundException('Imagem não encontrada.');
     return this.toResponse(ready);
   }
 
-  async createDownload(id: string) {
-    const image = await this.requireImage(id);
+  async createDownload(id: string, session: AuthSession) {
+    const organizationId =
+      await this.organizations.requireActiveOrganization(session);
+    const image = await this.requireImage(organizationId, id);
     if (image.status !== 'ready') {
       throw new BadRequestException(
         'O upload da imagem ainda não foi confirmado.',
@@ -90,8 +100,8 @@ export class ImagesService {
     };
   }
 
-  private async requireImage(id: string) {
-    const image = await this.repository.findById(id);
+  private async requireImage(organizationId: string, id: string) {
+    const image = await this.repository.findById(organizationId, id);
     if (!image) throw new NotFoundException('Imagem não encontrada.');
     return image;
   }

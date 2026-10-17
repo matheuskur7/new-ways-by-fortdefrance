@@ -3,6 +3,8 @@ import { validateEnv } from '../../../src/shared/config/env.js';
 
 const valid = {
   DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/test',
+  BETTER_AUTH_URL: 'http://localhost:5000',
+  BETTER_AUTH_SECRET: 'test-secret-with-at-least-32-characters',
   S3_REGION: 'us-east-1',
   S3_BUCKET: 'test-images',
 };
@@ -58,6 +60,10 @@ describe('Configuração do ambiente', () => {
     { FRONTEND_URL: '*' },
     { S3_KEY_ID: 'example-id' },
     { S3_KEY_SECRET: 'example-secret' },
+    { BETTER_AUTH_SECRET: undefined },
+    { BETTER_AUTH_SECRET: 'short' },
+    { BETTER_AUTH_URL: undefined },
+    { BETTER_AUTH_URL: 'invalid' },
     { SMTP_SECURE: 'yes' },
   ])('rejeita configuração inválida: %o', (override) => {
     expect(() => validateEnv({ ...valid, ...override })).toThrow(

@@ -36,7 +36,14 @@ Este arquivo se aplica a todo o monorepo. Orientações em `AGENTS.md` dentro de
 - Images usa URLs pré-assinadas para upload e leitura diretamente no S3. Nunca receba arquivos, multipart, buffers ou streams de arquivos nas rotas do backend.
 - Gere as chaves S3 no servidor; valide tipo declarado, tamanho e checksum SHA-256. Confirme uploads com `HeadObject` antes de marcar metadados como prontos e liberar URLs de leitura.
 - Mantenha o bucket privado, a validade das URLs limitada e as credenciais na configuração validada (chaves S3 ou cadeia padrão AWS). Não persista nem registre URLs assinadas em logs.
-- O scaffold não inclui autenticação. Ao adicionar acesso por usuário ou empresa, valide autorização antes de emitir URLs ou consultar/alterar metadados.
+- Autenticação usa Better Auth com adaptador Drizzle e plugin Organization. Preserve as rotas nativas em `/api/auth/*`; não duplique os fluxos de senha, sessão, membros, papéis ou convites em controllers próprios.
+- Configure HTTP com `setupHttp` e crie a aplicação com `bodyParser: false`: o handler Better Auth deve ser registrado antes dos parsers JSON/urlencoded. Preserve CORS com credenciais, origem explícita e verificações de origem/CSRF do Better Auth.
+- Valide `BETTER_AUTH_URL` e `BETTER_AUTH_SECRET` (mínimo 32 caracteres) no ConfigModule. Não use o JWT legado para validar sessões Better Auth.
+- Proteja controllers privados com `AuthGuard` e obtenha a sessão validada pelo decorator `Session`. Reutilize os tipos inferidos do Better Auth.
+- Em operações por empresa, use `OrganizationAccessService.requireActiveOrganization(session)` no service antes de acessar dados. O vínculo deve ser consultado no banco a cada operação; não confie apenas em `activeOrganizationId` nem aceite a empresa do DTO.
+- Repositories recebem o `organizationId` validado e o incluem na criação e nos filtros de leitura, atualização e exclusão. Verifique permissões adicionais quando a operação exigir papéis específicos.
+- Schemas Better Auth ficam nos grupos `auth.schema.ts` e `organization.schema.ts`; relações que atravessam grupos ficam em `relations.ts`, exportadas por `schemas/index.ts`. Use `pnpm auth:generate` para gerar a referência e distribua mudanças nesses grupos antes de gerar a migração Drizzle. Valide o mapeamento com `pnpm auth:check`.
+- Images exige sessão e vínculo atual com a organização ativa. Imagens legadas sem organização são preservadas e ficam inacessíveis até uma associação explícita; não faça backfill automático.
 - Mantenha todos os testes inteiramente em `test/`, inclusive `.spec.ts`: unitários em `test/unit/` por módulo e testes HTTP/e2e em `test/e2e/`. Não crie testes em `src/`.
 - Testes unitários e HTTP isolados devem simular banco e S3; testes de integração reais devem declarar suas dependências externas.
 - Valide com `pnpm build`, `pnpm lint`, `pnpm test` e `pnpm test:e2e`, conforme o escopo. Documente variáveis necessárias em `.env.example`, sem credenciais reais.

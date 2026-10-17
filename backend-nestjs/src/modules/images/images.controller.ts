@@ -1,5 +1,9 @@
+import { AuthGuard } from '../auth/auth.guard.js';
+import { Session } from '../auth/session.decorator.js';
+import type { AuthSession } from '../auth/auth.factory.js';
 import {
   Inject,
+  UseGuards,
   Body,
   Controller,
   Get,
@@ -9,6 +13,9 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiCookieAuth,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
   ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -26,6 +33,12 @@ import {
 import type { ImageParamsDto, UploadImageDto } from './dto/images.dto.js';
 
 @ApiTags('Images')
+@ApiCookieAuth()
+@ApiUnauthorizedResponse({ description: 'Sessão ausente ou expirada.' })
+@ApiForbiddenResponse({
+  description: 'Organização ativa ausente ou sem vínculo.',
+})
+@UseGuards(AuthGuard)
 @ApiBadRequestResponse({
   description: 'Entrada inválida ou upload incompatível.',
 })
@@ -38,8 +51,11 @@ export class ImagesController {
     summary: 'Solicitar URL para enviar imagem diretamente ao S3',
   })
   @ApiCreatedResponse({ standardSchema: uploadResponseSchema })
-  createUpload(@Body({ schema: uploadImageSchema }) body: UploadImageDto) {
-    return this.images.createUpload(body);
+  createUpload(
+    @Body({ schema: uploadImageSchema }) body: UploadImageDto,
+    @Session() session: AuthSession,
+  ) {
+    return this.images.createUpload(body, session);
   }
 
   @Post(':id/complete')
@@ -47,15 +63,21 @@ export class ImagesController {
   @ApiOperation({ summary: 'Confirmar upload verificando os metadados no S3' })
   @ApiOkResponse({ standardSchema: imageResponseSchema })
   @ApiNotFoundResponse({ description: 'Imagem não encontrada.' })
-  complete(@Param({ schema: imageParamsSchema }) params: ImageParamsDto) {
-    return this.images.complete(params.id);
+  complete(
+    @Param({ schema: imageParamsSchema }) params: ImageParamsDto,
+    @Session() session: AuthSession,
+  ) {
+    return this.images.complete(params.id, session);
   }
 
   @Get(':id/download-url')
   @ApiOperation({ summary: 'Obter URL temporária para leitura direta no S3' })
   @ApiOkResponse({ standardSchema: downloadResponseSchema })
   @ApiNotFoundResponse({ description: 'Imagem não encontrada.' })
-  download(@Param({ schema: imageParamsSchema }) params: ImageParamsDto) {
-    return this.images.createDownload(params.id);
+  download(
+    @Param({ schema: imageParamsSchema }) params: ImageParamsDto,
+    @Session() session: AuthSession,
+  ) {
+    return this.images.createDownload(params.id, session);
   }
 }

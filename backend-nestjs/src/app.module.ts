@@ -5,6 +5,9 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { ImagesModule } from './modules/images/images.module.js';
 import { validateEnv } from './shared/config/env.js';
+import { AuthModule } from './modules/auth/auth.module.js';
+import { OrganizationModule } from './modules/organization/organization.module.js';
+import { UserModule } from './modules/user/user.module.js';
 
 @Module({
   imports: [
@@ -15,6 +18,9 @@ import { validateEnv } from './shared/config/env.js';
       validate: validateEnv,
     }),
     ImagesModule,
+    AuthModule,
+    OrganizationModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [
