@@ -12,6 +12,8 @@ import { AuthService } from '../../../../src/modules/auth/auth.service.js';
 describe('Organizations and membership roles (mocked database)', () => {
   let app: NestExpressApplication;
   const findMany = vi.fn();
+  const findUnique = vi.fn();
+  const findInvitations = vi.fn();
   beforeAll(async () => {
     const module = await Test.createTestingModule({
       imports: [DbModule, OrganizationModule],
@@ -33,7 +35,10 @@ describe('Organizations and membership roles (mocked database)', () => {
       ],
     })
       .overrideProvider(PrismaService)
-      .useValue({ member: { findMany } })
+      .useValue({
+        member: { findMany, findUnique },
+        invitation: { findMany: findInvitations },
+      })
       .compile();
     app = module.createNestApplication<NestExpressApplication>();
     await app.init();
@@ -74,5 +79,59 @@ describe('Organizations and membership roles (mocked database)', () => {
       { id: 'company-b', name: 'Filial', slug: 'filial', role: 'member' },
     ]);
     expect(response.headers['cache-control']).toBe('private, no-store');
+  });
+  it('denies settings access to outsiders and ordinary members before listing any data', async () => {
+    findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce({
+      role: 'member',
+      organization: { id: 'company-a' },
+    });
+    for (let attempt = 0; attempt < 2; attempt++) {
+      await request(app.getHttpServer())
+        .get('/api/organizations/company-a/settings')
+        .set('Cookie', 'session=alice')
+        .expect(403);
+    }
+    expect(findMany).not.toHaveBeenCalled();
+    expect(findInvitations).not.toHaveBeenCalled();
+  });
+
+  it('checks the requested company and returns only its active members and pending invitations to managers', async () => {
+    const organization = { id: 'company-a', name: 'Matriz', slug: 'matriz' };
+    findUnique.mockResolvedValueOnce({ role: 'admin', organization });
+    findMany.mockResolvedValueOnce([]);
+    findInvitations.mockResolvedValueOnce([]);
+    const response = await request(app.getHttpServer())
+      .get('/api/organizations/company-a/settings')
+      .set('Cookie', 'session=alice')
+      .expect(200);
+    expect(response.body).toEqual({
+      organization,
+      members: [],
+      invitations: [],
+    });
+    expect(findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          organizationId_userId: {
+            organizationId: 'company-a',
+            userId: 'alice',
+          },
+        },
+      }),
+    );
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { organizationId: 'company-a', user: { deletedAt: null } },
+      }),
+    );
+    expect(findInvitations).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          organizationId: 'company-a',
+          status: 'pending',
+          expiresAt: { gt: expect.any(Date) },
+        },
+      }),
+    );
   });
 });

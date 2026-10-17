@@ -44,6 +44,37 @@ export class EmailService implements OnModuleDestroy {
     void task.finally(() => this.pending.delete(task));
   }
 
+  async sendOrganizationInvitationEmail(
+    to: string,
+    organizationName: string,
+    invitationId: string,
+  ): Promise<void> {
+    const link = new URL(
+      `/invitations/${encodeURIComponent(invitationId)}`,
+      this.config.getOrThrow<string>('FRONTEND_URL'),
+    ).href;
+    const description = `Você recebeu um convite para participar de ${organizationName} no New Ways.`;
+    try {
+      await this.getTransport().sendMail({
+        from: this.config.getOrThrow<string>('SMTP_FROM'),
+        to,
+        replyTo: this.config.get<string>('SMTP_REPLY_TO') || undefined,
+        subject: 'Convite para uma empresa — New Ways',
+        text: `${description}\n\nAcesse com a conta deste e-mail e aceite o convite: ${link}\n\nO convite é válido por 48 horas.`,
+        html: `<div style="font-family:Arial,Helvetica,sans-serif"><h1>Convite para uma empresa</h1><p>${escapeHtml(description)}</p><p><a href="${escapeHtml(link)}">Ver convite</a></p><p>Acesse com a conta deste e-mail. O convite é válido por 48 horas.</p></div>`,
+        disableFileAccess: true,
+        disableUrlAccess: true,
+      });
+    } catch {
+      this.logger.error(
+        'Falha no envio do convite. Confira a configuração SMTP e o provedor.',
+      );
+      throw new Error(
+        'Não foi possível enviar o convite por e-mail. Tente reenviar.',
+      );
+    }
+  }
+
   private getTransport() {
     if (this.transport) return this.transport;
     const host = this.config.get<string>('SMTP_HOST');

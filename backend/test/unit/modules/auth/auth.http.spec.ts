@@ -45,7 +45,18 @@ describe('Better Auth HTTP integration (in-memory database)', () => {
   let agent: ReturnType<typeof request.agent>;
   let organizationId: string;
   const messages: { kind: string; to: string; url: string }[] = [];
+  const invitationEmail = vi.fn().mockResolvedValue(undefined);
+  const database: Record<string, Record<string, unknown>[]> = {
+    user: [],
+    session: [],
+    account: [],
+    verification: [],
+    organization: [],
+    member: [],
+    invitation: [],
+  };
   const email = {
+    sendOrganizationInvitationEmail: invitationEmail,
     sendAuthenticationEmail: vi.fn((kind: string, to: string, url: string) => {
       messages.push({ kind, to, url });
     }),
@@ -73,16 +84,10 @@ describe('Better Auth HTTP integration (in-memory database)', () => {
   }
   beforeAll(async () => {
     const auth = betterAuth({
-      ...getAuthOptions(config, email),
-      database: memoryAdapter({
-        user: [],
-        session: [],
-        account: [],
-        verification: [],
-        organization: [],
-        member: [],
-        invitation: [],
-      }),
+      ...getAuthOptions(config, email, async (address) =>
+        database.user.some((user) => user.email === address && !user.deletedAt),
+      ),
+      database: memoryAdapter(database),
       rateLimit: { enabled: false },
     });
     const originService = new AuthService(
@@ -447,6 +452,175 @@ describe('Better Auth HTTP integration (in-memory database)', () => {
         .get(verification.pathname + verification.search)
         .expect(302);
       expect(result.headers.location).toContain('error=TOKEN_EXPIRED');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+  it('validates new company codes and preserves the current company when requested', async () => {
+    const agent = request.agent(app.getHttpServer());
+    await agent
+      .post('/api/auth/sign-in/email')
+      .set('Origin', frontend)
+      .send({ email: 'test@example.com', password: 'New-strong-password-123' })
+      .expect(200);
+    await agent
+      .post('/api/auth/organization/create')
+      .set('Origin', frontend)
+      .send({ name: ' ', slug: 'Invalid Code' })
+      .expect(400);
+    const before = await agent.get('/api/auth/get-session').expect(200);
+    const created = await agent
+      .post('/api/auth/organization/create')
+      .set('Origin', frontend)
+      .send({
+        name: 'Second Org',
+        slug: 'second-org',
+        keepCurrentActiveOrganization: true,
+      })
+      .expect(200);
+    expect(created.body.members[0].role).toBe('owner');
+    for (const data of [{ name: ' ' }, { slug: 'Invalid Code' }]) {
+      await agent
+        .post('/api/auth/organization/update')
+        .set('Origin', frontend)
+        .send({ organizationId: created.body.id, data })
+        .expect(400);
+    }
+    const updated = await agent
+      .post('/api/auth/organization/update')
+      .set('Origin', frontend)
+      .send({
+        organizationId: created.body.id,
+        data: { name: ' Updated Org ' },
+      })
+      .expect(200);
+    expect(updated.body.name).toBe('Updated Org');
+    expect(updated.body.slug).toBe('second-org');
+    const after = await agent.get('/api/auth/get-session').expect(200);
+    expect(after.body.session.activeOrganizationId).toBe(
+      before.body.session.activeOrganizationId,
+    );
+  });
+
+  it('invites registered users only, enforces company permissions, and requires acceptance by the recipient', async () => {
+    const owner = request.agent(app.getHttpServer());
+    await owner
+      .post('/api/auth/sign-in/email')
+      .set('Origin', frontend)
+      .send({ email: 'test@example.com', password: 'New-strong-password-123' })
+      .expect(200);
+    const recipient = request.agent(app.getHttpServer());
+    await loginAccount(recipient, 'other@example.com');
+    const before = invitationEmail.mock.calls.length;
+    await owner
+      .post('/api/auth/organization/invite-member')
+      .set('Origin', frontend)
+      .send({ organizationId, email: 'missing@example.com', role: 'member' })
+      .expect(400);
+    expect(invitationEmail).toHaveBeenCalledTimes(before);
+    await recipient
+      .post('/api/auth/organization/invite-member')
+      .set('Origin', frontend)
+      .send({ organizationId, email: 'pending@example.com', role: 'member' })
+      .expect(400);
+    const result = await owner
+      .post('/api/auth/organization/invite-member')
+      .set('Origin', frontend)
+      .send({ organizationId, email: 'other@example.com', role: 'member' })
+      .expect(200);
+    const id = result.body.id;
+    expect(invitationEmail).toHaveBeenLastCalledWith(
+      'other@example.com',
+      'Test Org',
+      id,
+    );
+    await owner
+      .get('/api/auth/organization/get-invitation?id=' + id)
+      .expect(403);
+    await recipient
+      .get('/api/auth/organization/get-invitation?id=' + id)
+      .expect(200);
+    await recipient
+      .post('/api/auth/organization/accept-invitation')
+      .set('Origin', frontend)
+      .send({ invitationId: id })
+      .expect(200);
+    await recipient
+      .post('/api/auth/organization/accept-invitation')
+      .set('Origin', frontend)
+      .send({ invitationId: id })
+      .expect(400);
+    await recipient
+      .post('/api/auth/organization/invite-member')
+      .set('Origin', frontend)
+      .send({ organizationId, email: 'pending@example.com', role: 'member' })
+      .expect(403);
+    const organizations = await recipient
+      .get('/api/auth/organization/list')
+      .expect(200);
+    expect(
+      organizations.body.map((company: { id: string }) => company.id),
+    ).toContain(organizationId);
+  });
+
+  it('rechecks registered status on resend and rejects cancelled and expired invitations', async () => {
+    const owner = request.agent(app.getHttpServer());
+    await owner
+      .post('/api/auth/sign-in/email')
+      .set('Origin', frontend)
+      .send({ email: 'test@example.com', password: 'New-strong-password-123' })
+      .expect(200);
+    const payload = {
+      organizationId,
+      email: 'pending@example.com',
+      role: 'member',
+    };
+    const invited = await owner
+      .post('/api/auth/organization/invite-member')
+      .set('Origin', frontend)
+      .send(payload)
+      .expect(200);
+    const user = database.user.find((user) => user.email === payload.email)!;
+    user.deletedAt = new Date();
+    const before = invitationEmail.mock.calls.length;
+    await owner
+      .post('/api/auth/organization/invite-member')
+      .set('Origin', frontend)
+      .send({ ...payload, resend: true })
+      .expect(400);
+    expect(invitationEmail).toHaveBeenCalledTimes(before);
+    delete user.deletedAt;
+    await owner
+      .post('/api/auth/organization/invite-member')
+      .set('Origin', frontend)
+      .send({ ...payload, resend: true })
+      .expect(200);
+    await owner
+      .post('/api/auth/organization/cancel-invitation')
+      .set('Origin', frontend)
+      .send({ invitationId: invited.body.id })
+      .expect(200);
+    const recipient = request.agent(app.getHttpServer());
+    await loginAccount(recipient, payload.email);
+    await recipient
+      .post('/api/auth/organization/accept-invitation')
+      .set('Origin', frontend)
+      .send({ invitationId: invited.body.id })
+      .expect(400);
+    const again = await owner
+      .post('/api/auth/organization/invite-member')
+      .set('Origin', frontend)
+      .send(payload)
+      .expect(200);
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(Date.now() + 48 * 3600_000 + 1000);
+      await loginAccount(recipient, payload.email);
+      await recipient
+        .post('/api/auth/organization/accept-invitation')
+        .set('Origin', frontend)
+        .send({ invitationId: again.body.id })
+        .expect(400);
     } finally {
       vi.useRealTimers();
     }
