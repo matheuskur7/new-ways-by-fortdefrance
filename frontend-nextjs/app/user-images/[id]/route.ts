@@ -15,7 +15,7 @@ export async function GET(
   if (!cookie) return new Response(null, { status: 401, headers })
   try {
     const response = await fetch(
-      `${getBackendUrl()}/images/user-images/${parsed.data}/download-url`,
+      `${getBackendUrl()}/user-images/${parsed.data}/download-url`,
       {
         headers: { cookie },
         cache: "no-store",

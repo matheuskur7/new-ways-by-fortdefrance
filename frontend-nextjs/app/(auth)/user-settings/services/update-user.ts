@@ -17,7 +17,7 @@ export async function updateUser(data: UpdateUserData) {
     userSettingsSchema.parse(data)
   if (data.image) {
     const upload = imageUploadSchema.parse(
-      (await api.post("/images/upload-url", { key: "user-image" })).data
+      (await api.post("/user-images/upload-url", { key: "user-image" })).data
     )
     const response = await fetch(upload.url, {
       method: upload.method,
@@ -28,18 +28,18 @@ export async function updateUser(data: UpdateUserData) {
     if (!response.ok)
       throw new Error("Não foi possível enviar a foto. Tente novamente.")
     const complete = completedImageSchema.parse(
-      (await api.post(`/images/${upload.id}/complete`)).data
+      (await api.post(`/user-images/${upload.id}/complete`)).data
     )
     if (complete.id !== upload.id)
       throw new Error("Confirmação de imagem inválida.")
     userUpdateResponseSchema.parse(
-      (await api.post(`/images/user-images/${upload.id}/attach`, payload)).data
+      (await api.post(`/user-images/${upload.id}/attach`, payload)).data
     )
     return
   }
   if (data.removeImage) {
     userUpdateResponseSchema.parse(
-      (await api.delete("/images/user-images/current", { data: payload })).data
+      (await api.delete("/user-images/current", { data: payload })).data
     )
     return
   }

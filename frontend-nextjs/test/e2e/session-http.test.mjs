@@ -17,7 +17,7 @@ const fixture = {
 // Somente o backend é simulado; as páginas e redirects são do Next.js real.
 const backend = createServer((req, res) => {
   const url = new URL(req.url, "http://localhost")
-  if (url.pathname.startsWith("/images/user-images/")) {
+  if (url.pathname.startsWith("/user-images/")) {
     res.setHeader("Content-Type", "application/json")
     if (req.headers.cookie !== "session=valid") {
       res.writeHead(403).end()

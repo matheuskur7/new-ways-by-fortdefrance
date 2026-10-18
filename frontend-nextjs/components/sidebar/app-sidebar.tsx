@@ -1,7 +1,6 @@
 "use client"
 
-import { useState } from "react"
-import Image from "next/image"
+import { UserImage } from "@/components/user-image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -146,7 +145,6 @@ function UserDropdown({ user }: { user: AuthSession["user"] }) {
   const pendingSelections = useIsMutating({
     mutationKey: ["enter-organization"],
   })
-  const [failedImage, setFailedImage] = useState<string | null>(null)
   const names = user.name.trim().split(/\s+/)
   const displayName =
     names.length > 1 ? `${names[0]} ${names.at(-1)}` : user.name
@@ -168,22 +166,16 @@ function UserDropdown({ user }: { user: AuthSession["user"] }) {
           }
         >
           <span className="flex size-10 shrink-0 items-center justify-center rounded-md border bg-background transition-[width,height] duration-200 ease-in-out group-data-[collapsible=icon]:size-8 motion-reduce:transition-none">
-            {user.image && user.image !== failedImage ? (
-              <Image
-                src={user.image}
-                alt=""
-                width={40}
-                height={40}
-                unoptimized
-                className="size-full rounded-md object-cover"
-                onError={() => setFailedImage(user.image ?? null)}
-              />
-            ) : (
-              <UserRound
-                className="size-5! transition-[width,height] duration-200 ease-in-out group-data-[collapsible=icon]:size-4! motion-reduce:transition-none"
-                aria-hidden="true"
-              />
-            )}
+            <UserImage
+              src={user.image}
+              size={40}
+              fallback={
+                <UserRound
+                  className="size-5! transition-[width,height] duration-200 ease-in-out group-data-[collapsible=icon]:size-4! motion-reduce:transition-none"
+                  aria-hidden="true"
+                />
+              }
+            />
           </span>
           <span className="grid max-w-40 min-w-0 flex-1 overflow-hidden text-left whitespace-nowrap opacity-100 transition-[max-width,opacity] duration-200 ease-in-out group-data-[collapsible=icon]:max-w-0 group-data-[collapsible=icon]:opacity-0 motion-reduce:transition-none">
             <span className="truncate text-sm leading-tight font-medium transition-[font-size] duration-200 ease-in-out group-data-[collapsible=icon]:text-[0px] motion-reduce:transition-none">
@@ -213,19 +205,11 @@ function UserDropdown({ user }: { user: AuthSession["user"] }) {
         <DropdownMenuGroup>
           <DropdownMenuLabel className="flex items-center gap-2">
             <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-background text-foreground">
-              {user.image && user.image !== failedImage ? (
-                <Image
-                  src={user.image}
-                  alt=""
-                  width={40}
-                  height={40}
-                  unoptimized
-                  className="size-full object-cover"
-                  onError={() => setFailedImage(user.image ?? null)}
-                />
-              ) : (
-                <UserRound className="size-5" aria-hidden="true" />
-              )}
+              <UserImage
+                src={user.image}
+                size={40}
+                fallback={<UserRound className="size-5" aria-hidden="true" />}
+              />
             </span>
             <span className="grid min-w-0 gap-1">
               <span className="truncate text-foreground">{user.name}</span>
@@ -235,7 +219,6 @@ function UserDropdown({ user }: { user: AuthSession["user"] }) {
           <DropdownMenuSeparator />
           <DropdownMenuItem
             render={<Link href="/user-settings" />}
-            className="cursor-pointer"
             onClick={() => setOpenMobile(false)}
           >
             <UserRoundCog aria-hidden="true" />
@@ -244,7 +227,6 @@ function UserDropdown({ user }: { user: AuthSession["user"] }) {
           <DropdownMenuSeparator />
           <DropdownMenuItem
             render={<Link href="/organizations" />}
-            className="cursor-pointer"
             onClick={() => setOpenMobile(false)}
           >
             <Building2 aria-hidden="true" />

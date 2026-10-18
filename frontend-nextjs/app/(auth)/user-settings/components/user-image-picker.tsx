@@ -1,6 +1,6 @@
 "use client"
 
-import Image from "next/image"
+import { UserImage } from "@/components/user-image"
 import { useEffect, useRef, useState } from "react"
 import { Pencil, Trash2, UserRound } from "lucide-react"
 import { IconButton } from "@/components/ui/icon-button"
@@ -21,7 +21,6 @@ export function UserImagePicker({
   const [cropSource, setCropSource] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<string | null>(null)
-  const [failedImage, setFailedImage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [removed, setRemoved] = useState(false)
   const source = removed ? null : (preview ?? image)
@@ -40,36 +39,41 @@ export function UserImagePicker({
 
   return (
     <div className="shrink-0">
-      <div className="relative size-14">
-        <span className="flex size-full items-center justify-center overflow-hidden rounded-lg border bg-background">
-          {source && source !== failedImage ? (
-            <Image
-              src={source}
-              alt="Sua foto de perfil"
-              width={56}
-              height={56}
-              unoptimized
-              className="size-full object-cover"
-              onError={() => {
-                setFailedImage(source)
-                if (preview)
-                  setError("Não foi possível abrir esta imagem. Escolha outra.")
-              }}
-            />
-          ) : (
-            <UserRound className="size-7" aria-hidden="true" />
-          )}
+      <div className="flex w-fit overflow-hidden rounded-lg border bg-background">
+        <span className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-lg">
+          <UserImage
+            src={source}
+            size={56}
+            alt="Sua foto de perfil"
+            fallback={<UserRound className="size-7" aria-hidden="true" />}
+            onError={() => {
+              if (preview)
+                setError("Não foi possível abrir esta imagem. Escolha outra.")
+            }}
+          />
         </span>
-        {source && (
+        <div className="grid h-14 w-6 grid-rows-2 divide-y">
+          <IconButton
+            ref={editButtonRef}
+            label="Alterar foto de perfil"
+            type="button"
+            size="icon-xs"
+            tooltipSide="right"
+            variant="ghost"
+            className="h-full w-full rounded-md"
+            disabled={disabled}
+            onClick={() => inputRef.current?.click()}
+          >
+            <Pencil aria-hidden="true" />
+          </IconButton>
           <IconButton
             label="Remover foto de perfil"
             type="button"
             size="icon-xs"
-            tooltipSide="bottom"
-            variant="outline"
-            className="absolute -bottom-1 -left-1 rounded-full text-muted-foreground shadow-sm hover:text-destructive"
-            disabled={disabled}
-            aria-describedby="user-image-description"
+            tooltipSide="right"
+            variant="ghost"
+            className="h-full w-full rounded-md text-muted-foreground hover:text-destructive"
+            disabled={disabled || !source}
             onClick={() => {
               setPreview(null)
               setRemoved(true)
@@ -78,21 +82,7 @@ export function UserImagePicker({
           >
             <Trash2 aria-hidden="true" />
           </IconButton>
-        )}
-        <IconButton
-          ref={editButtonRef}
-          label="Alterar foto de perfil"
-          type="button"
-          size="icon-xs"
-          tooltipSide="bottom"
-          variant="outline"
-          className="absolute -right-1 -bottom-1 rounded-full shadow-sm"
-          disabled={disabled}
-          aria-describedby="user-image-description"
-          onClick={() => inputRef.current?.click()}
-        >
-          <Pencil aria-hidden="true" />
-        </IconButton>
+        </div>
       </div>
       <input
         ref={inputRef}
@@ -109,7 +99,6 @@ export function UserImagePicker({
             return
           }
           setError(null)
-          setFailedImage(null)
           setCropSource(URL.createObjectURL(file))
         }}
       />

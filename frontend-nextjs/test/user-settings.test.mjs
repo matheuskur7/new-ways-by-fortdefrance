@@ -48,7 +48,7 @@ function setup({
   const calls = []
   mock.method(api, "post", async (path, data) => {
     calls.push({ path, data })
-    if (path === "/images/upload-url")
+    if (path === "/user-images/upload-url")
       return {
         data: {
           id,
@@ -57,11 +57,11 @@ function setup({
           headers,
         },
       }
-    if (path === `/images/${id}/complete`)
+    if (path === `/user-images/${id}/complete`)
       return { data: { id, status: completeStatus } }
     if (
       path === "/api/auth/update-user" ||
-      path === `/images/user-images/${id}/attach`
+      path === `/user-images/${id}/attach`
     )
       return { data: { status: true } }
     throw new Error("Requisição inesperada")
@@ -87,10 +87,10 @@ test("envia a foto diretamente ao S3, confirma e só então salva uma referênci
   assert.deepEqual(
     calls.map(({ path }) => path),
     [
-      "/images/upload-url",
+      "/user-images/upload-url",
       signed,
-      `/images/${id}/complete`,
-      `/images/user-images/${id}/attach`,
+      `/user-images/${id}/complete`,
+      `/user-images/${id}/attach`,
     ]
   )
   assert.deepEqual(calls[0].data, { key: "user-image" })
@@ -128,13 +128,13 @@ test("respeita o PUT simples retornado para Magalu sem inventar headers condicio
   const calls = setup({ headers: {} })
   await updateUser({ name: "Admin", image: photo })
   assert.deepEqual(calls[1].options.headers, { "Content-Type": "image/png" })
-  assert.equal(calls.at(-1).path, `/images/user-images/${id}/attach`)
+  assert.equal(calls.at(-1).path, `/user-images/${id}/attach`)
 })
 
 test("remove a foto sem upload e envia o nome junto ao endpoint de remoção", async () => {
   const calls = setup()
   const deletion = mock.method(api, "delete", async (path, options) => {
-    assert.equal(path, "/images/user-images/current")
+    assert.equal(path, "/user-images/current")
     assert.deepEqual(options.data, { name: "Admin" })
     return { data: { status: true } }
   })

@@ -5,7 +5,7 @@ import { buttonVariants } from "@/components/ui/button"
 import { UserSettingsForm } from "./components/user-settings-form"
 
 export default async function SettingsPage() {
-  const { user, session } = await requireSession()
+  const { user } = await requireSession()
   return (
     <div className="flex flex-1 animate-in flex-col gap-6 duration-300 fade-in-0 motion-reduce:animate-none">
       <Link
@@ -26,10 +26,7 @@ export default async function SettingsPage() {
           Seus dados pessoais e informações da conta.
         </p>
       </header>
-      <UserSettingsForm
-        user={user}
-        hasActiveOrganization={Boolean(session.activeOrganizationId)}
-      />
+      <UserSettingsForm user={user} />
     </div>
   )
 }
