@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import type { Request, Response } from 'express';
-import { UserImageLifecycleService } from './user-image-lifecycle.service.js';
 import {
   Body,
   Controller,
@@ -40,10 +39,7 @@ const attachUserImageSchema = z.strictObject({ name: z.string().trim().min(1).ma
 @UseGuards(AuthGuard)
 @Controller('images/user-images')
 export class UserImagesController {
-  constructor(
-    @Inject(UserImagesService) private readonly images: UserImagesService,
-    @Inject(UserImageLifecycleService) private readonly lifecycle: UserImageLifecycleService,
-  ) {}
+  constructor(@Inject(UserImagesService) private readonly images: UserImagesService) {}
 
   @Delete('current')
   @HttpCode(200)
@@ -56,7 +52,7 @@ export class UserImagesController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const result = await this.lifecycle.remove(body.name, session, request.headers);
+    const result = await this.images.remove(body.name, session, request.headers);
     for (const cookie of result.headers.getSetCookie()) response.append('Set-Cookie', cookie);
     return result.response;
   }
@@ -74,7 +70,7 @@ export class UserImagesController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const result = await this.lifecycle.attach(params.id, body.name, session, request.headers);
+    const result = await this.images.attach(params.id, body.name, session, request.headers);
     for (const cookie of result.headers.getSetCookie()) response.append('Set-Cookie', cookie);
     return result.response;
   }

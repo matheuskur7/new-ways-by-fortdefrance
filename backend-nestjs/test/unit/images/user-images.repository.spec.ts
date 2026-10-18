@@ -68,4 +68,17 @@ describe('UserImagesRepository: exclusão segura', () => {
     ).resolves.toBe(false);
     expect(remove).not.toHaveBeenCalled();
   });
+  it.each(['findById', 'withImage', 'findCleanupCandidates'] as const)(
+    '%s limita a consulta à empresa e ao prefixo de usuário',
+    async (method) => {
+      if (method === 'findById') await repository.findById('org-test', id);
+      else if (method === 'withImage')
+        await repository.withImage('org-test', id, async () => undefined);
+      else await repository.findCleanupCandidates('org-test', new Date());
+      const call = query.mock.calls.find(([statement]) => statement.text.startsWith('select'))!;
+      expect(call[1]).toEqual(expect.arrayContaining(['org-test', 'user-image']));
+      expect(call[0].text).toContain('"images"."organization_id"');
+      expect(call[0].text).toContain('"images"."key_prefix"');
+    },
+  );
 });

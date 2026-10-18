@@ -127,6 +127,8 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       .useValue(repository)
       .overrideProvider(UserImagesRepository)
       .useValue({
+        findById: repository.findById,
+        findCleanupCandidates: vi.fn().mockResolvedValue([]),
         withImage: async (
           orgId: string,
           id: string,

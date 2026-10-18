@@ -8,6 +8,21 @@ import type { Image } from '../../../shared/database/schemas/index.js';
 export class UserImagesRepository {
   constructor(@Inject(DatabaseService) private readonly database: DatabaseService) {}
 
+  async findById(organizationId: string, id: string) {
+    const [image] = await this.database.db
+      .select()
+      .from(images)
+      .where(
+        and(
+          eq(images.organizationId, organizationId),
+          eq(images.id, id),
+          eq(images.keyPrefix, 'user-image'),
+        ),
+      )
+      .limit(1);
+    return image;
+  }
+
   async withImage<T>(
     organizationId: string,
     id: string,
@@ -17,21 +32,19 @@ export class UserImagesRepository {
       const [image] = await tx
         .select()
         .from(images)
-        .where(and(eq(images.organizationId, organizationId), eq(images.id, id)))
+        .where(
+          and(
+            eq(images.organizationId, organizationId),
+            eq(images.id, id),
+            eq(images.keyPrefix, 'user-image'),
+          ),
+        )
         .for('update');
       return action(image);
     });
   }
 
-  // O job enumera empresas; cada consulta e exclusão de imagens usa o escopo correspondente.
-  async listOrganizationsForCleanup(cutoff: Date) {
-    return this.database.db
-      .selectDistinct({ organizationId: images.organizationId })
-      .from(images)
-      .where(and(eq(images.keyPrefix, 'user-image'), lt(images.createdAt, cutoff)));
-  }
-
-  async findAbandoned(organizationId: string, cutoff: Date) {
+  async findCleanupCandidates(organizationId: string, cutoff: Date) {
     return this.database.db
       .select({ id: images.id })
       .from(images)
@@ -81,7 +94,13 @@ export class UserImagesRepository {
       await removeObject(image.key);
       await tx
         .delete(images)
-        .where(and(eq(images.organizationId, organizationId), eq(images.id, id)));
+        .where(
+          and(
+            eq(images.organizationId, organizationId),
+            eq(images.id, id),
+            eq(images.keyPrefix, 'user-image'),
+          ),
+        );
       return true;
     });
   }
