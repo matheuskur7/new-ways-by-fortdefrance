@@ -1,4 +1,4 @@
-import { UserImagesRepository } from '../../src/modules/images/user-images/user-images.repository.js';
+import { UserImagesRepository } from '../../src/modules/user-images/user-images.repository.js';
 import 'reflect-metadata';
 import { Test } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
@@ -37,15 +37,15 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
   };
   const records = new Map<string, Record<string, unknown>>();
   const repository = {
-    create: vi.fn(async (orgId: string, prefix: string) => {
+    create: vi.fn(async (userId: string) => {
       // Simula o DEFAULT uuidv7() do PostgreSQL.
       const id = '019a1234-5678-7000-8000-123456789abc';
       const row = {
         id,
-        organizationId: orgId,
-        keyPrefix: prefix,
+        userId,
+        importedKey: null,
         createdAt: new Date(),
-        key: `images/${orgId}/${prefix}/${id}`,
+        key: `user-image/${userId}/${id}`,
         contentType: null,
         size: null,
         status: 'pending',
@@ -53,14 +53,14 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       records.set(id, row);
       return row;
     }),
-    findById: vi.fn(async (orgId: string, id: string) => {
+    findById: vi.fn(async (userId: string, id: string) => {
       const row = records.get(id);
-      return row?.organizationId === orgId ? row : undefined;
+      return row?.userId === userId ? row : undefined;
     }),
     markReady: vi.fn(
-      async (orgId: string, id: string, metadata: { contentType: string; size: number }) => {
+      async (userId: string, id: string, metadata: { contentType: string; size: number }) => {
         const row = records.get(id);
-        if (row?.organizationId !== orgId) return undefined;
+        if (row?.userId !== userId) return undefined;
         Object.assign(row, metadata, { status: 'ready' });
         return row;
       },
@@ -128,14 +128,16 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       .overrideProvider(UserImagesRepository)
       .useValue({
         findById: repository.findById,
+        create: repository.create,
+        markReady: repository.markReady,
         findCleanupCandidates: vi.fn().mockResolvedValue([]),
         withImage: async (
-          orgId: string,
+          userId: string,
           id: string,
           action: (image: Record<string, unknown> | undefined) => Promise<unknown>,
         ) => {
           const row = records.get(id);
-          return action(row?.organizationId === orgId ? row : undefined);
+          return action(row?.userId === userId ? row : undefined);
         },
         deleteUnreferenced: vi.fn().mockResolvedValue(false),
       })
@@ -164,7 +166,8 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
     await request(app.getHttpServer()).get('/api/auth/ok').expect(200);
     const response = await request(app.getHttpServer()).get('/openapi.json').expect(200);
     expect(
-      response.body.paths['/images/upload-url'].post.requestBody.content['application/json'].schema,
+      response.body.paths['/user-images/upload-url'].post.requestBody.content['application/json']
+        .schema,
     ).toMatchObject({
       required: ['key'],
     });
@@ -180,9 +183,9 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
 
   it('exige sessão e permite CORS com cookies somente para a origem configurada', async () => {
     await request(app.getHttpServer()).get('/organizations').expect(401);
-    await request(app.getHttpServer()).post('/images/upload-url').send({}).expect(401);
+    await request(app.getHttpServer()).post('/user-images/upload-url').send({}).expect(401);
     await request(app.getHttpServer())
-      .get('/images/user-images/019a1234-5678-7000-8000-123456789abc/download-url')
+      .get('/user-images/019a1234-5678-7000-8000-123456789abc/download-url')
       .expect(401);
     const response = await request(app.getHttpServer())
       .options('/api/auth/sign-in/email')
@@ -193,7 +196,7 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
     expect(response.headers['access-control-allow-credentials']).toBe('true');
   });
 
-  it('cadastra e autentica com cookie, rejeita senha inválida e exige organização ativa', async () => {
+  it('cadastra e autentica com cookie, rejeita senha inválida e permite foto sem empresa', async () => {
     const signup = await owner
       .post('/api/auth/sign-up/email')
       .set('Origin', 'http://localhost:3000')
@@ -208,8 +211,8 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
     const session = await owner.get('/api/auth/get-session').expect(200);
     expect(session.body.user.email).toBe('owner@example.com');
     await owner.get('/organizations').expect(200).expect([]);
-    await owner.post('/images/upload-url').send({}).expect(400);
-    await owner.post('/images/upload-url').send({ key: 'user-image' }).expect(403);
+    await owner.post('/user-images/upload-url').send({}).expect(400);
+    await owner.post('/user-images/upload-url').send({ key: 'user-image' }).expect(201);
     await request(app.getHttpServer())
       .post('/api/auth/sign-in/email')
       .send({ email: 'owner@example.com', password: 'wrong-password' })
@@ -266,9 +269,9 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       // Passa do vencimento original: o cookie renovado ainda permite autenticar.
       vi.setSystemTime(new Date(now.getTime() + 90 * 60 * 1000));
       const protectedResponse = await agent
-        .post('/images/upload-url')
+        .post('/user-images/upload-url')
         .send({ key: 'user-image' })
-        .expect(403); // Sessão válida, mas sem organização ativa.
+        .expect(201); // Foto pessoal independe de organização ativa.
       expect(protectedResponse.headers['set-cookie']).toEqual(
         expect.arrayContaining([expect.stringContaining('Max-Age=7200')]),
       );
@@ -279,7 +282,7 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       ).toBe(otherExpiry);
 
       vi.setSystemTime(new Date(Date.now() + 7_200_001));
-      await agent.post('/images/upload-url').send({ key: 'user-image' }).expect(401);
+      await agent.post('/user-images/upload-url').send({ key: 'user-image' }).expect(401);
       expect(store.session.find((entry) => entry.id === current.id)).toBeUndefined();
     } finally {
       vi.useRealTimers();
@@ -287,47 +290,52 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
   });
 
   it('valida JSON e parâmetros com Zod após autenticar', async () => {
-    await owner.post('/images/upload-url').send({ key: 'car-image' }).expect(400);
-    await owner.post('/images/upload-url').send({ key: 'car-image/rear' }).expect(400);
-    await owner.post('/images/upload-url').send({ key: 'user-image', size: 100 }).expect(400);
-    await owner.post('/images/upload-url').send({ key: 'user-image', id: 'custom' }).expect(400);
-    await owner.get('/images/invalid/download-url').expect(400);
+    vi.clearAllMocks();
+    await owner.post('/images/upload-url').send({ key: 'user-image' }).expect(400);
+    await owner.post('/user-images/upload-url').send({ key: 'car-image' }).expect(400);
+    await owner.post('/user-images/upload-url').send({ key: 'car-image/rear' }).expect(400);
+    await owner.post('/user-images/upload-url').send({ key: 'user-image', size: 100 }).expect(400);
+    await owner
+      .post('/user-images/upload-url')
+      .send({ key: 'user-image', id: 'custom' })
+      .expect(400);
+    await owner.get('/user-images/invalid/download-url').expect(400);
     expect(storage.presignUpload).not.toHaveBeenCalled();
     expect(repository.findById).not.toHaveBeenCalled();
   });
 
-  it('executa upload, confirmação e leitura no escopo da organização', async () => {
+  it('executa upload, confirmação e leitura no escopo do usuário', async () => {
     const input = { key: 'user-image' };
-    const upload = await owner.post('/images/upload-url').send(input).expect(201);
+    const upload = await owner.post('/user-images/upload-url').send(input).expect(201);
     imageId = upload.body.id;
     expect(upload.body.status).toBe('pending');
     expect(imageId).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
     );
     expect(storage.presignUpload).toHaveBeenCalledWith(
-      `images/${organizationId}/user-image/${imageId}`,
+      `user-image/${store.user.find((entry) => entry.email === 'owner@example.com')!.id}/${imageId}`,
     );
-    await owner.get(`/images/${imageId}/download-url`).expect(400);
-    await owner.get(`/images/user-images/${imageId}/download-url`).expect(400);
+    await owner.get(`/user-images/${imageId}/download-url`).expect(400);
+    await owner.get(`/user-images/${imageId}/download-url`).expect(400);
     storage.head.mockResolvedValue({
       ContentLength: 100,
       ContentType: 'image/png',
     });
-    await owner.post(`/images/${imageId}/complete`).expect(200);
-    const download = await owner.get(`/images/${imageId}/download-url`).expect(200);
+    await owner.post(`/user-images/${imageId}/complete`).expect(200);
+    const download = await owner.get(`/user-images/${imageId}/download-url`).expect(200);
     expect(download.body.url).toBe('https://s3.example.com/download');
   });
 
   it('libera leitura da foto por 12 horas e atualiza nome e imagem pela rota nativa', async () => {
-    const photo = await owner.get(`/images/user-images/${imageId}/download-url`).expect(200);
+    const photo = await owner.get(`/user-images/${imageId}/download-url`).expect(200);
     expect(photo.body.expiresIn).toBe(43200);
     expect(storage.presignDownload).toHaveBeenLastCalledWith(
-      `images/${organizationId}/user-image/${imageId}`,
+      `user-image/${store.user.find((entry) => entry.email === 'owner@example.com')!.id}/${imageId}`,
       43200,
     );
     const image = `http://localhost:3000/user-images/${imageId}`;
     await owner
-      .post(`/images/user-images/${imageId}/attach`)
+      .post(`/user-images/${imageId}/attach`)
       .set('Origin', 'http://localhost:3000')
       .send({ name: 'Owner atualizado' })
       .expect(200);
@@ -337,9 +345,31 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
     expect(session.body.user.email).toBe('owner@example.com');
   });
 
+  it('mantém a foto e permite remoção sem empresa ativa', async () => {
+    const profile = store.user.find((entry) => entry.email === 'owner@example.com')!;
+    const session = store.session.find((entry) => entry.userId === profile.id)!;
+    const activeOrganizationId = session.activeOrganizationId;
+    session.activeOrganizationId = null;
+    try {
+      await owner.get(`/user-images/${imageId}/download-url`).expect(200);
+      await owner
+        .post(`/user-images/${imageId}/attach`)
+        .set('Origin', 'http://localhost:3000')
+        .send({ name: 'Owner atualizado' })
+        .expect(200);
+      await owner
+        .delete('/user-images/current')
+        .set('Origin', 'http://localhost:3000')
+        .send({ name: 'Owner atualizado' })
+        .expect(200);
+    } finally {
+      session.activeOrganizationId = activeOrganizationId;
+    }
+  });
+
   it('remove a foto pelo endpoint de imagens sem alterar o e-mail', async () => {
     await owner
-      .delete('/images/user-images/current')
+      .delete('/user-images/current')
       .set('Origin', 'http://localhost:3000')
       .send({ name: 'Owner atualizado' })
       .expect(200);
@@ -369,8 +399,8 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       .set('Origin', 'http://localhost:3000')
       .send({ organizationId: foreignOrganizationId })
       .expect(200);
-    await outsider.get(`/images/${imageId}/download-url`).expect(404);
-    await outsider.get(`/images/user-images/${imageId}/download-url`).expect(404);
+    await outsider.get(`/user-images/${imageId}/download-url`).expect(404);
+    await outsider.get(`/user-images/${imageId}/download-url`).expect(404);
     const ownOrganizations = await owner.get('/organizations').expect(200);
     expect(ownOrganizations.body).toEqual([
       { id: organizationId, name: 'Owner Org', slug: 'owner-org', role: 'owner' },
@@ -383,7 +413,7 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
     expect(outsiderOrganizations.body).toEqual([
       { id: foreignOrganizationId, name: 'Other Org', slug: 'other-org', role: 'owner' },
     ]);
-    await outsider.post(`/images/${imageId}/complete`).expect(404);
+    await outsider.post(`/user-images/${imageId}/complete`).expect(404);
     await outsider
       .post('/api/auth/organization/set-active')
       .set('Origin', 'http://localhost:3000')
@@ -412,7 +442,12 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       .set('Origin', 'http://localhost:3000')
       .send({ email: 'third@example.com', role: 'admin', organizationId })
       .expect(403);
-    await outsider.get(`/images/${imageId}/download-url`).expect(200);
+    await outsider.get(`/user-images/${imageId}/download-url`).expect(404);
+    await outsider
+      .post(`/user-images/${imageId}/attach`)
+      .set('Origin', 'http://localhost:3000')
+      .send({ name: 'Other' })
+      .expect(404);
     const organizations = await outsider.get('/organizations').expect(200);
     expect(organizations.body).toEqual(
       expect.arrayContaining([
@@ -430,7 +465,12 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       .set('Origin', 'http://localhost:3000')
       .send({ memberIdOrEmail: otherMember.id, organizationId })
       .expect(200);
-    await outsider.get(`/images/${imageId}/download-url`).expect(403);
+    await outsider.get(`/user-images/${imageId}/download-url`).expect(404);
+    await outsider
+      .post(`/user-images/${imageId}/attach`)
+      .set('Origin', 'http://localhost:3000')
+      .send({ name: 'Other' })
+      .expect(404);
     const organizations = await outsider.get('/organizations').expect(200);
     expect(organizations.body).not.toEqual(
       expect.arrayContaining([expect.objectContaining({ id: organizationId })]),
@@ -440,7 +480,7 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       .set('Origin', 'http://localhost:3000')
       .send({})
       .expect(200);
-    await owner.get(`/images/${imageId}/download-url`).expect(401);
+    await owner.get(`/user-images/${imageId}/download-url`).expect(401);
   });
 
   it('rejeita origens não confiáveis em operações de autenticação', async () => {

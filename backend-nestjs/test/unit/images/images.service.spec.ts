@@ -10,11 +10,12 @@ import { StorageService } from '../../../src/shared/storage/storage.service.js';
 import { ImagesRepository } from '../../../src/modules/images/images.repository.js';
 import { ImagesService } from '../../../src/modules/images/images.service.js';
 
-const dto = { key: 'user-image' as const };
+import type { UploadImageDto } from '../../../src/modules/images/dto/images.dto.js';
+const dto = { key: 'test-image' } as UploadImageDto;
 const image: Image = {
   id: '019a1234-5678-7000-8000-123456789abc',
-  keyPrefix: 'user-image',
-  key: 'images/org-test/user-image/019a1234-5678-7000-8000-123456789abc',
+  keyPrefix: 'test-image',
+  key: 'images/org-test/test-image/019a1234-5678-7000-8000-123456789abc',
   contentType: null,
   size: null,
   status: 'pending',
@@ -69,7 +70,7 @@ describe('ImagesService', () => {
       expiresIn: 300,
       headers: { 'If-None-Match': '*' },
     });
-    expect(repository.create).toHaveBeenCalledWith('org-test', 'user-image');
+    expect(repository.create).toHaveBeenCalledWith('org-test', 'test-image');
     expect(storage.presignUpload).toHaveBeenCalledWith(image.key);
     expect(repository.create.mock.invocationCallOrder[0]).toBeLessThan(
       storage.presignUpload.mock.invocationCallOrder[0],

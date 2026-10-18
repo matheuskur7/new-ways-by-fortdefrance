@@ -1,8 +1,9 @@
 import { sql } from 'drizzle-orm';
-import { check, integer, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { check, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { organization } from './organization.schema.js';
 
-export const imageStatus = pgEnum('image_status', ['pending', 'ready']);
+import { imageStatus } from './image-status.js';
+export { imageStatus } from './image-status.js';
 
 export const images = pgTable(
   'images',

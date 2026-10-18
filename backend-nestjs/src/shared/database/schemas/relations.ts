@@ -1,9 +1,11 @@
+import { userImages } from './user-images.schema.js';
 import { relations } from 'drizzle-orm';
 import { user, session, account } from './auth.schema.js';
 import { organization, member, invitation } from './organization.schema.js';
 
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
+  images: many(userImages),
   accounts: many(account),
   members: many(member),
   invitations: many(invitation),
@@ -50,4 +52,8 @@ export const invitationRelations = relations(invitation, ({ one }) => ({
     fields: [invitation.inviterId],
     references: [user.id],
   }),
+}));
+
+export const userImageRelations = relations(userImages, ({ one }) => ({
+  user: one(user, { fields: [userImages.userId], references: [user.id] }),
 }));

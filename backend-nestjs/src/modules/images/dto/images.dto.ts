@@ -4,7 +4,7 @@ import { IMAGE_KEYS } from '../../../shared/storage/image-keys.js';
 export const uploadImageSchema = z.strictObject({
   key: z
     .enum(IMAGE_KEYS)
-    .describe('Pasta/prefixo da imagem no S3. Por enquanto, apenas user-image.'),
+    .describe('Prefixo de imagem de empresa. Nenhum prefixo habilitado atualmente.'),
 });
 export type UploadImageDto = z.infer<typeof uploadImageSchema>;
 

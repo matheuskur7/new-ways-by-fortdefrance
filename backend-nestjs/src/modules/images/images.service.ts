@@ -2,9 +2,9 @@ import type { AuthSession } from '../auth/auth.factory.js';
 import { OrganizationAccessService } from '../organization/organization-access.service.js';
 import { Inject, BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { S3ServiceException } from '@aws-sdk/client-s3';
 import type { Environment } from '../../shared/config/env.js';
 import type { Image } from '../../shared/database/schemas/index.js';
+import { inspectUploadedImage } from '../../shared/storage/inspect-uploaded-image.js';
 import { StorageService } from '../../shared/storage/storage.service.js';
 import { ImagesRepository } from './images.repository.js';
 import type { UploadImageDto } from './dto/images.dto.js';
@@ -39,31 +39,7 @@ export class ImagesService {
     const organizationId = await this.organizations.requireActiveOrganization(session);
     const image = await this.requireImage(organizationId, id);
     if (image.status === 'ready') return this.toResponse(image);
-    let object;
-    try {
-      object = await this.storage.head(image.key);
-    } catch (error) {
-      if (error instanceof S3ServiceException && error.$metadata.httpStatusCode === 404) {
-        throw new BadRequestException('Upload ainda não encontrado no S3.');
-      }
-      throw error;
-    }
-    const contentType = object.ContentType;
-    const size = object.ContentLength;
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    if (!contentType || !allowedTypes.includes(contentType)) {
-      throw new BadRequestException(
-        'O arquivo enviado deve ser uma imagem JPEG, PNG, WebP ou GIF.',
-      );
-    }
-    if (
-      size === undefined ||
-      !Number.isSafeInteger(size) ||
-      size <= 0 ||
-      size > this.config.get('MAX_IMAGE_SIZE_BYTES', { infer: true })
-    ) {
-      throw new BadRequestException('Imagem vazia ou acima do tamanho permitido.');
-    }
+    const { contentType, size } = await inspectUploadedImage(this.storage, this.config, image.key);
     const ready = await this.repository.markReady(organizationId, id, {
       contentType,
       size,

@@ -126,9 +126,9 @@ Documentação: [Nodemailer SMTP](https://nodemailer.com/smtp).
 
 ## Imagens: fluxo direto para S3
 
-Todas as rotas de imagens exigem uma sessão válida e uma organização ativa com vínculo atual no banco. A organização vem da sessão; não deve ser enviada no corpo. Os metadados e as chaves S3 usam o escopo da organização. Sessão ausente retorna 401, ausência de organização/vínculo retorna 403 e imagem de outra organização retorna 404.
+As rotas atuais de fotos de perfil exigem sessão válida e usam exclusivamente o usuário autenticado como proprietário. Não exigem empresa ativa nem vínculo com uma empresa. Sessão ausente retorna 401; fotos de outro usuário retornam 404, inclusive quando ambos pertencem à mesma empresa. O usuário proprietário não é recebido no corpo.
 
-1. Envie `POST /images/upload-url` com apenas:
+1. Envie `POST /user-images/upload-url` com apenas:
 
 ```json
 {
@@ -136,16 +136,16 @@ Todas as rotas de imagens exigem uma sessão válida e uma organização ativa c
 }
 ```
 
-`key` define a pasta/prefixo da imagem no S3. Por enquanto, apenas `user-image` é válido. Outros valores, como `car-image` ou `car-image/rear`, serão adicionados conforme seus domínios forem implementados. A lista central fica em `src/shared/storage/image-keys.ts`. IDs, nomes, tamanho, tipo e checksum não devem ser enviados nessa solicitação.
+`key` define a pasta/prefixo da imagem no S3. Por enquanto, apenas `user-image` é válido. Esse valor é validado pelo DTO de `src/modules/user-images/`. Imagens de empresa permanecem no módulo `images`, com lista própria em `src/shared/storage/image-keys.ts`, ainda sem prefixos habilitados. IDs, nomes, tamanho, tipo e checksum não devem ser enviados nessa solicitação.
 
-2. O backend insere o registro com status `pending`. O PostgreSQL gera o ID com `DEFAULT uuidv7()`. A coluna calculada do PostgreSQL gera a chave completa `images/<organizationId>/user-image/<uuidv7>`. Organização, prefixo e chave completa são NOT NULL. Após o INSERT, a URL PUT é assinada para essa chave.
+2. O backend insere o registro com status `pending`. O PostgreSQL gera o ID com `DEFAULT uuidv7()`. A coluna calculada do PostgreSQL gera a chave completa `user-image/<userId>/<uuidv7>` na tabela `user_images`. Usuário e chave completa são NOT NULL; não existe coluna de organização nessa tabela. Após o INSERT, a URL PUT é assinada para essa chave.
 
 A resposta contém `id`, `key` (chave completa), `status: "pending"`, `url`, `method: "PUT"`, `headers` e `expiresIn`. Se a assinatura falhar, o registro continua pendente.
 
 3. Envie os bytes diretamente à URL S3 com PUT, sem multipart, usando os headers retornados. Defina Content-Type com o tipo do arquivo. Com `S3_USE_CONDITIONAL_UPLOAD=true` (padrão), a URL exige `If-None-Match: *`, impedindo sobrescrever um objeto já enviado à mesma chave. Nesse modo, um upload repetido retorna 412; confirme pelo backend ou solicite uma nova URL/registro. Para Magalu Cloud, configure `false`: o contrato retorna headers sem a condição e usa uma chave exclusiva por upload.
 
 ```ts
-const response = await fetch('http://localhost:5000/images/upload-url', {
+const response = await fetch('http://localhost:5000/user-images/upload-url', {
   method: 'POST',
   credentials: 'include',
   headers: { 'Content-Type': 'application/json' },
@@ -162,29 +162,29 @@ const sent = await fetch(upload.url, {
   body: file,
 });
 if (!sent.ok) throw new Error('Falha no upload ao S3');
-const complete = await fetch(`http://localhost:5000/images/${upload.id}/complete`, {
+const complete = await fetch(`http://localhost:5000/user-images/${upload.id}/complete`, {
   method: 'POST',
   credentials: 'include',
 });
 if (!complete.ok) throw new Error('Falha na confirmação');
 ```
 
-4. `POST /images/:id/complete` consulta apenas HeadObject no S3, valida o tipo declarado (JPEG, PNG, WebP ou GIF) e o tamanho e preenche esses metadados no banco. O limite padrão é 10 MiB, configurável por MAX_IMAGE_SIZE_BYTES (máximo 100 MiB). Arquivos vazios, tipos incompatíveis e arquivos acima do limite não são confirmados; continuam pendentes. A checagem ocorre depois do envio ao S3, não durante a assinatura. A confirmação é idempotente e muda o status para `ready`.
-5. `GET /images/:id/download-url` retorna uma URL temporária GET para uma imagem pronta. O cliente lê os bytes diretamente do S3.
+4. `POST /user-images/:id/complete` consulta apenas HeadObject no S3, valida o tipo declarado (JPEG, PNG, WebP ou GIF) e o tamanho e preenche esses metadados no banco. O limite padrão é 10 MiB, configurável por MAX_IMAGE_SIZE_BYTES (máximo 100 MiB). Arquivos vazios, tipos incompatíveis e arquivos acima do limite não são confirmados; continuam pendentes. A checagem ocorre depois do envio ao S3, não durante a assinatura. A confirmação é idempotente e muda o status para `ready`.
+5. `GET /user-images/:id/download-url` retorna uma URL temporária GET para uma imagem pronta. O cliente lê os bytes diretamente do S3.
 
-Para fotos de usuário, `GET /images/user-images/:id/download-url` usa o submódulo `UserImagesModule`: aceita somente o prefixo `user-image`, exige status `ready` e gera a URL de leitura com validade de 12 horas (`43200` segundos). A validade das demais imagens e dos uploads continua sendo `S3_URL_TTL_SECONDS`. Credenciais temporárias AWS podem encerrar a validade antes do prazo assinado. O vínculo com a organização ativa é revalidado em cada solicitação.
+Para fotos de usuário, `GET /user-images/:id/download-url` usa o módulo independente `UserImagesModule`: consulta somente fotos do usuário autenticado, exige status `ready` e gera a URL de leitura com validade de 12 horas (`43200` segundos). A validade das demais imagens e dos uploads continua sendo `S3_URL_TTL_SECONDS`. Credenciais temporárias AWS podem encerrar a validade antes do prazo assinado. A propriedade da foto é verificada no banco em cada solicitação.
 
-A página `/user-settings` atualiza nome e imagem pelo endpoint nativo `POST /api/auth/update-user`. O e-mail não é enviado. O envio da foto usa `POST /images/upload-url` com `{ "key": "user-image" }`, PUT direto ao S3 com os headers retornados e `POST /images/:id/complete` antes de vincular a foto por `POST /images/user-images/:id/attach`. No campo `image`, o servidor salva a URL estável `/user-images/:id` (absoluta), nunca uma URL pré-assinada. Essa rota solicita uma nova URL de leitura e redireciona o navegador diretamente ao S3, sem cache ou transporte de arquivos pelo servidor. O upload e a leitura mantêm o escopo da empresa ativa: sem empresa selecionada ou ao acessar uma foto de outra empresa, aplicam-se as mesmas restrições de Images.
+A página `/user-settings` atualiza nome e imagem pelo endpoint nativo `POST /api/auth/update-user`. O e-mail não é enviado. O envio da foto usa `POST /user-images/upload-url` com `{ "key": "user-image" }`, PUT direto ao S3 com os headers retornados e `POST /user-images/:id/complete` antes de vincular a foto por `POST /user-images/:id/attach`. No campo `image`, o servidor salva a URL estável `/user-images/:id` (absoluta), nunca uma URL pré-assinada. Essa rota solicita uma nova URL de leitura e redireciona o navegador diretamente ao S3, sem cache ou transporte de arquivos pelo servidor. Upload, confirmação, leitura, vínculo e remoção funcionam sem empresa selecionada e são filtrados pelo usuário autenticado.
 
 O backend não inspeciona os bytes nem detecta o formato real da imagem: MIME é declarado pelo cliente ao S3. Verificação de conteúdo e antivírus, se necessários, devem ocorrer em processamento externo ao backend.
 
 URLs são temporárias (300 segundos por padrão, máximo 3600). Não registre URLs em logs. Uploads abandonados ou rejeitados deixam registros/objetos pendentes; limpeza e política de retenção devem ser definidas conforme o produto. filename e checksum não fazem parte do schema. Tipo e tamanho podem ser nulos no status pending; CHECK constraints impedem ready sem esses metadados e rejeitam tamanhos não positivos.
 
-Uma organização com imagens não pode ser excluída por causa da referência de integridade (ON DELETE RESTRICT). URLs S3 já emitidas continuam válidas até a expiração, mesmo após logout ou remoção do vínculo.
+As fotos de perfil não possuem referência à organização. Imagens de outros domínios na tabela `images` continuam usando organização e ON DELETE RESTRICT. URLs S3 já emitidas continuam válidas até a expiração, mesmo após logout ou remoção do vínculo.
 
 ## Configuração S3
 
-Mantenha Block Public Access habilitado. A identidade da API precisa de `s3:PutObject` e `s3:GetObject` no prefixo `images/*` do bucket; HeadObject usa a permissão GetObject. Nenhum ACL público é aplicado.
+Mantenha Block Public Access habilitado. A identidade da API precisa de `s3:PutObject` e `s3:GetObject` nos prefixos `user-image/*` e `images/*` do bucket (este último preserva o acesso às fotos migradas); HeadObject usa a permissão GetObject. Nenhum ACL público é aplicado.
 
 Configure CORS no bucket para as origens do cliente (FRONTEND_URL configura apenas a API). Exemplo para desenvolvimento:
 
@@ -240,14 +240,22 @@ Reexecutar preserva contas e senhas existentes com o mesmo e-mail e os dados da 
 
 Assim como em `zexperiments`, use PUT simples para Magalu Cloud. Esse provedor não suporta PUT condicional (`If-None-Match`/`If-Match`) e retorna `501 NotImplemented`. Configure `S3_USE_CONDITIONAL_UPLOAD=false` e `S3_FORCE_PATH_STYLE=true`. O padrão de `S3_USE_CONDITIONAL_UPLOAD` permanece `true` para provedores compatíveis com escrita condicional. Cada upload continua recebendo uma nova chave gerada a partir do UUIDv7 do banco; na Magalu a URL pode ser reutilizada até expirar. O frontend envia exatamente os headers retornados pela API, além do Content-Type do arquivo.
 
-Após o PUT e a confirmação, `POST /images/user-images/:id/attach` recebe o nome, verifica a organização ativa, o prefixo `user-image`, o status `ready` e a criação na última hora. Em seguida chama o handler nativo `updateUser` do Better Auth e devolve seus cookies. A referência permanente é criada pelo servidor usando FRONTEND_URL. A foto anterior só é excluída depois de atualizar o perfil e verificar que nenhum usuário a referencia. A exclusão usa bloqueio da linha da imagem; em caso de falha no S3, o registro é preservado para nova tentativa.
+Após o PUT e a confirmação, `POST /user-images/:id/attach` recebe o nome, verifica o proprietário autenticado, o status `ready` e a criação na última hora. Em seguida chama o handler nativo `updateUser` do Better Auth e devolve seus cookies. A referência permanente é criada pelo servidor usando FRONTEND_URL. A foto anterior só é excluída depois de atualizar o perfil e verificar que nenhum usuário a referencia. A exclusão usa bloqueio da linha da imagem; em caso de falha no S3, o registro é preservado para nova tentativa.
 
-A limpeza de fotos órfãs roda somente após o vínculo bem-sucedido de uma nova foto e se limita à organização ativa validada na requisição. Os bloqueios de linha no repository protegem a exclusão quando há requisições concorrentes. Não há execução na inicialização nem agendamento periódico. Mantém fotos em uso e remove objetos `user-image` sem vínculo criados há mais de 24 horas, incluindo uploads pendentes abandonados. Os limites de uma hora para vincular e 24 horas para limpeza evitam apagar uploads em andamento. Remover a foto continua tentando excluir somente o arquivo anterior sem vínculo; não dispara a varredura de órfãs. Falhas na limpeza são registradas sem desfazer o perfil salvo e uma nova tentativa ocorre no próximo envio bem-sucedido. As credenciais precisam permitir DeleteObject além de PutObject/GetObject; não é necessário listar objetos no bucket, pois os uploads já são registrados no banco antes da assinatura.
+A limpeza de fotos órfãs roda somente após o vínculo bem-sucedido de uma nova foto e se limita ao usuário autenticado na requisição. Os bloqueios de linha no repository protegem a exclusão quando há requisições concorrentes. Não há execução na inicialização nem agendamento periódico. Mantém fotos em uso e remove objetos `user-image` sem vínculo criados há mais de 24 horas, incluindo uploads pendentes abandonados. Os limites de uma hora para vincular e 24 horas para limpeza evitam apagar uploads em andamento. Remover a foto continua tentando excluir somente o arquivo anterior sem vínculo; não dispara a varredura de órfãs. Falhas na limpeza são registradas sem desfazer o perfil salvo e uma nova tentativa ocorre no próximo envio bem-sucedido. As credenciais precisam permitir DeleteObject além de PutObject/GetObject; não é necessário listar objetos no bucket, pois os uploads já são registrados no banco antes da assinatura.
 
 Referência do provedor: https://docs.magalu.cloud/docs/storage/object-storage/troubleshooting/error-proxmox-backupserver
 
 
-Na interface de `/user-settings`, a foto recortada é exportada em WebP com lado máximo de 512 px, sem ampliar recortes menores. Começa em qualidade 80% e ajusta qualidade e, se necessário, resolução para respeitar 50.000 bytes. JPEG é usado como alternativa apenas quando o navegador não exporta WebP. O botão de lixeira prepara a remoção, aplicada junto do nome ao salvar por `DELETE /images/user-images/current`. O servidor limpa a referência pelo Better Auth antes de excluir o objeto sem vínculo; falhas no salvamento preservam a foto atual.
+Na interface de `/user-settings`, a foto recortada é exportada em WebP com lado máximo de 512 px, sem ampliar recortes menores. Começa em qualidade 80% e ajusta qualidade e, se necessário, resolução para respeitar 50.000 bytes. JPEG é usado como alternativa apenas quando o navegador não exporta WebP. O botão de lixeira prepara a remoção, aplicada junto do nome ao salvar por `DELETE /user-images/current`. O servidor limpa a referência pelo Better Auth antes de excluir o objeto sem vínculo; falhas no salvamento preservam a foto atual.
 
 
-O submódulo de fotos concentra leitura, vínculo, remoção e limpeza no `UserImagesService`. O `UserImagesRepository` mantém o escopo de organização, os bloqueios e a proteção de fotos referenciadas por usuários. Não existe enumeração global de empresas nesse fluxo.
+O módulo de fotos concentra leitura, vínculo, remoção e limpeza no `UserImagesService`. O `UserImagesRepository` mantém o escopo do usuário, os bloqueios e a proteção de fotos referenciadas por usuários. Não existe enumeração global de empresas nesse fluxo.
+
+
+### Migração das fotos pessoais
+
+A migração `0003` transfere fotos vinculadas de `images` para `user_images` e atualiza as referências em `user.image`. A coluna `imported_key` preserva a localização de objetos já existentes; novos uploads não preenchem essa coluna e usam `user-image/<userId>/<id>`. Não há cópia nem exclusão de objetos S3 durante a migração. Referências compartilhadas recebem registros separados, mantendo o arquivo enquanto houver uma referência. Registros antigos sem vínculo continuam na tabela anterior para uma futura limpeza; não são atribuídos arbitrariamente a usuários.
+
+
+O módulo `src/modules/user-images/` registra suas próprias rotas em `/user-images`, com controller, service, repository e DTOs. O schema pessoal fica em `user-images.schema.ts`. O módulo `images` mantém seu fluxo por organização e não importa nem chama `UserImagesModule`; fotos pessoais não fazem parte de sua lista de prefixos. Ambos reutilizam somente a infraestrutura de armazenamento e validação de metadados S3.

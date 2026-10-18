@@ -15,19 +15,25 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiCreatedResponse,
   ApiCookieAuth,
-  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { AuthGuard } from '../../auth/auth.guard.js';
-import { Session } from '../../auth/session.decorator.js';
-import type { AuthSession } from '../../auth/auth.factory.js';
-import { downloadResponseSchema, imageParamsSchema } from '../dto/images.dto.js';
-import type { ImageParamsDto } from '../dto/images.dto.js';
+import { AuthGuard } from '../auth/auth.guard.js';
+import { Session } from '../auth/session.decorator.js';
+import type { AuthSession } from '../auth/auth.factory.js';
+import {
+  uploadImageSchema,
+  uploadResponseSchema,
+  imageResponseSchema,
+  downloadResponseSchema,
+  imageParamsSchema,
+} from './dto/user-images.dto.js';
+import type { UploadImageDto, ImageParamsDto } from './dto/user-images.dto.js';
 import { UserImagesService } from './user-images.service.js';
 
 const attachUserImageSchema = z.strictObject({ name: z.string().trim().min(1).max(200) });
@@ -35,11 +41,33 @@ const attachUserImageSchema = z.strictObject({ name: z.string().trim().min(1).ma
 @ApiTags('User images')
 @ApiCookieAuth()
 @ApiUnauthorizedResponse({ description: 'Sessão ausente ou expirada.' })
-@ApiForbiddenResponse({ description: 'Organização ativa ausente ou sem vínculo.' })
 @UseGuards(AuthGuard)
-@Controller('images/user-images')
+@Controller('user-images')
 export class UserImagesController {
   constructor(@Inject(UserImagesService) private readonly images: UserImagesService) {}
+
+  @Post('upload-url')
+  @ApiOperation({ summary: 'Solicitar upload de foto pessoal diretamente ao S3' })
+  @ApiCreatedResponse({ standardSchema: uploadResponseSchema })
+  createUpload(
+    @Body({ schema: uploadImageSchema }) _body: UploadImageDto,
+    @Session() session: AuthSession,
+  ) {
+    return this.images.createUpload(session);
+  }
+
+  @Post(':id/complete')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Confirmar a foto pessoal após validar metadados no S3' })
+  @ApiOkResponse({ standardSchema: imageResponseSchema })
+  @ApiNotFoundResponse({ description: 'Foto não encontrada para este usuário.' })
+  @ApiBadRequestResponse({ description: 'Upload ausente ou metadados incompatíveis.' })
+  complete(
+    @Param({ schema: imageParamsSchema }) params: ImageParamsDto,
+    @Session() session: AuthSession,
+  ) {
+    return this.images.complete(params.id, session);
+  }
 
   @Delete('current')
   @HttpCode(200)
@@ -61,7 +89,7 @@ export class UserImagesController {
   @HttpCode(200)
   @ApiOperation({ summary: 'Vincular foto pronta ao perfil e limpar a anterior sem vínculo' })
   @ApiOkResponse({ standardSchema: z.object({ status: z.literal(true) }) })
-  @ApiNotFoundResponse({ description: 'Foto não encontrada na organização ativa.' })
+  @ApiNotFoundResponse({ description: 'Foto não encontrada para este usuário.' })
   @ApiBadRequestResponse({ description: 'Foto pendente, antiga ou entrada inválida.' })
   async attach(
     @Param({ schema: imageParamsSchema }) params: ImageParamsDto,
@@ -78,7 +106,7 @@ export class UserImagesController {
   @Get(':id/download-url')
   @ApiOperation({ summary: 'Obter URL de leitura da foto de usuário com validade de 12 horas' })
   @ApiOkResponse({ standardSchema: downloadResponseSchema })
-  @ApiNotFoundResponse({ description: 'Foto não encontrada na organização ativa.' })
+  @ApiNotFoundResponse({ description: 'Foto não encontrada para este usuário.' })
   @ApiBadRequestResponse({ description: 'ID inválido ou upload ainda pendente.' })
   download(
     @Param({ schema: imageParamsSchema }) params: ImageParamsDto,

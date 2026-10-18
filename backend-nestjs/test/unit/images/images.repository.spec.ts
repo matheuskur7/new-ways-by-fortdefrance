@@ -1,3 +1,4 @@
+import type { ImageKey } from '../../../src/shared/storage/image-keys.js';
 import type { SQL } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import { drizzle } from 'drizzle-orm/node-postgres';
@@ -40,8 +41,8 @@ describe('ImagesRepository: isolamento no SQL', () => {
         [
           '019a1234-5678-7000-8000-123456789abc',
           'org-allowed',
-          'user-image',
-          'images/org-allowed/user-image/019a1234-5678-7000-8000-123456789abc',
+          'test-image',
+          'images/org-allowed/test-image/019a1234-5678-7000-8000-123456789abc',
           null,
           null,
           'pending',
@@ -49,10 +50,10 @@ describe('ImagesRepository: isolamento no SQL', () => {
         ],
       ],
     });
-    await repository.create('org-allowed', 'user-image');
+    await repository.create('org-allowed', 'test-image' as ImageKey);
     const [statement, values] = query.mock.calls[0];
     expect(statement.text).toContain('insert into "images"');
-    expect(values).toEqual(['org-allowed', 'user-image']);
+    expect(values).toEqual(['org-allowed', 'test-image']);
     expect(new PgDialect().sqlToQuery(schema.images.id.default as SQL).sql).toBe('uuidv7()');
     expect(schema.images.organizationId.notNull).toBe(true);
     expect(schema.images.keyPrefix.notNull).toBe(true);

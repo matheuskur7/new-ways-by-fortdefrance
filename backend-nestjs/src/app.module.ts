@@ -3,6 +3,7 @@ import { APP_PIPE } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
+import { UserImagesModule } from './modules/user-images/user-images.module.js';
 import { ImagesModule } from './modules/images/images.module.js';
 import { validateEnv } from './shared/config/env.js';
 import { AuthModule } from './modules/auth/auth.module.js';
@@ -19,6 +20,7 @@ import { EmailModule } from './shared/email/email.module.js';
       validate: validateEnv,
     }),
     ImagesModule,
+    UserImagesModule,
     AuthModule,
     OrganizationModule,
     UserModule,

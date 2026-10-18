@@ -6,10 +6,9 @@ import { StorageModule } from '../../shared/storage/storage.module.js';
 import { ImagesController } from './images.controller.js';
 import { ImagesRepository } from './images.repository.js';
 import { ImagesService } from './images.service.js';
-import { UserImagesModule } from './user-images/user-images.module.js';
 
 @Module({
-  imports: [DatabaseModule, StorageModule, AuthModule, OrganizationModule, UserImagesModule],
+  imports: [DatabaseModule, StorageModule, AuthModule, OrganizationModule],
   controllers: [ImagesController],
   providers: [ImagesService, ImagesRepository],
   exports: [ImagesService],
