@@ -38,7 +38,6 @@ export function getSessionRedirect(
   pathname: string,
   session: AuthSession | null
 ) {
-  if (pathname === "/login")
-    return session ? "/organizations?reason=already-authenticated" : null
+  if (pathname === "/login") return session ? "/organizations" : null
   return session ? null : "/login?reason=session-expired"
 }

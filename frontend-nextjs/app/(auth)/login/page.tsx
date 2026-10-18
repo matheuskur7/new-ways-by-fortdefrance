@@ -5,7 +5,7 @@ import { getSession } from "@/lib/auth-server"
 
 export default async function LoginPage() {
   if (await getSession()) {
-    redirect("/organizations?reason=already-authenticated")
+    redirect("/organizations")
   }
 
   return (

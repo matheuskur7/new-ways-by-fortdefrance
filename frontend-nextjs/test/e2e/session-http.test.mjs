@@ -114,10 +114,7 @@ test("visitante vê login e é redirecionado ao acessar páginas privadas", asyn
 test("sessão válida sai do login e acessa páginas privadas", async () => {
   const response = await open("/login", "session=valid")
   assert.equal(response.status, 307)
-  assert.equal(
-    response.headers.get("location"),
-    "/organizations?reason=already-authenticated"
-  )
+  assert.equal(response.headers.get("location"), "/organizations")
   assert.equal((await open("/", "session=valid")).status, 200)
   assert.ok(queries.length > 0)
   for (const params of queries) {

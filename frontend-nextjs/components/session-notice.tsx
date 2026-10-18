@@ -21,16 +21,6 @@ export function SessionNotice() {
         description: "Entre novamente para continuar.",
         type: "warning",
       })
-    } else if (
-      pathname === "/organizations" &&
-      reason === "already-authenticated"
-    ) {
-      toastManager.add({
-        id: "already-authenticated",
-        title: "Você já está conectado",
-        description: "Bem-vindo ao sistema.",
-        type: "success",
-      })
     } else {
       return
     }

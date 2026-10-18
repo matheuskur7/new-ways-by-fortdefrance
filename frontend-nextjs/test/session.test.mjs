@@ -44,10 +44,7 @@ test("respostas inesperadas e JSON inválido não são interpretados como logout
 })
 
 test("login com sessão válida encaminha para organizações", () => {
-  assert.equal(
-    getSessionRedirect("/login", session),
-    "/organizations?reason=already-authenticated"
-  )
+  assert.equal(getSessionRedirect("/login", session), "/organizations")
   assert.equal(getSessionRedirect("/login", null), null)
 })
 
