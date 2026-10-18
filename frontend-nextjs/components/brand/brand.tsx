@@ -12,7 +12,7 @@ export function Brand({ variant = "default", className }: BrandProps) {
       className={cn(
         "inline-flex flex-col gap-0 whitespace-nowrap",
         variant == "sidebar" &&
-          "max-w-48 min-w-0 shrink-0 overflow-hidden opacity-100 transition-[max-width,opacity] duration-200 ease-linear group-data-[collapsible=icon]:max-w-0 group-data-[collapsible=icon]:opacity-0 motion-reduce:transition-none",
+          "max-w-48 min-w-0 shrink-0 overflow-hidden opacity-100 transition-[max-width,opacity] duration-200 ease-in-out group-data-[collapsible=icon]:max-w-0 group-data-[collapsible=icon]:opacity-0 motion-reduce:transition-none",
         className
       )}
     >
@@ -20,7 +20,7 @@ export function Brand({ variant = "default", className }: BrandProps) {
         className={cn(
           "leading-none font-bold",
           variant == "sidebar"
-            ? "text-2xl tracking-tight transition-[font-size] duration-200 ease-linear group-data-[collapsible=icon]:text-[0px] motion-reduce:transition-none"
+            ? "text-2xl tracking-tight transition-[font-size] duration-200 ease-in-out group-data-[collapsible=icon]:text-[0px] motion-reduce:transition-none"
             : "text-5xl tracking-tighter sm:text-6xl"
         )}
       >
@@ -30,7 +30,7 @@ export function Brand({ variant = "default", className }: BrandProps) {
         className={cn(
           "leading-none italic",
           variant == "sidebar"
-            ? "-mt-1 text-xs text-muted-foreground transition-[font-size,margin] duration-200 ease-linear group-data-[collapsible=icon]:mt-0 group-data-[collapsible=icon]:text-[0px] motion-reduce:transition-none"
+            ? "-mt-1 text-xs text-muted-foreground transition-[font-size,margin] duration-200 ease-in-out group-data-[collapsible=icon]:mt-0 group-data-[collapsible=icon]:text-[0px] motion-reduce:transition-none"
             : "-mt-1.5 text-sm"
         )}
       >

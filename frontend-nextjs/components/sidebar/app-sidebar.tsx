@@ -61,7 +61,7 @@ export function AppSidebar({ user }: { user: AuthSession["user"] }) {
       collapsible="icon"
       className="shadow-[3px_0_10px_-4px_rgba(73,73,73,0.16)]"
     >
-      <SidebarHeader className="shrink-0 flex-row items-center gap-2 p-3 transition-[padding] duration-200 ease-linear group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:pt-2 group-data-[collapsible=icon]:pb-3 motion-reduce:transition-none">
+      <SidebarHeader className="shrink-0 flex-row items-center gap-2 p-3 transition-[padding] duration-200 ease-in-out group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:pt-2 group-data-[collapsible=icon]:pb-3 motion-reduce:transition-none">
         <Tooltip>
           <TooltipTrigger
             render={
@@ -75,7 +75,7 @@ export function AppSidebar({ user }: { user: AuthSession["user"] }) {
           >
             <BusinessBrand
               variant="logo"
-              className="w-12 shrink-0 transition-[width] duration-200 ease-linear group-data-[collapsible=icon]:w-8 motion-reduce:transition-none [&_img]:w-full"
+              className="w-12 shrink-0 transition-[width] duration-200 ease-in-out group-data-[collapsible=icon]:w-8 motion-reduce:transition-none [&_img]:w-full"
             />
             <Brand variant="sidebar" />
           </TooltipTrigger>
@@ -95,7 +95,7 @@ export function AppSidebar({ user }: { user: AuthSession["user"] }) {
         <SidebarDailyIndicators />
         <nav
           aria-label="Navegação principal"
-          className="px-3 transition-[padding] duration-200 ease-linear group-data-[collapsible=icon]:px-2 motion-reduce:transition-none"
+          className="px-3 transition-[padding] duration-200 ease-in-out group-data-[collapsible=icon]:px-2 motion-reduce:transition-none"
         >
           <SidebarMenu className="gap-1">
             {navigation.map(({ href, label, icon: Icon }) => {
@@ -111,14 +111,14 @@ export function AppSidebar({ user }: { user: AuthSession["user"] }) {
                     aria-current={active ? "page" : undefined}
                     aria-label={label}
                     tooltip={label}
-                    className="h-10 border border-transparent text-[15px] transition-[width,height,padding,font-size] duration-200 ease-linear group-data-[collapsible=icon]:text-sm motion-reduce:transition-none data-active:shadow-[inset_2px_0_0_var(--primary)]"
+                    className="h-10 border border-transparent text-[15px] transition-[width,height,padding,font-size] duration-200 ease-in-out group-data-[collapsible=icon]:text-sm motion-reduce:transition-none data-active:shadow-[inset_2px_0_0_var(--primary)]"
                     onClick={() => setOpenMobile(false)}
                   >
                     <Icon
-                      className="size-4.5! transition-[width,height] duration-200 ease-linear group-data-[collapsible=icon]:size-4! motion-reduce:transition-none"
+                      className="size-4.5! transition-[width,height] duration-200 ease-in-out group-data-[collapsible=icon]:size-4! motion-reduce:transition-none"
                       aria-hidden="true"
                     />
-                    <span className="max-w-40 overflow-hidden whitespace-nowrap opacity-100 transition-[max-width,font-size,opacity] duration-200 ease-linear group-data-[collapsible=icon]:max-w-0 group-data-[collapsible=icon]:text-[0px] group-data-[collapsible=icon]:opacity-0 motion-reduce:transition-none">
+                    <span className="max-w-40 overflow-hidden whitespace-nowrap opacity-100 transition-[max-width,font-size,opacity] duration-200 ease-in-out group-data-[collapsible=icon]:max-w-0 group-data-[collapsible=icon]:text-[0px] group-data-[collapsible=icon]:opacity-0 motion-reduce:transition-none">
                       {label}
                     </span>
                   </SidebarMenuButton>
@@ -129,7 +129,7 @@ export function AppSidebar({ user }: { user: AuthSession["user"] }) {
         </nav>
       </SidebarContent>
       <SidebarSeparator />
-      <SidebarFooter className="p-3 transition-[padding] duration-200 ease-linear group-data-[collapsible=icon]:p-2 motion-reduce:transition-none">
+      <SidebarFooter className="p-3 transition-[padding] duration-200 ease-in-out group-data-[collapsible=icon]:p-2 motion-reduce:transition-none">
         <SidebarMenu>
           <SidebarMenuItem>
             <UserDropdown user={user} />
@@ -161,13 +161,13 @@ function UserDropdown({ user }: { user: AuthSession["user"] }) {
                 <SidebarMenuButton
                   size="lg"
                   aria-label="Abrir opções do perfil"
-                  className="h-auto! cursor-pointer duration-200 ease-linear group-data-[collapsible=icon]:h-auto! motion-reduce:transition-none"
+                  className="h-auto! cursor-pointer duration-200 ease-in-out group-data-[collapsible=icon]:h-auto! motion-reduce:transition-none"
                 />
               }
             />
           }
         >
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-md border bg-background transition-[width,height] duration-200 ease-linear group-data-[collapsible=icon]:size-8 motion-reduce:transition-none">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-md border bg-background transition-[width,height] duration-200 ease-in-out group-data-[collapsible=icon]:size-8 motion-reduce:transition-none">
             {user.image && user.image !== failedImage ? (
               <Image
                 src={user.image}
@@ -180,21 +180,21 @@ function UserDropdown({ user }: { user: AuthSession["user"] }) {
               />
             ) : (
               <UserRound
-                className="size-5! transition-[width,height] duration-200 ease-linear group-data-[collapsible=icon]:size-4! motion-reduce:transition-none"
+                className="size-5! transition-[width,height] duration-200 ease-in-out group-data-[collapsible=icon]:size-4! motion-reduce:transition-none"
                 aria-hidden="true"
               />
             )}
           </span>
-          <span className="grid max-w-40 min-w-0 flex-1 overflow-hidden text-left whitespace-nowrap opacity-100 transition-[max-width,opacity] duration-200 ease-linear group-data-[collapsible=icon]:max-w-0 group-data-[collapsible=icon]:opacity-0 motion-reduce:transition-none">
-            <span className="truncate text-sm leading-tight font-medium transition-[font-size] duration-200 ease-linear group-data-[collapsible=icon]:text-[0px] motion-reduce:transition-none">
+          <span className="grid max-w-40 min-w-0 flex-1 overflow-hidden text-left whitespace-nowrap opacity-100 transition-[max-width,opacity] duration-200 ease-in-out group-data-[collapsible=icon]:max-w-0 group-data-[collapsible=icon]:opacity-0 motion-reduce:transition-none">
+            <span className="truncate text-sm leading-tight font-medium transition-[font-size] duration-200 ease-in-out group-data-[collapsible=icon]:text-[0px] motion-reduce:transition-none">
               {displayName}
             </span>
-            <span className="truncate text-xs leading-normal text-muted-foreground transition-[font-size] duration-200 ease-linear group-data-[collapsible=icon]:text-[0px] motion-reduce:transition-none">
+            <span className="truncate text-xs leading-normal text-muted-foreground transition-[font-size] duration-200 ease-in-out group-data-[collapsible=icon]:text-[0px] motion-reduce:transition-none">
               {user.email}
             </span>
           </span>
           <ChevronsUpDown
-            className="ml-auto transition-[width,opacity] duration-200 ease-linear group-data-[collapsible=icon]:w-0! group-data-[collapsible=icon]:opacity-0 motion-reduce:transition-none"
+            className="ml-auto transition-[width,opacity] duration-200 ease-in-out group-data-[collapsible=icon]:w-0! group-data-[collapsible=icon]:opacity-0 motion-reduce:transition-none"
             aria-hidden="true"
           />
         </TooltipTrigger>
@@ -208,7 +208,7 @@ function UserDropdown({ user }: { user: AuthSession["user"] }) {
         side={!isMobile && state === "collapsed" ? "right" : "top"}
         align="end"
         sideOffset={!isMobile && state === "collapsed" ? 12 : 8}
-        className={`${!isMobile && state === "collapsed" ? "min-w-60" : "min-w-0"} translate-y-0 opacity-100 transition-[opacity,translate] duration-200 ease-out data-ending-style:translate-y-2 data-ending-style:opacity-0 data-starting-style:translate-y-2 data-starting-style:opacity-0 motion-reduce:transition-none`}
+        className={`${!isMobile && state === "collapsed" ? "min-w-60" : "min-w-0"} translate-y-0 opacity-100 transition-[opacity,translate] duration-200 ease-in-out data-ending-style:translate-y-2 data-ending-style:opacity-0 data-starting-style:translate-y-2 data-starting-style:opacity-0 motion-reduce:transition-none`}
       >
         <DropdownMenuGroup>
           <DropdownMenuLabel className="flex items-center gap-2">
