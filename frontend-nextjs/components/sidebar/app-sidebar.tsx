@@ -19,7 +19,7 @@ import { useIsMutating } from "@tanstack/react-query"
 import { LogOut, LoaderCircle } from "lucide-react"
 import { Brand } from "@/components/brand/brand"
 import { BusinessBrand } from "@/components/brand/business-brand"
-import { SidebarDailyIndicators } from "@/components/sidebar-daily-indicators"
+import { SidebarDailyIndicators } from "@/components/sidebar/sidebar-daily-indicators"
 import { IconButton } from "@/components/ui/icon-button"
 import {
   Tooltip,
