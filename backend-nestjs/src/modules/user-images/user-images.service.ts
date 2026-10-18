@@ -8,7 +8,7 @@ import type { UserImage } from '../../shared/database/schemas/index.js';
 import { StorageService } from '../../shared/storage/storage.service.js';
 import { AuthService } from '../auth/auth.service.js';
 import type { AuthSession } from '../auth/auth.factory.js';
-import { inspectUploadedImage } from '../../shared/storage/inspect-uploaded-image.js';
+import { inspectUploadedObject } from '../../shared/storage/inspect-uploaded-object.js';
 import { imageResponseSchema } from './dto/user-images.dto.js';
 import { UserImagesRepository } from './user-images.repository.js';
 
@@ -45,8 +45,22 @@ export class UserImagesService {
     const image = await this.repository.findById(session.user.id, id);
     if (!image) throw new NotFoundException('Foto de usuário não encontrada.');
     if (image.status === 'ready') return imageResponseSchema.parse(image);
-    const metadata = await inspectUploadedImage(this.storage, this.config, image.key);
-    const ready = await this.repository.markReady(session.user.id, id, metadata);
+    const { contentType, size } = await inspectUploadedObject(this.storage, image.key);
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!contentType || !allowedTypes.includes(contentType)) {
+      throw new BadRequestException(
+        'O arquivo enviado deve ser uma imagem JPEG, PNG, WebP ou GIF.',
+      );
+    }
+    if (
+      size === undefined ||
+      !Number.isSafeInteger(size) ||
+      size <= 0 ||
+      size > this.config.get('MAX_IMAGE_SIZE_BYTES', { infer: true })
+    ) {
+      throw new BadRequestException('Imagem vazia ou acima do tamanho permitido.');
+    }
+    const ready = await this.repository.markReady(session.user.id, id, { contentType, size });
     if (!ready) throw new NotFoundException('Foto de usuário não encontrada.');
     return imageResponseSchema.parse(ready);
   }

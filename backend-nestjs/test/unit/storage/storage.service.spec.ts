@@ -1,5 +1,6 @@
+import { inspectUploadedObject } from '../../../src/shared/storage/inspect-uploaded-object.js';
 import { ConfigService } from '@nestjs/config';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { Environment } from '../../../src/shared/config/env.js';
 import { validateEnv } from '../../../src/shared/config/env.js';
 import { StorageService } from '../../../src/shared/storage/storage.service.js';
@@ -85,5 +86,31 @@ describe('StorageService: assinatura local sem acesso ao S3', () => {
     } finally {
       service.onApplicationShutdown();
     }
+  });
+});
+
+describe('inspectUploadedObject: metadados sem regras de domínio', () => {
+  it('aceita metadados de objetos não relacionados a imagens, independentemente do tamanho', async () => {
+    const storage = {
+      head: vi
+        .fn()
+        .mockResolvedValue({ ContentType: 'application/pdf', ContentLength: 200_000_000 }),
+    };
+    await expect(
+      inspectUploadedObject(storage as unknown as StorageService, 'documents/example'),
+    ).resolves.toEqual({
+      contentType: 'application/pdf',
+      size: 200_000_000,
+    });
+  });
+
+  it('devolve metadados ausentes para o service decidir se são obrigatórios', async () => {
+    const storage = { head: vi.fn().mockResolvedValue({}) };
+    await expect(
+      inspectUploadedObject(storage as unknown as StorageService, 'objects/example'),
+    ).resolves.toEqual({
+      contentType: undefined,
+      size: undefined,
+    });
   });
 });

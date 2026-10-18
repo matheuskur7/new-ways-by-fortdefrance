@@ -4,7 +4,7 @@ import { Inject, BadRequestException, Injectable, NotFoundException } from '@nes
 import { ConfigService } from '@nestjs/config';
 import type { Environment } from '../../shared/config/env.js';
 import type { Image } from '../../shared/database/schemas/index.js';
-import { inspectUploadedImage } from '../../shared/storage/inspect-uploaded-image.js';
+import { inspectUploadedObject } from '../../shared/storage/inspect-uploaded-object.js';
 import { StorageService } from '../../shared/storage/storage.service.js';
 import { ImagesRepository } from './images.repository.js';
 import type { UploadImageDto } from './dto/images.dto.js';
@@ -39,7 +39,21 @@ export class ImagesService {
     const organizationId = await this.organizations.requireActiveOrganization(session);
     const image = await this.requireImage(organizationId, id);
     if (image.status === 'ready') return this.toResponse(image);
-    const { contentType, size } = await inspectUploadedImage(this.storage, this.config, image.key);
+    const { contentType, size } = await inspectUploadedObject(this.storage, image.key);
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!contentType || !allowedTypes.includes(contentType)) {
+      throw new BadRequestException(
+        'O arquivo enviado deve ser uma imagem JPEG, PNG, WebP ou GIF.',
+      );
+    }
+    if (
+      size === undefined ||
+      !Number.isSafeInteger(size) ||
+      size <= 0 ||
+      size > this.config.get('MAX_IMAGE_SIZE_BYTES', { infer: true })
+    ) {
+      throw new BadRequestException('Imagem vazia ou acima do tamanho permitido.');
+    }
     const ready = await this.repository.markReady(organizationId, id, {
       contentType,
       size,
