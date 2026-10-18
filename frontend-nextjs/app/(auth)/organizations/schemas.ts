@@ -20,3 +20,9 @@ export const selectedOrganizationSchema = organizationSchema.omit({
 export function isOrganizationOwner(role: string) {
   return role.split(",").some((value) => value.trim() === "owner")
 }
+
+export function canManageOrganization(role: string) {
+  return role
+    .split(",")
+    .some((value) => ["owner", "admin"].includes(value.trim()))
+}

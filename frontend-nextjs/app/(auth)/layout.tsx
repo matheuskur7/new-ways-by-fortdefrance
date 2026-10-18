@@ -50,7 +50,7 @@ export default function AuthLayout({
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 -z-10 bg-foreground/20"
       />
-      <Card className="grid w-full max-w-5xl gap-0 rounded-3xl border p-0 shadow-xl lg:min-h-155 lg:grid-cols-2">
+      <Card className="group/auth-shell grid w-full max-w-5xl gap-0 rounded-3xl border p-0 shadow-xl has-data-[auth-shell=wide]:max-w-[96rem] has-data-[auth-shell=wide]:shadow-none lg:min-h-155 lg:grid-cols-2 lg:has-data-[auth-shell=wide]:min-h-0 lg:has-data-[auth-shell=wide]:grid-cols-[32rem_minmax(0,1fr)]">
         <aside className="relative flex flex-col justify-between gap-12 overflow-hidden border-b bg-muted p-8 text-center sm:p-12 lg:min-h-96 lg:border-r lg:border-b-0 lg:text-left">
           <div className="relative z-10">
             <Brand />
@@ -67,7 +67,7 @@ export default function AuthLayout({
             <BrandWatermark />
           </div>
         </aside>
-        <section className="flex min-w-0 flex-col justify-center px-7 py-10 [--card:color-mix(in_oklab,var(--muted)_40%,transparent)] sm:p-12">
+        <section className="flex min-w-0 flex-col justify-center px-7 py-10 [--card:color-mix(in_oklab,var(--muted)_40%,transparent)] has-data-[auth-shell=wide]:px-5 has-data-[auth-shell=wide]:py-5 sm:p-12 sm:has-data-[auth-shell=wide]:p-6">
           {children}
         </section>
         <footer className="relative overflow-hidden border-t bg-muted p-8 text-center sm:p-12 lg:hidden">

@@ -17,6 +17,38 @@ const fixture = {
 // Somente o backend é simulado; as páginas e redirects são do Next.js real.
 const backend = createServer((req, res) => {
   const url = new URL(req.url, "http://localhost")
+  if (url.pathname === "/api/auth/organization/get-organization") {
+    res.setHeader("Content-Type", "application/json")
+    res.end(
+      JSON.stringify({
+        id: "org-example",
+        name: "Empresa de teste",
+        slug: "empresa-de-teste",
+        email: "company@example.com",
+      })
+    )
+    return
+  }
+  if (url.pathname === "/organizations") {
+    const role =
+      req.headers.cookie === "session=member"
+        ? "member"
+        : req.headers.cookie === "session=admin"
+          ? "admin"
+          : "owner"
+    res.setHeader("Content-Type", "application/json")
+    res.end(
+      JSON.stringify([
+        {
+          id: "org-example",
+          name: "Empresa de teste",
+          slug: "empresa-de-teste",
+          role,
+        },
+      ])
+    )
+    return
+  }
   if (url.pathname.startsWith("/user-images/")) {
     res.setHeader("Content-Type", "application/json")
     if (req.headers.cookie !== "session=valid") {
@@ -41,7 +73,13 @@ const backend = createServer((req, res) => {
     res.writeHead(401).end()
   } else {
     res.end(
-      JSON.stringify(req.headers.cookie === "session=valid" ? fixture : null)
+      JSON.stringify(
+        ["session=valid", "session=admin", "session=member"].includes(
+          req.headers.cookie
+        )
+          ? fixture
+          : null
+      )
     )
   }
 })
@@ -182,4 +220,27 @@ test("foto usa redirecionamento privado sem cache e mantém erros de autorizaç�
     (await open("/user-images/invalid", "session=valid")).status,
     404
   )
+})
+
+test("configurações da empresa exigem owner ou admin também no acesso direto", async () => {
+  const path = "/organization-settings?organizationId=org-example"
+  assert.equal((await open(path)).status, 307)
+  for (const cookie of ["session=valid", "session=admin"]) {
+    const response = await fetch(`${origin}${path}`, { headers: { cookie } })
+    assert.equal(response.status, 200)
+    const html = await response.text()
+    assert.match(html, /Gerenciamento da Empresa/)
+    assert.match(html, /Empresa de teste/)
+    assert.match(html, /Não pode ser alterado/)
+    assert.match(html, /Minhas empresas/)
+  }
+  for (const path of [
+    "/organization-settings",
+    "/organization-settings?organizationId=missing",
+    "/organization-settings?organizationId=org-example",
+  ]) {
+    const response = await open(path, "session=member")
+    assert.equal(response.status, 307)
+    assert.equal(response.headers.get("location"), "/organizations")
+  }
 })

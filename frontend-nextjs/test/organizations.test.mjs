@@ -74,3 +74,18 @@ test("aceita a resposta nativa de seleção sem exigir papel do membro", () => {
   )
   assert.equal(selectedOrganizationSchema.safeParse(null).success, false)
 })
+
+test("somente owner e admin podem gerenciar a empresa, inclusive com múltiplos papéis", async () => {
+  const { canManageOrganization } =
+    await import("../app/(auth)/organizations/schemas.ts")
+  for (const role of ["owner", "admin", "member, admin", " admin,owner "])
+    assert.equal(canManageOrganization(role), true)
+  for (const role of [
+    "member",
+    "",
+    "administrator",
+    "superadmin",
+    "owner-other",
+  ])
+    assert.equal(canManageOrganization(role), false)
+})

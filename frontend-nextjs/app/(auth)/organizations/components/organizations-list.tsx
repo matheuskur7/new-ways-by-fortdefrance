@@ -1,7 +1,9 @@
 "use client"
 
-import { ArrowRight, LoaderCircle } from "lucide-react"
+import Link from "next/link"
+import { ArrowRight, LoaderCircle, Settings2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { IconButton } from "@/components/ui/icon-button"
 import {
   Tooltip,
   TooltipTrigger,
@@ -13,6 +15,7 @@ import { useIsMutating } from "@tanstack/react-query"
 import { isSigningOut } from "@/lib/logout"
 import { useOrganizations } from "../hooks/use-organizations"
 import { useEnterOrganization } from "../hooks/use-enter-organization"
+import { canManageOrganization } from "../schemas"
 
 const roleBadges = [
   {
@@ -151,6 +154,32 @@ export function OrganizationsList({
                       </span>
                     </span>
                     <div className="flex shrink-0 items-center gap-1">
+                      {canManageOrganization(organization.role) && (
+                        <IconButton
+                          label={`Gerenciamento da Empresa: ${organization.name}`}
+                          variant="ghost"
+                          size="icon-sm"
+                          nativeButton={false}
+                          disabled={
+                            pendingLogouts > 0 ||
+                            isSigningOut() ||
+                            enterOrganization.isPending ||
+                            enterOrganization.isSuccess
+                          }
+                          render={
+                            <Link
+                              href={{
+                                pathname: "/organization-settings",
+                                query: {
+                                  organizationId: organization.id,
+                                },
+                              }}
+                            />
+                          }
+                        >
+                          <Settings2 aria-hidden="true" />
+                        </IconButton>
+                      )}
                       <Tooltip>
                         <TooltipTrigger
                           render={<span className="inline-flex" />}
