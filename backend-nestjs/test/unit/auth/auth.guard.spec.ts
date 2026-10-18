@@ -12,8 +12,9 @@ describe('AuthGuard', () => {
     headers: { cookie: 'test-cookie' },
     authSession: undefined,
   };
+  const response = {};
   const context = {
-    switchToHttp: () => ({ getRequest: () => request }),
+    switchToHttp: () => ({ getRequest: () => request, getResponse: () => response }),
   } as unknown as ExecutionContext;
 
   beforeEach(() => {
@@ -30,7 +31,7 @@ describe('AuthGuard', () => {
   it('atribui à requisição somente a sessão validada pelo Better Auth', async () => {
     authService.getSession.mockResolvedValue(authSession);
     expect(await guard.canActivate(context)).toBe(true);
-    expect(authService.getSession).toHaveBeenCalledWith(request.headers);
+    expect(authService.getSession).toHaveBeenCalledWith(request.headers, response);
     expect(request.authSession).toBe(authSession);
   });
 });

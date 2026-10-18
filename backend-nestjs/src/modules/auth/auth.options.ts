@@ -13,6 +13,8 @@ export function createAuthOptions(config: ConfigService<Environment, true>) {
     emailAndPassword: { enabled: true },
     advanced: { disableOriginCheck: false, disableCSRFCheck: false },
     session: {
+      expiresIn: 2 * 60 * 60,
+      updateAge: 0,
       cookieCache: { enabled: false },
     },
     plugins: [organization(), openAPI()],

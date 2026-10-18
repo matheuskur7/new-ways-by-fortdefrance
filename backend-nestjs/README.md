@@ -33,6 +33,8 @@ O Scalar em `/docs` permite selecionar as fontes API e Auth e organizações.
 
 Better Auth usa o adaptador Drizzle/PostgreSQL e sessões por cookie. O cadastro por e-mail e senha está habilitado. O plugin Organization fornece criação de organizações, organização ativa, membros, papéis e convites. São usados os papéis padrão `owner`, `admin` e `member`, com as permissões nativas do plugin. Qualquer usuário autenticado pode criar uma organização.
 
+Sessões padrão duram 2 horas (`expiresIn: 7200`) e são renovadas a cada validação bem-sucedida (`updateAge: 0`), sem cache de sessão no cookie. A renovação atualiza somente a sessão consultada e envia `Set-Cookie`, inclusive nas rotas protegidas pelo `AuthGuard`. Consultas automáticas também renovam o prazo. Sessões expiradas exigem novo login. O modo nativo `rememberMe: false` continua sem renovação automática. Sessões emitidas antes dessa configuração podem manter o prazo antigo até a renovação nativa; faça novo login para aplicar imediatamente o prazo de 2 horas.
+
 O handler nativo fica em `/api/auth/*` e é montado antes dos parsers do Nest em `setupHttp`. Novas inicializações da aplicação devem manter `bodyParser: false` e chamar essa função. CORS permite cookies da origem FRONTEND_URL; verificações de origem e CSRF permanecem habilitadas.
 
 Principais rotas (corpos e contratos completos na documentação Better Auth):

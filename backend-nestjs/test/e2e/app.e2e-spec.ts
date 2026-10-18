@@ -5,8 +5,6 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { betterAuth } from 'better-auth';
 import { memoryAdapter } from 'better-auth/adapters/memory';
 import type { MemoryDB } from 'better-auth/adapters/memory';
-import { fromNodeHeaders } from 'better-auth/node';
-import type { IncomingHttpHeaders } from 'node:http';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { AuthService } from '../../src/modules/auth/auth.service.js';
@@ -101,11 +99,7 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       .overrideProvider(AuthService)
       .useValue({
         auth,
-        getSession: (headers: IncomingHttpHeaders) =>
-          auth.api.getSession({
-            headers: fromNodeHeaders(headers),
-            query: { disableCookieCache: true },
-          }),
+        getSession: AuthService.prototype.getSession.bind({ auth } as unknown as AuthService),
       })
       .overrideProvider(OrganizationRepository)
       .useValue({
@@ -201,6 +195,54 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       .set('Origin', 'http://localhost:3000')
       .send({ organizationId })
       .expect(200);
+  });
+
+  it('renova por duas horas somente a sessão validada e não recupera sessões expiradas', async () => {
+    const agent = request.agent(app.getHttpServer());
+    const signup = await agent
+      .post('/api/auth/sign-up/email')
+      .send({ name: 'Sliding', email: 'sliding@example.com', password: 'test-password-123' })
+      .expect(200);
+    const current = store.session.find((entry) => entry.userId === signup.body.user.id)!;
+    const otherLogin = await request(app.getHttpServer())
+      .post('/api/auth/sign-in/email')
+      .send({ email: 'sliding@example.com', password: 'test-password-123' })
+      .expect(200);
+    const other = store.session.find((entry) => entry.token === otherLogin.body.token)!;
+    const otherExpiry = new Date(other.expiresAt).getTime();
+    const createdAt = new Date(current.createdAt).getTime();
+    expect(new Date(current.expiresAt).getTime() - createdAt).toBeCloseTo(7_200_000, -3);
+
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      const now = new Date(Date.now() + 60 * 60 * 1000);
+      vi.setSystemTime(now);
+      const session = await agent.get('/api/auth/get-session').expect(200);
+      expect(new Date(session.body.session.expiresAt).getTime()).toBe(now.getTime() + 7_200_000);
+      expect(session.headers['set-cookie']).toEqual(
+        expect.arrayContaining([expect.stringContaining('Max-Age=7200')]),
+      );
+
+      // Passa do vencimento original: o cookie renovado ainda permite autenticar.
+      vi.setSystemTime(new Date(now.getTime() + 90 * 60 * 1000));
+      const protectedResponse = await agent
+        .post('/images/upload-url')
+        .send({ key: 'user-image' })
+        .expect(403); // Sessão válida, mas sem organização ativa.
+      expect(protectedResponse.headers['set-cookie']).toEqual(
+        expect.arrayContaining([expect.stringContaining('Max-Age=7200')]),
+      );
+      const renewed = store.session.find((entry) => entry.id === current.id)!;
+      expect(new Date(renewed.expiresAt).getTime()).toBe(Date.now() + 7_200_000);
+      expect(new Date(store.session.find((entry) => entry.id === other.id)!.expiresAt).getTime())
+        .toBe(otherExpiry);
+
+      vi.setSystemTime(new Date(Date.now() + 7_200_001));
+      await agent.post('/images/upload-url').send({ key: 'user-image' }).expect(401);
+      expect(store.session.find((entry) => entry.id === current.id)).toBeUndefined();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('valida JSON e parâmetros com Zod após autenticar', async () => {

@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { fromNodeHeaders } from 'better-auth/node';
 import type { IncomingHttpHeaders } from 'node:http';
+import type { Response } from 'express';
 import type { Environment } from '../../shared/config/env.js';
 import { DatabaseService } from '../../shared/database/database.service.js';
 import { createAuth } from './auth.factory.js';
@@ -18,10 +19,15 @@ export class AuthService {
     this.auth = createAuth(config, database.db);
   }
 
-  getSession(headers: IncomingHttpHeaders) {
-    return this.auth.api.getSession({
+  async getSession(headers: IncomingHttpHeaders, response: Response) {
+    const result = await this.auth.api.getSession({
       headers: fromNodeHeaders(headers),
       query: { disableCookieCache: true },
+      returnHeaders: true,
     });
+    for (const cookie of result.headers.getSetCookie()) {
+      response.append('Set-Cookie', cookie);
+    }
+    return result.response;
   }
 }
