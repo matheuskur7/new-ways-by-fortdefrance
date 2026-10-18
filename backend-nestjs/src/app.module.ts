@@ -10,6 +10,7 @@ import { AuthModule } from './modules/auth/auth.module.js';
 import { OrganizationModule } from './modules/organization/organization.module.js';
 import { UserModule } from './modules/user/user.module.js';
 import { EmailModule } from './shared/email/email.module.js';
+import { CardFeesModule } from './modules/card-fees/card-fees.module.js';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { EmailModule } from './shared/email/email.module.js';
     OrganizationModule,
     UserModule,
     EmailModule,
+    CardFeesModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_PIPE, useClass: StandardSchemaValidationPipe }],

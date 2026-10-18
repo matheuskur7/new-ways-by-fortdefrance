@@ -1,3 +1,4 @@
+import { CardFeesRepository } from '../../src/modules/card-fees/card-fees.repository.js';
 import { UserImagesRepository } from '../../src/modules/user-images/user-images.repository.js';
 import 'reflect-metadata';
 import { Test } from '@nestjs/testing';
@@ -98,6 +99,19 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
     });
     const { AppModule } = await import('../../src/app.module.js');
     const module = await Test.createTestingModule({ imports: [AppModule] })
+      .overrideProvider(CardFeesRepository)
+      .useValue({
+        findAll: vi.fn().mockResolvedValue([
+          {
+            id: '019a1234-5678-7000-8000-123456789abc',
+            name: 'Visa / Mastercard',
+            channel: 'Presencial',
+            logoSvg: null,
+            installments: 2,
+            ratePercent: '3.94',
+          },
+        ]),
+      })
       .overrideProvider(DatabaseService)
       .useValue({})
       .overrideProvider(AuthService)
@@ -217,6 +231,21 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       .post('/api/auth/sign-in/email')
       .send({ email: 'owner@example.com', password: 'wrong-password' })
       .expect(401);
+  });
+
+  it('exige sessão para taxas globais e permite consulta sem empresa ativa', async () => {
+    await request(app.getHttpServer()).get('/card-fees').expect(401);
+    const response = await owner.get('/card-fees').expect(200);
+    expect(response.headers['cache-control']).toBe('private, no-store');
+    expect(response.body).toEqual([
+      {
+        id: '019a1234-5678-7000-8000-123456789abc',
+        name: 'Visa / Mastercard',
+        channel: 'Presencial',
+        logoSvg: null,
+        rates: [{ installments: 2, ratePercent: '3.94' }],
+      },
+    ]);
   });
 
   it('cria organização, lista e seleciona como ativa', async () => {
