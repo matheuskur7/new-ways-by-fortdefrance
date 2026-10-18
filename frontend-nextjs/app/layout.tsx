@@ -1,10 +1,11 @@
 import { Roboto } from "next/font/google"
 
 import "./globals.css"
+import { QueryProvider } from "@/components/query-provider"
 import { AnchoredToastProvider, ToastProvider } from "@/components/ui/toast"
 import { cn } from "@/lib/utils"
 
-const roboto = Roboto({ subsets: ["latin"], variable: "--font-sans" })
+const roboto = Roboto({ subsets: ["latin"], variable: "--font-roboto" })
 
 export default function RootLayout({
   children,
@@ -17,11 +18,13 @@ export default function RootLayout({
       className={cn("antialiased", "font-sans", roboto.variable)}
     >
       <body className="relative">
-        <ToastProvider>
-          <AnchoredToastProvider>
-            <div className="relative isolate min-h-svh">{children}</div>
-          </AnchoredToastProvider>
-        </ToastProvider>
+        <QueryProvider>
+          <ToastProvider position="top-center" >
+            <AnchoredToastProvider>
+              <div className="relative isolate min-h-svh">{children}</div>
+            </AnchoredToastProvider>
+          </ToastProvider>
+        </QueryProvider>
       </body>
     </html>
   )

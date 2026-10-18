@@ -4,11 +4,11 @@
 
 :root {
   color-scheme: light;
-  --card: oklch(1 0 0);
+  --card: #ffffff;
   --card-foreground: #4a4a4a;
   --popover: oklch(1 0 0);
   --popover-foreground: #4a4a4a;
-  --primary: #f30014;
+  --primary: #FF001C;
   --primary-foreground: #ffffff;
   --secondary: oklch(0.967 0.001 286.375);
   --secondary-foreground: #4a4a4a;
