@@ -5,6 +5,11 @@ import { useState } from "react"
 import { Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip"
+import {
   Field,
   FieldError,
   FieldGroup,
@@ -90,23 +95,34 @@ export default function LoginForm() {
                   placeholder="Digite sua senha"
                   aria-invalid={fieldState.invalid}
                 />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  className="absolute top-2 right-2"
-                  aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-                  aria-controls={field.name}
-                  aria-pressed={showPassword}
-                  disabled={login.isPending}
-                  onClick={() => setShowPassword((value) => !value)}
-                >
-                  {showPassword ? (
-                    <EyeOff aria-hidden="true" />
-                  ) : (
-                    <Eye aria-hidden="true" />
-                  )}
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger
+                    className="absolute top-2 right-2"
+                    render={<span />}
+                  >
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={
+                        showPassword ? "Ocultar senha" : "Mostrar senha"
+                      }
+                      aria-controls={field.name}
+                      aria-pressed={showPassword}
+                      disabled={login.isPending}
+                      onClick={() => setShowPassword((value) => !value)}
+                    >
+                      {showPassword ? (
+                        <EyeOff aria-hidden="true" />
+                      ) : (
+                        <Eye aria-hidden="true" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {showPassword ? "Ocultar senha" : "Mostrar senha"}
+                  </TooltipContent>
+                </Tooltip>
               </div>
 
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}

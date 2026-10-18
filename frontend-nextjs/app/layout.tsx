@@ -2,6 +2,7 @@ import { Roboto } from "next/font/google"
 import { Suspense } from "react"
 
 import "./globals.css"
+import { TooltipProvider } from "@/components/ui/tooltip"
 import { QueryProvider } from "@/components/query-provider"
 import { AnchoredToastProvider, ToastProvider } from "@/components/ui/toast"
 import { cn } from "@/lib/utils"
@@ -21,17 +22,19 @@ export default function RootLayout({
       className={cn("antialiased", "font-sans", roboto.variable)}
     >
       <body className="relative">
-        <QueryProvider>
-          <ToastProvider position="top-center">
-            <AnchoredToastProvider>
-              <SessionMonitor />
-              <Suspense fallback={null}>
-                <SessionNotice />
-              </Suspense>
-              <div className="relative isolate min-h-svh">{children}</div>
-            </AnchoredToastProvider>
-          </ToastProvider>
-        </QueryProvider>
+        <TooltipProvider>
+          <QueryProvider>
+            <ToastProvider position="top-center">
+              <AnchoredToastProvider>
+                <SessionMonitor />
+                <Suspense fallback={null}>
+                  <SessionNotice />
+                </Suspense>
+                <div className="relative isolate min-h-svh">{children}</div>
+              </AnchoredToastProvider>
+            </ToastProvider>
+          </QueryProvider>
+        </TooltipProvider>
       </body>
     </html>
   )
