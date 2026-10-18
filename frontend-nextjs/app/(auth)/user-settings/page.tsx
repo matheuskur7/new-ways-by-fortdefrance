@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/page-header"
 import Link from "next/link"
-import { ArrowLeft, UserRound } from "lucide-react"
+import { ArrowLeft, UserRoundCog } from "lucide-react"
 import { requireSession } from "@/lib/auth-server"
 import { buttonVariants } from "@/components/ui/button"
 import { UserSettingsForm } from "./components/user-settings-form"
@@ -23,7 +23,7 @@ export default async function SettingsPage() {
         <ArrowLeft aria-hidden="true" /> Minhas empresas
       </Link>
       <PageHeader
-        icon={UserRound}
+        icon={UserRoundCog}
         title="Ajustes do usuário"
         subtitle="Seus dados pessoais e informações da conta."
       />
