@@ -456,6 +456,107 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
     );
   });
 
+  it('gerencia nome, e-mail e endereço pela rota nativa sem alterar o código nem exigir empresa ativa', async () => {
+    const user = store.user.find((entry) => entry.email === 'owner@example.com')!;
+    const session = store.session.find((entry) => entry.userId === user.id)!;
+    const active = session.activeOrganizationId;
+    session.activeOrganizationId = null;
+    try {
+      const saved = await owner
+        .post('/api/auth/organization/update')
+        .set('Origin', 'http://localhost:3000')
+        .send({
+          organizationId,
+          data: {
+            name: '  Empresa atualizada  ',
+            email: 'company@example.com',
+            address: '  Rua Exemplo, 123 - Centro  ',
+          },
+        })
+        .expect(200);
+      expect(saved.body).toMatchObject({
+        name: 'Empresa atualizada',
+        email: 'company@example.com',
+        slug: 'owner-org',
+        address: 'Rua Exemplo, 123 - Centro',
+      });
+      const details = await owner
+        .get('/api/auth/organization/get-organization')
+        .query({ organizationId })
+        .expect(200);
+      expect(details.body.email).toBe('company@example.com');
+      expect(details.body.address).toBe('Rua Exemplo, 123 - Centro');
+      for (const data of [
+        { slug: 'novo-codigo' },
+        { name: '   ' },
+        { email: 'invalido' },
+        { address: 'x'.repeat(501) },
+      ]) {
+        await owner
+          .post('/api/auth/organization/update')
+          .set('Origin', 'http://localhost:3000')
+          .send({ organizationId, data })
+          .expect(400);
+      }
+      await owner
+        .post('/api/auth/organization/update')
+        .set('Origin', 'http://localhost:3000')
+        .send({ organizationId, data: { name: 'Owner Org', email: null } })
+        .expect(200);
+    } finally {
+      session.activeOrganizationId = active;
+    }
+  });
+
+  it('aplica permissões nativas ao editar a empresa e alterar cargos de membros reais', async () => {
+    const member = store.member.find(
+      (entry) => entry.organizationId === organizationId && entry.role === 'member',
+    )!;
+    const ownerMember = store.member.find(
+      (entry) => entry.organizationId === organizationId && entry.role === 'owner',
+    )!;
+    const members = await owner
+      .get('/api/auth/organization/list-members')
+      .query({ organizationId, limit: 1, offset: 0, sortBy: 'id' })
+      .expect(200);
+    expect(members.body.total).toBe(2);
+    expect(members.body.members).toHaveLength(1);
+    expect(members.body.members[0].user).toMatchObject({
+      name: expect.any(String),
+      email: expect.any(String),
+    });
+    await outsider
+      .post('/api/auth/organization/update')
+      .set('Origin', 'http://localhost:3000')
+      .send({ organizationId, data: { name: 'Sem permissão' } })
+      .expect(403);
+    await outsider
+      .post('/api/auth/organization/update-member-role')
+      .set('Origin', 'http://localhost:3000')
+      .send({ organizationId, memberId: member.id, role: 'admin' })
+      .expect(403);
+    await owner
+      .post('/api/auth/organization/update-member-role')
+      .set('Origin', 'http://localhost:3000')
+      .send({ organizationId, memberId: member.id, role: 'admin' })
+      .expect(200);
+    await outsider
+      .post('/api/auth/organization/update')
+      .set('Origin', 'http://localhost:3000')
+      .send({ organizationId, data: { name: 'Owner Org', email: 'admin@example.com' } })
+      .expect(200);
+    await outsider
+      .post('/api/auth/organization/update-member-role')
+      .set('Origin', 'http://localhost:3000')
+      .send({ organizationId, memberId: ownerMember.id, role: 'member' })
+      .expect(403);
+    await owner
+      .post('/api/auth/organization/update-member-role')
+      .set('Origin', 'http://localhost:3000')
+      .send({ organizationId, memberId: member.id, role: 'member' })
+      .expect(200);
+  });
+
   it('revoga acesso após remover vínculo e encerra a sessão no logout', async () => {
     const otherMember = store.member.find(
       (member) => member.organizationId === organizationId && member.role === 'member',

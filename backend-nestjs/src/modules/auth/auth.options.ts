@@ -1,7 +1,20 @@
 import { ConfigService } from '@nestjs/config';
 import type { BetterAuthOptions } from 'better-auth';
+import { APIError } from 'better-auth/api';
 import { openAPI, organization } from 'better-auth/plugins';
+import { organizationDetailsSchema } from '../organization/dto/organization-details.dto.js';
 import type { Environment } from '../../shared/config/env.js';
+
+function validateOrganizationDetails(data: unknown) {
+  const parsed = organizationDetailsSchema.partial().safeParse(data);
+  if (!parsed.success) {
+    throw new APIError('BAD_REQUEST', {
+      code: 'INVALID_ORGANIZATION_DETAILS',
+      message: 'Informe dados válidos para a empresa.',
+    });
+  }
+  return parsed.data;
+}
 
 export function createAuthOptions(config: ConfigService<Environment, true>) {
   return {
@@ -17,6 +30,40 @@ export function createAuthOptions(config: ConfigService<Environment, true>) {
       updateAge: 0,
       cookieCache: { enabled: false },
     },
-    plugins: [organization(), openAPI()],
+    plugins: [
+      organization({
+        schema: {
+          organization: {
+            additionalFields: {
+              address: {
+                type: 'string',
+                required: false,
+                validator: { input: organizationDetailsSchema.shape.address },
+              },
+              email: {
+                type: 'string',
+                required: false,
+                validator: { input: organizationDetailsSchema.shape.email },
+              },
+            },
+          },
+        },
+        organizationHooks: {
+          beforeCreateOrganization: async ({ organization: data }) => ({
+            data: { ...data, ...validateOrganizationDetails(data) },
+          }),
+          beforeUpdateOrganization: async ({ organization: data }) => {
+            if (data.slug !== undefined) {
+              throw new APIError('BAD_REQUEST', {
+                code: 'ORGANIZATION_CODE_IMMUTABLE',
+                message: 'O código da empresa não pode ser alterado.',
+              });
+            }
+            return { data: { ...data, ...validateOrganizationDetails(data) } };
+          },
+        },
+      }),
+      openAPI(),
+    ],
   } satisfies BetterAuthOptions;
 }

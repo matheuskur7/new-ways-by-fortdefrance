@@ -4,6 +4,8 @@ import { user } from './auth.schema.js';
 export const organization = pgTable('organization', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
+  email: text('email'),
+  address: text('address'),
   slug: text('slug').notNull().unique(),
   logo: text('logo'),
   createdAt: timestamp('created_at').notNull(),
