@@ -12,8 +12,26 @@ import { AnimatedHeight } from "@/components/ui/animated-height"
 import { useIsMutating } from "@tanstack/react-query"
 import { isSigningOut } from "@/lib/logout"
 import { useOrganizations } from "../hooks/use-organizations"
-import { isOrganizationOwner } from "../schemas"
 import { useEnterOrganization } from "../hooks/use-enter-organization"
+
+const roleBadges = [
+  {
+    role: "owner",
+    label: "Proprietário",
+    color: "border-primary/15 bg-primary/5 text-primary/80",
+  },
+  {
+    role: "admin",
+    label: "Administrador",
+    color:
+      "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  },
+  {
+    role: "member",
+    label: "Membro",
+    color: "border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-400",
+  },
+]
 
 export function OrganizationsList({
   userId,
@@ -84,7 +102,7 @@ export function OrganizationsList({
               </p>
             )}
             {organizations.isSuccess && organizations.data.length > 0 && (
-              <ul className="grid gap-3">
+              <ul className="grid auto-rows-fr gap-3">
                 {organizations.data.map((organization, index) => (
                   <li
                     key={organization.id}
@@ -94,11 +112,22 @@ export function OrganizationsList({
                     }}
                   >
                     <span className="grid min-w-0 flex-1 gap-1 pl-3">
-                      {isOrganizationOwner(organization.role) && (
-                        <span className="inline-flex h-4 w-fit items-center rounded border border-primary/15 bg-primary/5 px-1.5 text-[10px] leading-none font-medium text-primary/80">
-                          Proprietário
-                        </span>
-                      )}
+                      <span className="flex flex-wrap gap-1">
+                        {roleBadges
+                          .filter(({ role }) =>
+                            organization.role
+                              .split(",")
+                              .some((value) => value.trim() === role)
+                          )
+                          .map(({ role, label, color }) => (
+                            <span
+                              key={role}
+                              className={`inline-flex h-4 w-fit items-center rounded border px-1.5 text-[10px] leading-none font-medium ${color}`}
+                            >
+                              {label}
+                            </span>
+                          ))}
+                      </span>
                       <span className="relative text-lg leading-tight font-semibold">
                         {organization.id === activeOrganizationId && (
                           <Tooltip>
