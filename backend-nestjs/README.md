@@ -17,7 +17,7 @@ pnpm db:migrate
 pnpm start:dev
 ```
 
-O ambiente é validado com Zod no ConfigModule. O schema, os helpers de validação e a tipagem do ambiente ficam em um único arquivo, `src/shared/config/env.ts`. Campos numéricos e booleanos são convertidos e consumidos com ConfigService tipado. As credenciais usam S3_KEY_ID e S3_KEY_SECRET, quando ambas são informadas. Se ambas estiverem vazias, o SDK usa a cadeia padrão AWS (IAM role, perfil local ou variáveis AWS_*). FRONTEND_URL define a origem permitida pelo CORS da API. Variáveis opcionais vazias são normalizadas para undefined. BETTER_AUTH_URL e BETTER_AUTH_SECRET são obrigatórios; o segredo deve conter pelo menos 32 caracteres. Variáveis legadas de JWT continuam opcionais e não são utilizadas pela autenticação. As variáveis INITIAL_USER_* e INITIAL_ORGANIZATION_* são opcionais para iniciar a API e obrigatórias para executar o seed. O módulo de e-mail usa as variáveis SMTP existentes com Nodemailer. Não coloque credenciais no código.
+O ambiente é validado com Zod no ConfigModule. O schema, os helpers de validação e a tipagem do ambiente ficam em um único arquivo, `src/shared/config/env.ts`. Campos numéricos e booleanos são convertidos e consumidos com ConfigService tipado. As credenciais usam S3_KEY_ID e S3_KEY_SECRET, quando ambas são informadas. Se ambas estiverem vazias, o SDK usa a cadeia padrão AWS (IAM role, perfil local ou variáveis `AWS_*`). FRONTEND_URL define a origem permitida pelo CORS da API. Variáveis opcionais vazias são normalizadas para undefined. BETTER_AUTH_URL e BETTER_AUTH_SECRET são obrigatórios; o segredo deve conter pelo menos 32 caracteres. Variáveis legadas de JWT continuam opcionais e não são utilizadas pela autenticação. As variáveis `INITIAL_USER_*` e `INITIAL_ORGANIZATION_*` são opcionais para iniciar a API e obrigatórias para executar o seed. O módulo de e-mail usa as variáveis SMTP existentes com Nodemailer. Não coloque credenciais no código.
 
 Por padrão, a API usa `http://localhost:5000`:
 
@@ -235,7 +235,6 @@ Reexecutar preserva contas e senhas existentes com o mesmo e-mail e os dados da 
 
 `GET /organizations` exige sessão válida pelo `AuthGuard` e retorna uma lista de `{ id, name, slug, role }`. A listagem usa um único SELECT Drizzle com JOIN entre `member` e `organization`, filtrado por `session.user.id`, e ordena por nome e ID. A validação da sessão ocorre separadamente. Não recebe o usuário nem a organização por DTO, não exige organização ativa e retorna `[]` se não houver vínculos. Respostas usam `Cache-Control: private, no-store`; o contrato Zod está documentado no OpenAPI. Os endpoints nativos do Better Auth para criação, seleção de empresa, membros e convites permanecem disponíveis.
 
-
 ## Fotos de usuário com Magalu Cloud
 
 Assim como em `zexperiments`, use PUT simples para Magalu Cloud. Esse provedor não suporta PUT condicional (`If-None-Match`/`If-Match`) e retorna `501 NotImplemented`. Configure `S3_USE_CONDITIONAL_UPLOAD=false` e `S3_FORCE_PATH_STYLE=true`. O padrão de `S3_USE_CONDITIONAL_UPLOAD` permanece `true` para provedores compatíveis com escrita condicional. Cada upload continua recebendo uma nova chave gerada a partir do UUIDv7 do banco; na Magalu a URL pode ser reutilizada até expirar. O frontend envia exatamente os headers retornados pela API, além do Content-Type do arquivo.
@@ -246,16 +245,12 @@ A limpeza de fotos órfãs roda somente após o vínculo bem-sucedido de uma nov
 
 Referência do provedor: https://docs.magalu.cloud/docs/storage/object-storage/troubleshooting/error-proxmox-backupserver
 
-
 Na interface de `/user-settings`, a foto recortada é exportada em WebP com lado máximo de 512 px, sem ampliar recortes menores. Começa em qualidade 80% e ajusta qualidade e, se necessário, resolução para respeitar 50.000 bytes. JPEG é usado como alternativa apenas quando o navegador não exporta WebP. O botão de lixeira prepara a remoção, aplicada junto do nome ao salvar por `DELETE /user-images/current`. O servidor limpa a referência pelo Better Auth antes de excluir o objeto sem vínculo; falhas no salvamento preservam a foto atual.
 
-
 O módulo de fotos concentra leitura, vínculo, remoção e limpeza no `UserImagesService`. O `UserImagesRepository` mantém o escopo do usuário, os bloqueios e a proteção de fotos referenciadas por usuários. Não existe enumeração global de empresas nesse fluxo.
-
 
 ### Migração das fotos pessoais
 
 A migração `0003` transfere fotos vinculadas de `images` para `user_images` e atualiza as referências em `user.image`. A coluna `imported_key` preserva a localização de objetos já existentes; novos uploads não preenchem essa coluna e usam `user-image/<userId>/<id>`. Não há cópia nem exclusão de objetos S3 durante a migração. Referências compartilhadas recebem registros separados, mantendo o arquivo enquanto houver uma referência. Registros antigos sem vínculo continuam na tabela anterior para uma futura limpeza; não são atribuídos arbitrariamente a usuários.
-
 
 O módulo `src/modules/user-images/` registra suas próprias rotas em `/user-images`, com controller, service, repository e DTOs. O schema pessoal fica em `user-images.schema.ts`. O módulo `images` mantém seu fluxo por organização e não importa nem chama `UserImagesModule`; fotos pessoais não fazem parte de sua lista de prefixos. Ambos reutilizam somente a infraestrutura de armazenamento e consulta de metadados S3. `inspectUploadedObject` consulta a existência do objeto e retorna tipo e tamanho, sem regras de imagem; cada service valida os tipos aceitos e seu limite de tamanho antes de confirmar o upload.

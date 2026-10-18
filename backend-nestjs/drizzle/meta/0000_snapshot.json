@@ -67,9 +67,7 @@
         "images_key_unique": {
           "name": "images_key_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "key"
-          ]
+          "columns": ["key"]
         }
       },
       "policies": {},
@@ -81,10 +79,7 @@
     "public.image_status": {
       "name": "image_status",
       "schema": "public",
-      "values": [
-        "pending",
-        "ready"
-      ]
+      "values": ["pending", "ready"]
     }
   },
   "schemas": {},
