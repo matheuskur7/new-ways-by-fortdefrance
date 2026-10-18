@@ -44,6 +44,7 @@ export const envSchema = z
     S3_KEY_SECRET: optional(z.string().min(1)),
     S3_BUCKET: z.string().min(1),
     S3_FORCE_PATH_STYLE: booleanString.default(false),
+    S3_USE_CONDITIONAL_UPLOAD: booleanString.default(true),
     S3_URL_TTL_SECONDS: z.coerce.number().int().min(1).max(3600).default(300),
     MAX_IMAGE_SIZE_BYTES: z.coerce.number().int().min(1).max(104857600).default(10485760),
     JWT_SECRET: optional(z.string().min(1)),

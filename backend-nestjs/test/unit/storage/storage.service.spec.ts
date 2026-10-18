@@ -51,4 +51,39 @@ describe('StorageService: assinatura local sem acesso ao S3', () => {
       service.onApplicationShutdown();
     }
   });
+  it('permite leitura de fotos por 12 horas sem alterar a validade padrão de outras imagens', async () => {
+    const service = new StorageService(config);
+    try {
+      const photo = new URL(await service.presignDownload('images/org/user-image/photo', 43200));
+      const other = new URL(await service.presignDownload('images/example'));
+      const upload = new URL(await service.presignUpload('images/org/user-image/new-photo'));
+      expect(photo.searchParams.get('X-Amz-Expires')).toBe('43200');
+      expect(other.searchParams.get('X-Amz-Expires')).toBe('120');
+      expect(upload.searchParams.get('X-Amz-Expires')).toBe('120');
+    } finally {
+      service.onApplicationShutdown();
+    }
+  });
+  it('usa PUT simples como zexperiments quando o provedor não suporta requisição condicional', async () => {
+    const compatible = new ConfigService<Environment, true>({
+      S3_REGION: 'br-se1',
+      S3_BUCKET: 'test-images',
+      S3_ENDPOINT: 'https://br-se1.magaluobjects.com',
+      S3_KEY_ID: 'example-key',
+      S3_KEY_SECRET: 'example-secret',
+      S3_FORCE_PATH_STYLE: true,
+      S3_USE_CONDITIONAL_UPLOAD: false,
+      S3_URL_TTL_SECONDS: 300,
+    });
+    const service = new StorageService(compatible);
+    try {
+      const url = new URL(await service.presignUpload('images/org/user-image/new'));
+      expect(service.uploadHeaders).toEqual({});
+      expect(url.searchParams.get('X-Amz-SignedHeaders')).not.toContain('if-none-match');
+      expect(url.searchParams.has('if-none-match')).toBe(false);
+      expect(url.pathname).toBe('/test-images/images/org/user-image/new');
+    } finally {
+      service.onApplicationShutdown();
+    }
+  });
 });

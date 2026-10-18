@@ -1,3 +1,4 @@
+import { UserImagesRepository } from '../../src/modules/images/user-images/user-images.repository.js';
 import 'reflect-metadata';
 import { Test } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
@@ -42,6 +43,8 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       const row = {
         id,
         organizationId: orgId,
+        keyPrefix: prefix,
+        createdAt: new Date(),
         key: `images/${orgId}/${prefix}/${id}`,
         contentType: null,
         size: null,
@@ -67,6 +70,7 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
     presignUpload: vi.fn().mockResolvedValue('https://s3.example.com/upload'),
     head: vi.fn(),
     presignDownload: vi.fn().mockResolvedValue('https://s3.example.com/download'),
+    uploadHeaders: { 'If-None-Match': '*' as const },
     expiresIn: 300,
   };
 
@@ -121,6 +125,18 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       })
       .overrideProvider(ImagesRepository)
       .useValue(repository)
+      .overrideProvider(UserImagesRepository)
+      .useValue({
+        withImage: async (
+          orgId: string,
+          id: string,
+          action: (image: Record<string, unknown> | undefined) => Promise<unknown>,
+        ) => {
+          const row = records.get(id);
+          return action(row?.organizationId === orgId ? row : undefined);
+        },
+        deleteUnreferenced: vi.fn().mockResolvedValue(false),
+      })
       .overrideProvider(StorageService)
       .useValue(storage)
       .compile();
@@ -163,6 +179,9 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
   it('exige sessão e permite CORS com cookies somente para a origem configurada', async () => {
     await request(app.getHttpServer()).get('/organizations').expect(401);
     await request(app.getHttpServer()).post('/images/upload-url').send({}).expect(401);
+    await request(app.getHttpServer())
+      .get('/images/user-images/019a1234-5678-7000-8000-123456789abc/download-url')
+      .expect(401);
     const response = await request(app.getHttpServer())
       .options('/api/auth/sign-in/email')
       .set('Origin', 'http://localhost:3000')
@@ -287,6 +306,7 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       `images/${organizationId}/user-image/${imageId}`,
     );
     await owner.get(`/images/${imageId}/download-url`).expect(400);
+    await owner.get(`/images/user-images/${imageId}/download-url`).expect(400);
     storage.head.mockResolvedValue({
       ContentLength: 100,
       ContentType: 'image/png',
@@ -294,6 +314,36 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
     await owner.post(`/images/${imageId}/complete`).expect(200);
     const download = await owner.get(`/images/${imageId}/download-url`).expect(200);
     expect(download.body.url).toBe('https://s3.example.com/download');
+  });
+
+  it('libera leitura da foto por 12 horas e atualiza nome e imagem pela rota nativa', async () => {
+    const photo = await owner.get(`/images/user-images/${imageId}/download-url`).expect(200);
+    expect(photo.body.expiresIn).toBe(43200);
+    expect(storage.presignDownload).toHaveBeenLastCalledWith(
+      `images/${organizationId}/user-image/${imageId}`,
+      43200,
+    );
+    const image = `http://localhost:3000/user-images/${imageId}`;
+    await owner
+      .post(`/images/user-images/${imageId}/attach`)
+      .set('Origin', 'http://localhost:3000')
+      .send({ name: 'Owner atualizado' })
+      .expect(200);
+    const session = await owner.get('/api/auth/get-session').expect(200);
+    expect(session.body.user.name).toBe('Owner atualizado');
+    expect(session.body.user.image).toBe(image);
+    expect(session.body.user.email).toBe('owner@example.com');
+  });
+
+  it('remove a foto pelo endpoint de imagens sem alterar o e-mail', async () => {
+    await owner
+      .delete('/images/user-images/current')
+      .set('Origin', 'http://localhost:3000')
+      .send({ name: 'Owner atualizado' })
+      .expect(200);
+    const session = await owner.get('/api/auth/get-session').expect(200);
+    expect(session.body.user.image).toBeNull();
+    expect(session.body.user.email).toBe('owner@example.com');
   });
 
   it('impede acesso a imagens e seleção de organização de outro usuário', async () => {
@@ -318,6 +368,7 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       .send({ organizationId: foreignOrganizationId })
       .expect(200);
     await outsider.get(`/images/${imageId}/download-url`).expect(404);
+    await outsider.get(`/images/user-images/${imageId}/download-url`).expect(404);
     const ownOrganizations = await owner.get('/organizations').expect(200);
     expect(ownOrganizations.body).toEqual([
       { id: organizationId, name: 'Owner Org', slug: 'owner-org', role: 'owner' },

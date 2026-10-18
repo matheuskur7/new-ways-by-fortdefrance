@@ -4,7 +4,7 @@ Projeto gerado pela CLI oficial do NestJS, em TypeScript ESM/NodeNext. Usa Postg
 
 ## Iniciar
 
-Requisitos: Node.js 22+, pnpm 12, PostgreSQL 18+ (UUIDv7 nativo) e um bucket S3 privado (ou serviço compatível com URLs assinadas e escrita condicional If-None-Match).
+Requisitos: Node.js 22+, pnpm 12, PostgreSQL 18+ (UUIDv7 nativo) e um bucket S3 privado (ou serviço compatível com URLs assinadas; para Magalu Cloud, veja a configuração de PUT simples ao final).
 
 Execute dentro de `backend-nestjs/`:
 
@@ -142,7 +142,7 @@ Todas as rotas de imagens exigem uma sessão válida e uma organização ativa c
 
 A resposta contém `id`, `key` (chave completa), `status: "pending"`, `url`, `method: "PUT"`, `headers` e `expiresIn`. Se a assinatura falhar, o registro continua pendente.
 
-3. Envie os bytes diretamente à URL S3 com PUT, sem multipart, usando os headers retornados. Defina Content-Type com o tipo do arquivo. A URL exige `If-None-Match: *`, impedindo sobrescrever um objeto já enviado à mesma chave. Um upload já concluído no S3 retorna 412 se for repetido; nesses casos, confirme pelo backend ou solicite uma nova URL/registro para outro arquivo.
+3. Envie os bytes diretamente à URL S3 com PUT, sem multipart, usando os headers retornados. Defina Content-Type com o tipo do arquivo. Com `S3_USE_CONDITIONAL_UPLOAD=true` (padrão), a URL exige `If-None-Match: *`, impedindo sobrescrever um objeto já enviado à mesma chave. Nesse modo, um upload repetido retorna 412; confirme pelo backend ou solicite uma nova URL/registro. Para Magalu Cloud, configure `false`: o contrato retorna headers sem a condição e usa uma chave exclusiva por upload.
 
 ```ts
 const response = await fetch('http://localhost:5000/images/upload-url', {
@@ -171,6 +171,10 @@ if (!complete.ok) throw new Error('Falha na confirmação');
 
 4. `POST /images/:id/complete` consulta apenas HeadObject no S3, valida o tipo declarado (JPEG, PNG, WebP ou GIF) e o tamanho e preenche esses metadados no banco. O limite padrão é 10 MiB, configurável por MAX_IMAGE_SIZE_BYTES (máximo 100 MiB). Arquivos vazios, tipos incompatíveis e arquivos acima do limite não são confirmados; continuam pendentes. A checagem ocorre depois do envio ao S3, não durante a assinatura. A confirmação é idempotente e muda o status para `ready`.
 5. `GET /images/:id/download-url` retorna uma URL temporária GET para uma imagem pronta. O cliente lê os bytes diretamente do S3.
+
+Para fotos de usuário, `GET /images/user-images/:id/download-url` usa o submódulo `UserImagesModule`: aceita somente o prefixo `user-image`, exige status `ready` e gera a URL de leitura com validade de 12 horas (`43200` segundos). A validade das demais imagens e dos uploads continua sendo `S3_URL_TTL_SECONDS`. Credenciais temporárias AWS podem encerrar a validade antes do prazo assinado. O vínculo com a organização ativa é revalidado em cada solicitação.
+
+A página `/user-settings` atualiza nome e imagem pelo endpoint nativo `POST /api/auth/update-user`. O e-mail não é enviado. O envio da foto usa `POST /images/upload-url` com `{ "key": "user-image" }`, PUT direto ao S3 com os headers retornados e `POST /images/:id/complete` antes de vincular a foto por `POST /images/user-images/:id/attach`. No campo `image`, o servidor salva a URL estável `/user-images/:id` (absoluta), nunca uma URL pré-assinada. Essa rota solicita uma nova URL de leitura e redireciona o navegador diretamente ao S3, sem cache ou transporte de arquivos pelo servidor. O upload e a leitura mantêm o escopo da empresa ativa: sem empresa selecionada ou ao acessar uma foto de outra empresa, aplicam-se as mesmas restrições de Images.
 
 O backend não inspeciona os bytes nem detecta o formato real da imagem: MIME é declarado pelo cliente ao S3. Verificação de conteúdo e antivírus, se necessários, devem ocorrer em processamento externo ao backend.
 
@@ -230,3 +234,17 @@ Reexecutar preserva contas e senhas existentes com o mesmo e-mail e os dados da 
 ## Listagem de empresas do usuário
 
 `GET /organizations` exige sessão válida pelo `AuthGuard` e retorna uma lista de `{ id, name, slug, role }`. A listagem usa um único SELECT Drizzle com JOIN entre `member` e `organization`, filtrado por `session.user.id`, e ordena por nome e ID. A validação da sessão ocorre separadamente. Não recebe o usuário nem a organização por DTO, não exige organização ativa e retorna `[]` se não houver vínculos. Respostas usam `Cache-Control: private, no-store`; o contrato Zod está documentado no OpenAPI. Os endpoints nativos do Better Auth para criação, seleção de empresa, membros e convites permanecem disponíveis.
+
+
+## Fotos de usuário com Magalu Cloud
+
+Assim como em `zexperiments`, use PUT simples para Magalu Cloud. Esse provedor não suporta PUT condicional (`If-None-Match`/`If-Match`) e retorna `501 NotImplemented`. Configure `S3_USE_CONDITIONAL_UPLOAD=false` e `S3_FORCE_PATH_STYLE=true`. O padrão de `S3_USE_CONDITIONAL_UPLOAD` permanece `true` para provedores compatíveis com escrita condicional. Cada upload continua recebendo uma nova chave gerada a partir do UUIDv7 do banco; na Magalu a URL pode ser reutilizada até expirar. O frontend envia exatamente os headers retornados pela API, além do Content-Type do arquivo.
+
+Após o PUT e a confirmação, `POST /images/user-images/:id/attach` recebe o nome, verifica a organização ativa, o prefixo `user-image`, o status `ready` e a criação na última hora. Em seguida chama o handler nativo `updateUser` do Better Auth e devolve seus cookies. A referência permanente é criada pelo servidor usando FRONTEND_URL. A foto anterior só é excluída depois de atualizar o perfil e verificar que nenhum usuário a referencia. A exclusão usa bloqueio da linha da imagem; em caso de falha no S3, o registro é preservado para nova tentativa.
+
+A limpeza de fotos órfãs roda somente após o vínculo bem-sucedido de uma nova foto, sem execuções simultâneas. Não há execução na inicialização nem agendamento periódico. Percorre os registros de imagens por organização, mantém fotos em uso e remove objetos `user-image` sem vínculo criados há mais de 24 horas, incluindo uploads pendentes abandonados. Os limites de uma hora para vincular e 24 horas para limpeza evitam apagar uploads em andamento. Remover a foto continua tentando excluir somente o arquivo anterior sem vínculo; não dispara a varredura de órfãs. Falhas na limpeza são registradas sem desfazer o perfil salvo e uma nova tentativa ocorre no próximo envio bem-sucedido. As credenciais precisam permitir DeleteObject além de PutObject/GetObject; não é necessário listar objetos no bucket, pois os uploads já são registrados no banco antes da assinatura.
+
+Referência do provedor: https://docs.magalu.cloud/docs/storage/object-storage/troubleshooting/error-proxmox-backupserver
+
+
+Na interface de `/user-settings`, a foto recortada é exportada em WebP com lado máximo de 512 px, sem ampliar recortes menores. Começa em qualidade 80% e ajusta qualidade e, se necessário, resolução para respeitar 50.000 bytes. JPEG é usado como alternativa apenas quando o navegador não exporta WebP. O botão de lixeira prepara a remoção, aplicada junto do nome ao salvar por `DELETE /images/user-images/current`. O servidor limpa a referência pelo Better Auth antes de excluir o objeto sem vínculo; falhas no salvamento preservam a foto atual.

@@ -18,7 +18,7 @@ export const uploadResponseSchema = z.object({
   url: z.url(),
   method: z.literal('PUT'),
   expiresIn: z.number(),
-  headers: z.object({ 'If-None-Match': z.literal('*') }),
+  headers: z.object({ 'If-None-Match': z.literal('*').optional() }),
 });
 export const imageResponseSchema = z.object({
   id: z.uuid(),

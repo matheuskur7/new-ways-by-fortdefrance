@@ -30,6 +30,7 @@ describe('ImagesService', () => {
     presignUpload: vi.fn(),
     head: vi.fn(),
     presignDownload: vi.fn(),
+    uploadHeaders: { 'If-None-Match': '*' as const },
     expiresIn: 300,
   };
   const config = new ConfigService<Environment, true>({

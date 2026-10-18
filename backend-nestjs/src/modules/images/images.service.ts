@@ -31,7 +31,7 @@ export class ImagesService {
       url,
       method: 'PUT' as const,
       expiresIn: this.storage.expiresIn,
-      headers: { 'If-None-Match': '*' as const },
+      headers: this.storage.uploadHeaders,
     };
   }
 
