@@ -98,6 +98,7 @@ function Toasts({
           return (
             <Toast.Root
               key={toast.id}
+              onClick={() => toastManager.close(toast.id)}
               className={cn(
                 "cursor-pointer absolute z-[calc(9999-var(--toast-index))] h-(--toast-calc-height) w-full rounded-lg border bg-[color-mix(in_srgb,var(--popover),var(--color-black)_calc(1%*max(0,var(--toast-index,0))))] bg-clip-padding text-popover-foreground shadow-lg/5 select-none [transition:transform_.5s_cubic-bezier(.22,1,.36,1),opacity_.5s,height_.15s,background-color_.5s] before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] before:shadow-[0_1px_--theme(--color-black/4%)] data-expanded:bg-popover",
                 // Base positioning using data-position
