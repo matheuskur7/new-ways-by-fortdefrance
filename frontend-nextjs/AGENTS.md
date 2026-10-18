@@ -13,3 +13,5 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Use os componentes Table do Shadcn com TanStack Table para tabelas do sistema. Reutilize `components/data-table.tsx` e defina as colunas no domínio correspondente.
 - Requisições autenticadas em Server Components usam `lib/api-server.ts`; no navegador, use `lib/api.ts`. Valide as respostas com os schemas do domínio.
 - Cabeçalhos de página usam `components/page-header.tsx`, com ícone, título, subtítulo e separador, inclusive nas telas de autenticação, exceto o login, que mantém seu cabeçalho próprio.
+
+- Formulários usam React Hook Form com schemas Zod. Prefira `register` nos inputs que expõem `ref`, `onChange` e `onBlur`; use `Controller` somente quando a API do componente exigir integração controlada, como `value/onValueChange`.

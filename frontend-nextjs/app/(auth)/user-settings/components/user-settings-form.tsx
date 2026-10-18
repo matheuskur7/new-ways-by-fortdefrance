@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Controller, useForm } from "react-hook-form"
+import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { LoaderCircle, Save, UserRound } from "lucide-react"
 import type { AuthSession } from "@/lib/session"
@@ -27,6 +27,8 @@ export function UserSettingsForm({ user }: { user: AuthSession["user"] }) {
     resolver: zodResolver(userSettingsSchema),
     defaultValues: { name: user.name },
   })
+
+  const { errors, isDirty } = form.formState
 
   function onSubmit(data: UserSettingsData) {
     updateUser.mutate(
@@ -81,25 +83,17 @@ export function UserSettingsForm({ user }: { user: AuthSession["user"] }) {
             </div>
           </div>
           <FieldGroup className="gap-3">
-            <Controller
-              name="name"
-              control={form.control}
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="settings-name">Nome completo</FieldLabel>
-                  <Input
-                    {...field}
-                    id="settings-name"
-                    autoComplete="name"
-                    disabled={updateUser.isPending}
-                    aria-invalid={fieldState.invalid}
-                  />
-                  {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
-                  )}
-                </Field>
-              )}
-            />
+            <Field data-invalid={Boolean(errors.name)}>
+              <FieldLabel htmlFor="settings-name">Nome completo</FieldLabel>
+              <Input
+                {...form.register("name")}
+                id="settings-name"
+                autoComplete="off"
+                disabled={updateUser.isPending}
+                aria-invalid={Boolean(errors.name)}
+              />
+              {errors.name && <FieldError errors={[errors.name]} />}
+            </Field>
             <Field>
               <FieldLabel
                 htmlFor="settings-email"
@@ -127,8 +121,7 @@ export function UserSettingsForm({ user }: { user: AuthSession["user"] }) {
           <Button
             type="submit"
             disabled={
-              updateUser.isPending ||
-              (!form.formState.isDirty && !image && !removeImage)
+              updateUser.isPending || (!isDirty && !image && !removeImage)
             }
           >
             {updateUser.isPending && (

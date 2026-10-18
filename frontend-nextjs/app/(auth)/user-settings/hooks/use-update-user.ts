@@ -26,7 +26,7 @@ export function useUpdateUser() {
         title: "Não foi possível salvar",
         description:
           isAxiosError(error) && error.response?.status === 403
-            ? "Selecione uma empresa à qual você pertence antes de enviar a foto."
+            ? "Você não tem permissão para atualizar este perfil."
             : "Confira sua conexão e tente novamente. Suas edições foram mantidas.",
         type: "error",
       })

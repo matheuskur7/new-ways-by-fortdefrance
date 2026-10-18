@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Controller, useForm } from "react-hook-form"
+import { useForm } from "react-hook-form"
 import z from "zod"
 import { useLogin } from "../hooks/use-login"
 
@@ -40,6 +40,8 @@ export default function LoginForm() {
     mode: "onSubmit",
   })
 
+  const { errors } = form.formState
+
   function onSubmit(data: LoginFormData) {
     login.mutate(data)
   }
@@ -52,83 +54,62 @@ export default function LoginForm() {
       method="post"
     >
       <FieldGroup className="gap-4">
-        {/* EMAIL */}
-        <Controller
-          name="email"
-          control={form.control}
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor={field.name}>Email</FieldLabel>
-
-              <Input
-                {...field}
-                id={field.name}
-                type="email"
-                className="h-12"
-                autoComplete="email"
-                disabled={login.isPending}
-                placeholder="Seu e-mail"
-                aria-invalid={fieldState.invalid}
-              />
-
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )}
-        />
-
-        {/* SENHA */}
-        <Controller
-          name="password"
-          control={form.control}
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor={field.name}>Senha</FieldLabel>
-
-              <div className="relative">
-                <Input
-                  {...field}
-                  id={field.name}
-                  type={showPassword ? "text" : "password"}
-                  className="h-12 pr-12"
-                  autoComplete="current-password"
+        <Field data-invalid={Boolean(errors.email)}>
+          <FieldLabel htmlFor="email">Email</FieldLabel>
+          <Input
+            {...form.register("email")}
+            id="email"
+            type="email"
+            className="h-12"
+            autoComplete="email"
+            disabled={login.isPending}
+            placeholder="Seu e-mail"
+            aria-invalid={Boolean(errors.email)}
+          />
+          {errors.email && <FieldError errors={[errors.email]} />}
+        </Field>
+        <Field data-invalid={Boolean(errors.password)}>
+          <FieldLabel htmlFor="password">Senha</FieldLabel>
+          <div className="relative">
+            <Input
+              {...form.register("password")}
+              id="password"
+              type={showPassword ? "text" : "password"}
+              className="h-12 pr-12"
+              autoComplete="current-password"
+              disabled={login.isPending}
+              placeholder="Digite sua senha"
+              aria-invalid={Boolean(errors.password)}
+            />
+            <Tooltip>
+              <TooltipTrigger
+                className="absolute top-2 right-2"
+                render={<span />}
+              >
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                  aria-controls="password"
+                  aria-pressed={showPassword}
                   disabled={login.isPending}
-                  placeholder="Digite sua senha"
-                  aria-invalid={fieldState.invalid}
-                />
-                <Tooltip>
-                  <TooltipTrigger
-                    className="absolute top-2 right-2"
-                    render={<span />}
-                  >
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-sm"
-                      aria-label={
-                        showPassword ? "Ocultar senha" : "Mostrar senha"
-                      }
-                      aria-controls={field.name}
-                      aria-pressed={showPassword}
-                      disabled={login.isPending}
-                      onClick={() => setShowPassword((value) => !value)}
-                    >
-                      {showPassword ? (
-                        <EyeOff aria-hidden="true" />
-                      ) : (
-                        <Eye aria-hidden="true" />
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {showPassword ? "Ocultar senha" : "Mostrar senha"}
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )}
-        />
+                  onClick={() => setShowPassword((value) => !value)}
+                >
+                  {showPassword ? (
+                    <EyeOff aria-hidden="true" />
+                  ) : (
+                    <Eye aria-hidden="true" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {showPassword ? "Ocultar senha" : "Mostrar senha"}
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          {errors.password && <FieldError errors={[errors.password]} />}
+        </Field>
 
         <Button
           type="button"
