@@ -103,6 +103,17 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       })
       .overrideProvider(OrganizationRepository)
       .useValue({
+        findAllForUser: async (userId: string) =>
+          store.member
+            .filter((membership) => membership.userId === userId)
+            .flatMap((membership) => {
+              const org = store.organization.find(
+                (entry) => entry.id === membership.organizationId,
+              );
+              return org
+                ? [{ id: org.id, name: org.name, slug: org.slug, role: membership.role }]
+                : [];
+            }),
         findMembership: async (orgId: string, userId: string) =>
           store.member.find(
             (member) => member.organizationId === orgId && member.userId === userId,
@@ -139,6 +150,10 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
     ).toMatchObject({
       required: ['key'],
     });
+    expect(
+      response.body.paths['/organizations'].get.responses['200'].content['application/json'].schema
+        .items.properties.role,
+    ).toBeDefined();
     const authSchema = await request(app.getHttpServer())
       .get('/api/auth/open-api/generate-schema')
       .expect(200);
@@ -146,6 +161,7 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
   });
 
   it('exige sessão e permite CORS com cookies somente para a origem configurada', async () => {
+    await request(app.getHttpServer()).get('/organizations').expect(401);
     await request(app.getHttpServer()).post('/images/upload-url').send({}).expect(401);
     const response = await request(app.getHttpServer())
       .options('/api/auth/sign-in/email')
@@ -170,6 +186,7 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
     expect(JSON.stringify(signup.body)).not.toContain('test-password-123');
     const session = await owner.get('/api/auth/get-session').expect(200);
     expect(session.body.user.email).toBe('owner@example.com');
+    await owner.get('/organizations').expect(200).expect([]);
     await owner.post('/images/upload-url').send({}).expect(400);
     await owner.post('/images/upload-url').send({ key: 'user-image' }).expect(403);
     await request(app.getHttpServer())
@@ -195,6 +212,8 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       .set('Origin', 'http://localhost:3000')
       .send({ organizationId })
       .expect(200);
+    const activeSession = await owner.get('/api/auth/get-session').expect(200);
+    expect(activeSession.body.session.activeOrganizationId).toBe(organizationId);
   });
 
   it('renova por duas horas somente a sessão validada e não recupera sessões expiradas', async () => {
@@ -234,8 +253,9 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       );
       const renewed = store.session.find((entry) => entry.id === current.id)!;
       expect(new Date(renewed.expiresAt).getTime()).toBe(Date.now() + 7_200_000);
-      expect(new Date(store.session.find((entry) => entry.id === other.id)!.expiresAt).getTime())
-        .toBe(otherExpiry);
+      expect(
+        new Date(store.session.find((entry) => entry.id === other.id)!.expiresAt).getTime(),
+      ).toBe(otherExpiry);
 
       vi.setSystemTime(new Date(Date.now() + 7_200_001));
       await agent.post('/images/upload-url').send({ key: 'user-image' }).expect(401);
@@ -298,6 +318,18 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       .send({ organizationId: foreignOrganizationId })
       .expect(200);
     await outsider.get(`/images/${imageId}/download-url`).expect(404);
+    const ownOrganizations = await owner.get('/organizations').expect(200);
+    expect(ownOrganizations.body).toEqual([
+      { id: organizationId, name: 'Owner Org', slug: 'owner-org', role: 'owner' },
+    ]);
+    expect(ownOrganizations.headers['cache-control']).toBe('private, no-store');
+    const ownerUserId = store.user.find((entry) => entry.email === 'owner@example.com')!.id;
+    const outsiderOrganizations = await outsider
+      .get(`/organizations?userId=${ownerUserId}&organizationId=${organizationId}`)
+      .expect(200);
+    expect(outsiderOrganizations.body).toEqual([
+      { id: foreignOrganizationId, name: 'Other Org', slug: 'other-org', role: 'owner' },
+    ]);
     await outsider.post(`/images/${imageId}/complete`).expect(404);
     await outsider
       .post('/api/auth/organization/set-active')
@@ -328,6 +360,12 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       .send({ email: 'third@example.com', role: 'admin', organizationId })
       .expect(403);
     await outsider.get(`/images/${imageId}/download-url`).expect(200);
+    const organizations = await outsider.get('/organizations').expect(200);
+    expect(organizations.body).toEqual(
+      expect.arrayContaining([
+        { id: organizationId, name: 'Owner Org', slug: 'owner-org', role: 'member' },
+      ]),
+    );
   });
 
   it('revoga acesso após remover vínculo e encerra a sessão no logout', async () => {
@@ -340,6 +378,10 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       .send({ memberIdOrEmail: otherMember.id, organizationId })
       .expect(200);
     await outsider.get(`/images/${imageId}/download-url`).expect(403);
+    const organizations = await outsider.get('/organizations').expect(200);
+    expect(organizations.body).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: organizationId })]),
+    );
     await owner
       .post('/api/auth/sign-out')
       .set('Origin', 'http://localhost:3000')
