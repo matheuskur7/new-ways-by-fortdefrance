@@ -6,6 +6,18 @@ const port = z.coerce.number().int().min(1).max(65535);
 const booleanString = z.enum(['true', 'false']).transform((value) => value === 'true');
 const httpUrl = z.url({ protocol: /^https?$/ });
 
+export const initialSeedSchema = z.object({
+  INITIAL_USER_NAME: z.string().trim().min(1),
+  INITIAL_USER_EMAIL: z.email().transform((value) => value.toLowerCase()),
+  INITIAL_USER_PASSWORD: z.string().min(8).max(128),
+  INITIAL_ORGANIZATION_NAME: z.string().trim().min(1),
+  INITIAL_ORGANIZATION_SLUG: z
+    .string()
+    .trim()
+    .min(1)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+});
+
 const mailbox = z
   .string()
   .trim()
@@ -38,9 +50,11 @@ export const envSchema = z
     JWT_EXPIRES_IN: optional(z.string().min(1)),
     BETTER_AUTH_URL: httpUrl,
     BETTER_AUTH_SECRET: z.string().min(32),
-    ADMIN_USER_NAME: optional(z.string().min(1)),
-    ADMIN_USER_PASSWORD: optional(z.string().min(1)),
-    ADMIN_USER_EMAIL: optional(z.email()),
+    INITIAL_USER_NAME: optional(initialSeedSchema.shape.INITIAL_USER_NAME),
+    INITIAL_USER_PASSWORD: optional(initialSeedSchema.shape.INITIAL_USER_PASSWORD),
+    INITIAL_USER_EMAIL: optional(initialSeedSchema.shape.INITIAL_USER_EMAIL),
+    INITIAL_ORGANIZATION_NAME: optional(initialSeedSchema.shape.INITIAL_ORGANIZATION_NAME),
+    INITIAL_ORGANIZATION_SLUG: optional(initialSeedSchema.shape.INITIAL_ORGANIZATION_SLUG),
     SMTP_HOST: optional(z.string().trim().min(1)),
     SMTP_PORT: port.default(465),
     SMTP_SECURE: booleanString.default(true),

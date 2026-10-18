@@ -49,11 +49,34 @@ describe('Configuração do ambiente', () => {
       SMTP_PASSWORD: '',
       SMTP_FROM: '',
       SMTP_REPLY_TO: '',
+      INITIAL_USER_NAME: '',
+      INITIAL_USER_EMAIL: '',
+      INITIAL_USER_PASSWORD: '',
+      INITIAL_ORGANIZATION_NAME: '',
+      INITIAL_ORGANIZATION_SLUG: '',
     });
     expect(config.S3_ENDPOINT).toBeUndefined();
     expect(config.S3_KEY_ID).toBeUndefined();
     expect(config.SMTP_HOST).toBeUndefined();
     expect(config.SMTP_FROM).toBeUndefined();
+    expect(config.INITIAL_USER_NAME).toBeUndefined();
+    expect(config.INITIAL_ORGANIZATION_NAME).toBeUndefined();
+    expect(config.INITIAL_ORGANIZATION_SLUG).toBeUndefined();
+  });
+
+  it('valida e normaliza as configurações do usuário e da empresa iniciais', () => {
+    const config = validateEnv({
+      ...valid,
+      INITIAL_USER_NAME: ' Usuário Inicial ',
+      INITIAL_USER_EMAIL: 'INITIAL@example.com',
+      INITIAL_USER_PASSWORD: 'example-password',
+      INITIAL_ORGANIZATION_NAME: ' Fort de France - Matriz ',
+      INITIAL_ORGANIZATION_SLUG: 'fortdefrance-matriz',
+    });
+    expect(config.INITIAL_USER_NAME).toBe('Usuário Inicial');
+    expect(config.INITIAL_USER_EMAIL).toBe('initial@example.com');
+    expect(config.INITIAL_ORGANIZATION_NAME).toBe('Fort de France - Matriz');
+    expect(config.INITIAL_ORGANIZATION_SLUG).toBe('fortdefrance-matriz');
   });
 
   it.each([
@@ -80,6 +103,10 @@ describe('Configuração do ambiente', () => {
     { SMTP_FROM: 'Sender <invalid>' },
     { SMTP_FROM: 'Sender\r\nBcc: hidden@example.com <sender@example.com>' },
     { SMTP_REPLY_TO: 'invalid' },
+    { INITIAL_USER_PASSWORD: 'short' },
+    { INITIAL_ORGANIZATION_NAME: ' ' },
+    { INITIAL_ORGANIZATION_SLUG: 'Fort de France' },
+    { INITIAL_ORGANIZATION_SLUG: '-matriz' },
   ])('rejeita configuração inválida: %o', (override) => {
     expect(() => validateEnv({ ...valid, ...override })).toThrow('Configuração inválida');
   });
