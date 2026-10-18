@@ -7,3 +7,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+## Padrões do frontend
+
+- Cabeçalhos de página usam `components/page-header.tsx`, com ícone, título, subtítulo e separador, inclusive nas telas de autenticação, exceto o login, que mantém seu cabeçalho próprio.

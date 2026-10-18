@@ -67,7 +67,7 @@ export default function AuthLayout({
             <BrandWatermark />
           </div>
         </aside>
-        <section className="flex min-w-0 flex-col justify-center px-7 py-10 sm:p-12">
+        <section className="flex min-w-0 flex-col justify-center px-7 py-10 [--card:color-mix(in_oklab,var(--muted)_40%,transparent)] sm:p-12">
           {children}
         </section>
         <footer className="relative overflow-hidden border-t bg-muted p-8 text-center sm:p-12 lg:hidden">

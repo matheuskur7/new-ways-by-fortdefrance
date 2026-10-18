@@ -50,7 +50,7 @@ export function OrganizationsList({
       !enterOrganization.isSuccess
   )
   return (
-    <Card className="animate-in gap-4 bg-muted/40 ring-0 duration-500 fade-in-0 motion-reduce:animate-none">
+    <Card className="animate-in gap-4 ring-0 duration-500 fade-in-0 motion-reduce:animate-none">
       <CardHeader className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-semibold">Suas empresas</h2>
       </CardHeader>
