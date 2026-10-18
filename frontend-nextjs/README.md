@@ -64,3 +64,7 @@ toastManager.add({
 Use `toastManager.add` em handlers de eventos ou efeitos, nunca durante a renderização. Reutilizar o mesmo `id` atualiza a notificação existente. Tipos disponíveis: `success`, `error`, `info`, `warning` e `loading`.
 
 Para notificações ancoradas em elementos, use `anchoredToastManager` com `positionerProps.anchor`. Os dois providers já estão disponíveis globalmente.
+
+## Layout privado
+
+As páginas de `app/(private)/` compartilham o layout com sidebar recolhível, menu móvel, indicadores visuais de veículos e opções do perfil, adaptado de `zexperiments/frontend`. A sessão continua validada no layout e em cada página privada. O monitor de sessão permanece no layout raiz. O cabeçalho resolve o nome da empresa ativa pela listagem autenticada existente; o menu reutiliza `useLogout()` para sair e oferece acesso a `/organizations`. Calculadora de taxas e ajustes do usuário ficam desabilitados até suas páginas serem implementadas. Os indicadores de entradas e saídas ainda são demonstrativos.
