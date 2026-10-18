@@ -234,7 +234,7 @@ function UserDropdown({ user }: { user: AuthSession["user"] }) {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            disabled
+            render={<Link href="/user-settings" />}
             className="cursor-pointer"
             onClick={() => setOpenMobile(false)}
           >

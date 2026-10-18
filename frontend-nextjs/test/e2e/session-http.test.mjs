@@ -17,6 +17,20 @@ const fixture = {
 // Somente o backend é simulado; as páginas e redirects são do Next.js real.
 const backend = createServer((req, res) => {
   const url = new URL(req.url, "http://localhost")
+  if (url.pathname.startsWith("/images/user-images/")) {
+    res.setHeader("Content-Type", "application/json")
+    if (req.headers.cookie !== "session=valid") {
+      res.writeHead(403).end()
+    } else {
+      res.end(
+        JSON.stringify({
+          url: "https://s3.example.com/photo?signed=temporary",
+          expiresIn: 43200,
+        })
+      )
+    }
+    return
+  }
   assert.equal(url.pathname, "/api/auth/get-session")
   queries.push(url.searchParams)
   res.setHeader("Content-Type", "application/json")
@@ -142,4 +156,30 @@ test("erro do backend não redireciona o usuário para o login", async () => {
   const response = await open("/", "session=server-error")
   assert.equal(response.status, 500)
   assert.equal(response.headers.get("location"), null)
+})
+
+test("configurações do usuário ficam no auth shell e exigem sessão", async () => {
+  assert.equal((await open("/user-settings")).status, 307)
+  const response = await fetch(`${origin}/user-settings`, {
+    headers: { cookie: "session=valid" },
+  })
+  assert.equal(response.status, 200)
+  assert.match(await response.text(), /Ajustes do usuário/)
+})
+
+test("foto usa redirecionamento privado sem cache e mantém erros de autorização", async () => {
+  const path = "/user-images/019a1234-5678-7000-8000-123456789abc"
+  const response = await open(path, "session=valid")
+  assert.equal(response.status, 302)
+  assert.equal(
+    response.headers.get("location"),
+    "https://s3.example.com/photo?signed=temporary"
+  )
+  assert.equal(response.headers.get("cache-control"), "private, no-store")
+  assert.equal((await open(path)).status, 401)
+  assert.equal((await open(path, "session=invalid")).status, 403)
+  assert.equal(
+    (await open("/user-images/invalid", "session=valid")).status,
+    404
+  )
 })
