@@ -2,7 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import type { Pool } from 'pg';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { InitialSeedService } from '../../../src/shared/database/initial-seed.service.js';
+import { InitialSeedService } from '../../../src/shared/database/seeds/initial-seed.service.js';
 import type { DatabaseService } from '../../../src/shared/database/database.service.js';
 import type { Environment } from '../../../src/shared/config/env.js';
 import * as schema from '../../../src/shared/database/schemas/index.js';

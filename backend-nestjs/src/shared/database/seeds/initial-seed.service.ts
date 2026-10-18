@@ -3,11 +3,11 @@ import { ConfigService } from '@nestjs/config';
 import { hashPassword } from 'better-auth/crypto';
 import { and, eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
-import { initialSeedSchema } from '../config/env.js';
-import type { Environment } from '../config/env.js';
-import { DatabaseService } from './database.service.js';
-import { account, user } from './schemas/auth.schema.js';
-import { member, organization } from './schemas/organization.schema.js';
+import { initialSeedSchema } from '../../config/env.js';
+import type { Environment } from '../../config/env.js';
+import { DatabaseService } from '../database.service.js';
+import { account, user } from '../schemas/auth.schema.js';
+import { member, organization } from '../schemas/organization.schema.js';
 
 @Injectable()
 export class InitialSeedService {

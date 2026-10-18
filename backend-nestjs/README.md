@@ -227,7 +227,7 @@ Referências: [NestJS Standard Schema](https://docs.nestjs.com/techniques/valida
 
 ## Conta inicial
 
-Configure `INITIAL_USER_NAME`, `INITIAL_USER_EMAIL`, `INITIAL_USER_PASSWORD`, `INITIAL_ORGANIZATION_NAME` e `INITIAL_ORGANIZATION_SLUG` no `.env` e execute `pnpm db:seed` após aplicar as migrações. A senha deve ter de 8 a 128 caracteres. O comando usa o ConfigModule e garante o usuário inicial, sua credencial com hash do Better Auth e a empresa **Fort de France - Matriz**, com slug `fortdefrance-matriz`, na mesma transação. O usuário inicial é vinculado como `owner` (proprietário) da empresa.
+Configure `INITIAL_USER_NAME`, `INITIAL_USER_EMAIL`, `INITIAL_USER_PASSWORD`, `INITIAL_ORGANIZATION_NAME` e `INITIAL_ORGANIZATION_SLUG` no `.env` e execute `pnpm run db:seed` após aplicar as migrações. A senha deve ter de 8 a 128 caracteres. O comando usa o ConfigModule e garante o usuário inicial, sua credencial com hash do Better Auth e a empresa **Fort de France - Matriz**, com slug `fortdefrance-matriz`, na mesma transação. O usuário inicial é vinculado como `owner` (proprietário) da empresa.
 
 Reexecutar preserva contas e senhas existentes com o mesmo e-mail e os dados da organização já cadastrada com esse slug. Mesmo quando o usuário já existe, o seed cria a empresa e o vínculo que estiverem faltando; vínculos existentes recebem o papel `owner` caso ainda não o tenham, preservando os outros papéis. O bloqueio da organização durante a transação evita vínculos duplicados entre execuções concorrentes do seed. O seed não seleciona a empresa nas sessões existentes nem cria permissões de administrador global. O nome e o slug da empresa vêm de `INITIAL_ORGANIZATION_NAME` e `INITIAL_ORGANIZATION_SLUG`; preencha-os com `Fort de France - Matriz` e `fortdefrance-matriz` para a matriz. O slug aceita letras minúsculas, números e hífens entre segmentos. As variáveis `INITIAL_USER_*` substituem as antigas `ADMIN_USER_*`; atualize os ambientes existentes. Não há novas migrações para esse seed.
 
@@ -262,3 +262,20 @@ A tela `/organization-settings?organizationId=...` valida o vínculo atual e per
 Membros são consultados com paginação por `GET /api/auth/organization/list-members`. Alterações de cargo usam `POST /api/auth/organization/update-member-role`, após confirmação no frontend e com as permissões nativas revalidadas no backend. Proprietários são exibidos sem seletor; os demais cargos disponíveis são membro e administrador. Falhas preservam os dados editados; mutações bem-sucedidas invalidam o cache correspondente. Se o próprio administrador mudar seu cargo para membro, o acesso ao gerenciamento é revalidado.
 
 O card de convites continua somente visual, com o botão de envio desativado. Esta etapa não envia nem registra convites.
+
+### Taxas de cartão
+
+`GET /card-fees` exige sessão Better Auth e retorna os grupos compartilhados de taxas, ordenados por exibição e parcelas. A tela `/taxas` calcula `valor da venda / (1 - taxa / 100)` para repassar a taxa ao comprador, com exibição em reais.
+
+O schema Drizzle mantém grupos, logotipos SVG e taxas decimais por parcela (1 a 12), com unicidade por grupo/parcela. Após conferir o banco de destino, execute `pnpm db:migrate` e `pnpm run db:seed` no backend. O seed inclui os três grupos e as 36 taxas do `zexperiments`; execuções posteriores preservam grupos existentes e suas taxas.
+
+### Execução centralizada dos seeds
+
+No diretório `backend-nestjs`, execute `pnpm run db:seed`. O comando compila o backend e executa `src/seed.ts`, que chama, em sequência:
+
+1. Dados iniciais: usuário, credencial, matriz e Outra Empresa com seus vínculos.
+2. Taxas de cartão: os três grupos, logotipos e 36 taxas do `zexperiments`.
+
+Todos os seeds e seus dados ficam em `src/shared/database/seeds/`. O `SeedsModule` carrega somente configuração e banco; os seeds não são registrados na API nem executados ao iniciá-la. Novos seeds devem ser adicionados nessa pasta e chamados em `src/seed.ts`.
+
+Aplique as migrações antes e configure as variáveis `INITIAL_USER_*` e `INITIAL_ORGANIZATION_*`. Cada seed usa sua própria transação; uma falha interrompe a sequência, retorna código de erro e permite reexecutar o comando. As taxas só são inseridas para grupos ainda não cadastrados, preservando taxas e logotipos existentes.
