@@ -18,11 +18,11 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        "mx-auto w-full animate-in pb-2 duration-500 fade-in-0 in-data-[page-enter]:animate-none motion-reduce:animate-none",
+        "mx-auto w-full animate-in pb-1.5 duration-500 fade-in-0 in-data-[page-enter]:animate-none motion-reduce:animate-none",
         className
       )}
     >
-      <header className="flex items-stretch justify-start gap-3 px-1 py-3 text-left">
+      <header className="flex items-stretch justify-start gap-3 px-1 py-2.5 text-left">
         <span className="flex w-14 shrink-0 items-center justify-center rounded-xl border bg-background text-foreground">
           <Icon className="size-8" aria-hidden="true" />
         </span>
@@ -31,7 +31,7 @@ export function PageHeader({
           <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
         </div>
       </header>
-      <Separator className="mt-3" />
+      <Separator className="mt-2" />
     </div>
   )
 }

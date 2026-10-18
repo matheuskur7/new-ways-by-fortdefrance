@@ -8,15 +8,17 @@ export default async function OrganizationsPage() {
   const { user, session } = await requireSession()
   return (
     <div className="flex flex-1 flex-col gap-6">
-      <PageHeader
-        icon={Building2}
-        title="Escolha sua empresa"
-        subtitle="Selecione seu espaço de trabalho para continuar."
-      />
-      <OrganizationsList
-        userId={user.id}
-        activeOrganizationId={session.activeOrganizationId}
-      />
+      <div className="flex flex-col gap-3">
+        <PageHeader
+          icon={Building2}
+          title="Escolha sua empresa"
+          subtitle="Selecione seu espaço de trabalho para continuar."
+        />
+        <OrganizationsList
+          userId={user.id}
+          activeOrganizationId={session.activeOrganizationId}
+        />
+      </div>
       <UserBanner user={user} />
     </div>
   )
