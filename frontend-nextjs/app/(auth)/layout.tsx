@@ -5,19 +5,19 @@ import { Card } from "@/components/ui/card"
 
 function CompanyIdentity() {
   return (
-    <div className="relative z-10 flex items-center justify-center gap-2 lg:justify-start">
+    <div className="relative z-10 flex items-center justify-center gap-0 sm:gap-2 lg:justify-start">
       <Image
         src="/brand/logo.png"
         loading="eager"
         alt=""
         width={1000}
         height={1000}
-        className="h-auto w-14 shrink-0 sm:w-20"
+        className="h-auto w-12 shrink-0 sm:w-20"
       />
       <img
         src="/brand/business-text.svg"
         alt="Não foi possível carregar a empresa"
-        className="w-72"
+        className="w-44 min-w-0 sm:w-72"
       />
     </div>
   )
@@ -58,7 +58,7 @@ export default function AuthLayout({
               aria-hidden="true"
               className="mx-auto my-5 h-1 w-12 rounded-full bg-primary lg:mx-0"
             />
-            <p className="text-lg leading-snug text-muted-foreground">
+            <p className="text-base leading-snug text-muted-foreground sm:text-lg">
               Sistema de Gestão para Oficinas
             </p>
           </div>

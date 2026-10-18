@@ -22,7 +22,7 @@ export default async function LoginPage() {
         </p>
       </header>
       <LoginForm />
-      <footer className="grid gap-3 self-end">
+      <footer className="-mb-4 grid gap-6 self-end">
         <p className="text-center text-sm text-muted-foreground">
           Ainda não possui uma conta?{" "}
           <Button
