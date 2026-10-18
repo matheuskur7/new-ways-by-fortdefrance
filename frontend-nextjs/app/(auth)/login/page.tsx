@@ -1,7 +1,13 @@
 import { Button } from "@/components/ui/button"
 import LoginForm from "./components/login-form"
+import { redirect } from "next/navigation"
+import { getSession } from "@/lib/auth-server"
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  if (await getSession()) {
+    redirect("/organizations?reason=already-authenticated")
+  }
+
   return (
     <div className="grid flex-1 grid-rows-[1fr_auto_1fr] gap-6">
       <header className="self-start">

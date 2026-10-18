@@ -1,6 +1,6 @@
 "use client"
 
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { isAxiosError } from "axios"
 
@@ -9,10 +9,12 @@ import { login } from "../services/login"
 
 export function useLogin() {
   const router = useRouter()
+  const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: login,
     onSuccess: () => {
+      queryClient.clear()
       toastManager.add({
         title: "Login realizado!",
         description: "Bem-vindo ao sistema.",

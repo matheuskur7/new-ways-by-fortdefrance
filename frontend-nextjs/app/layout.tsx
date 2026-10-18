@@ -1,9 +1,12 @@
 import { Roboto } from "next/font/google"
+import { Suspense } from "react"
 
 import "./globals.css"
 import { QueryProvider } from "@/components/query-provider"
 import { AnchoredToastProvider, ToastProvider } from "@/components/ui/toast"
 import { cn } from "@/lib/utils"
+import { SessionMonitor } from "@/components/session-monitor"
+import { SessionNotice } from "@/components/session-notice"
 
 const roboto = Roboto({ subsets: ["latin"], variable: "--font-roboto" })
 
@@ -19,8 +22,12 @@ export default function RootLayout({
     >
       <body className="relative">
         <QueryProvider>
-          <ToastProvider position="top-center" >
+          <ToastProvider position="top-center">
             <AnchoredToastProvider>
+              <SessionMonitor />
+              <Suspense fallback={null}>
+                <SessionNotice />
+              </Suspense>
               <div className="relative isolate min-h-svh">{children}</div>
             </AnchoredToastProvider>
           </ToastProvider>
