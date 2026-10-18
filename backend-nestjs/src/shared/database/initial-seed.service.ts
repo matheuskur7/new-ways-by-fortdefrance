@@ -56,59 +56,74 @@ export class InitialSeedService {
             .limit(1);
       if (!initialUser) throw new Error('Conta inicial não encontrada.');
 
-      const slug = initial.INITIAL_ORGANIZATION_SLUG;
-      const [createdOrganization] = await tx
-        .insert(organization)
-        .values({
-          id: randomUUID(),
+      const organizations = [
+        {
           name: initial.INITIAL_ORGANIZATION_NAME,
-          slug,
-          createdAt: new Date(),
-        })
-        .onConflictDoNothing({ target: organization.slug })
-        .returning({ id: organization.id });
-
-      // Serializa seeds concorrentes para não duplicar o vínculo da matriz.
-      const [matrix] = await tx
-        .select({ id: organization.id })
-        .from(organization)
-        .where(eq(organization.slug, slug))
-        .limit(1)
-        .for('update');
-      if (!matrix) throw new Error('Empresa inicial não encontrada.');
-
-      const [membership] = await tx
-        .select({ id: member.id, role: member.role })
-        .from(member)
-        .where(and(eq(member.organizationId, matrix.id), eq(member.userId, initialUser.id)))
-        .limit(1);
-      if (!membership) {
-        await tx.insert(member).values({
-          id: randomUUID(),
-          organizationId: matrix.id,
-          userId: initialUser.id,
+          slug: initial.INITIAL_ORGANIZATION_SLUG,
           role: 'owner',
-          createdAt: new Date(),
-        });
-        return true;
+        },
+        { name: 'Outra Empresa', slug: 'outra-empresa', role: 'member' },
+      ];
+      if (organizations[0]!.slug === organizations[1]!.slug) {
+        throw new Error('A empresa inicial deve ter um slug diferente de outra-empresa.');
       }
+      let changed = Boolean(created);
+      for (const seed of organizations) {
+        const [createdOrganization] = await tx
+          .insert(organization)
+          .values({ id: randomUUID(), name: seed.name, slug: seed.slug, createdAt: new Date() })
+          .onConflictDoNothing({ target: organization.slug })
+          .returning({ id: organization.id });
+        changed ||= Boolean(createdOrganization);
 
-      const roles = membership.role.split(',').map((role) => role.trim());
-      if (!roles.includes('owner')) {
-        await tx
-          .update(member)
-          .set({ role: [...roles, 'owner'].join(',') })
-          .where(
-            and(
-              eq(member.id, membership.id),
-              eq(member.organizationId, matrix.id),
-              eq(member.userId, initialUser.id),
-            ),
-          );
-        return true;
+        // Serializa seeds concorrentes para não duplicar os vínculos.
+        const [company] = await tx
+          .select({ id: organization.id })
+          .from(organization)
+          .where(eq(organization.slug, seed.slug))
+          .limit(1)
+          .for('update');
+        if (!company) throw new Error('Empresa do seed não encontrada.');
+
+        const [membership] = await tx
+          .select({ id: member.id, role: member.role })
+          .from(member)
+          .where(and(eq(member.organizationId, company.id), eq(member.userId, initialUser.id)))
+          .limit(1);
+        if (!membership) {
+          await tx.insert(member).values({
+            id: randomUUID(),
+            organizationId: company.id,
+            userId: initialUser.id,
+            role: seed.role,
+            createdAt: new Date(),
+          });
+          changed = true;
+          continue;
+        }
+
+        const roles = membership.role.split(',').map((role) => role.trim());
+        const nextRole =
+          seed.role === 'member'
+            ? 'member'
+            : roles.includes('owner')
+              ? membership.role
+              : [...roles, 'owner'].join(',');
+        if (nextRole !== membership.role) {
+          await tx
+            .update(member)
+            .set({ role: nextRole })
+            .where(
+              and(
+                eq(member.id, membership.id),
+                eq(member.organizationId, company.id),
+                eq(member.userId, initialUser.id),
+              ),
+            );
+          changed = true;
+        }
       }
-
-      return Boolean(created || createdOrganization);
+      return changed;
     });
   }
 }

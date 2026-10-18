@@ -34,7 +34,11 @@ describe('InitialSeedService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    query.mockReset().mockResolvedValue({ rows: [] });
+    query.mockReset().mockImplementation(async (statement) => {
+      if (statement.text.includes('from "organization"')) return { rows: [['other-org']] };
+      if (statement.text.includes('from "member"')) return { rows: [['other-member', 'member']] };
+      return { rows: [] };
+    });
   });
 
   it('cria usuário, credencial, matriz e proprietário na mesma transação', async () => {
@@ -129,6 +133,52 @@ describe('InitialSeedService', () => {
     await expect(service.run()).rejects.toMatchObject({ cause: { message: 'Falha simulada' } });
     expect(statements().at(-1)).toBe('rollback');
     expect(statements()).not.toContain('commit');
+  });
+
+  it('cria Outra Empresa com o usuário inicial como membro', async () => {
+    rows(
+      [],
+      [['user-id']],
+      [],
+      [['org-id']],
+      [['org-id']],
+      [],
+      [],
+      [['other-org']],
+      [['other-org']],
+      [],
+      [],
+      [],
+    );
+    await expect(service.run()).resolves.toBe(true);
+    const inserts = query.mock.calls.filter(([sql]) =>
+      sql.text.startsWith('insert into "organization"'),
+    );
+    expect(inserts[1]?.[1]).toEqual(expect.arrayContaining(['Outra Empresa', 'outra-empresa']));
+    const memberships = query.mock.calls.filter(([sql]) =>
+      sql.text.startsWith('insert into "member"'),
+    );
+    expect(memberships[1]?.[1]).toEqual(expect.arrayContaining(['other-org', 'user-id', 'member']));
+    expect(memberships[1]?.[1]).not.toContain('owner');
+  });
+
+  it('corrige o vínculo da outra empresa para membro mesmo se já for proprietário', async () => {
+    rows(
+      [],
+      [],
+      [['user-id']],
+      [],
+      [['org-id']],
+      [['member-id', 'owner']],
+      [],
+      [['other-org']],
+      [['other-member', 'admin,owner']],
+      [],
+      [],
+    );
+    await expect(service.run()).resolves.toBe(true);
+    const update = query.mock.calls.find(([sql]) => sql.text.startsWith('update "member"'));
+    expect(update?.[1]).toEqual(['member', 'other-member', 'other-org', 'user-id']);
   });
 
   it('rejeita configuração incompleta antes de acessar o banco', async () => {
