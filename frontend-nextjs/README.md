@@ -20,6 +20,8 @@ Redirecionamentos usam `reason=session-expired` no login quando há um cookie de
 
 Execute `pnpm test` para os testes da interpretação da sessão e decisões de redirecionamento (Node.js 22.18+ ou 24+, com suporte nativo a TypeScript), além de `pnpm lint`, `pnpm typecheck` e `pnpm build`. Após gerar o build, `pnpm test:e2e` inicia o Next.js e um backend simulado em portas locais temporárias para conferir os redirects HTTP e as falhas de sessão, sem usar banco ou contas reais.
 
+Para sair da conta em componentes cliente, reutilize `useLogout()` de `hooks/use-logout.ts` e chame `logout.mutate()`. O botão é definido diretamente na tela que o utiliza. O hook envia `POST /api/auth/sign-out` pelo proxy, cancela consultas e limpa o React Query somente após confirmar a saída, mostra o resultado e redireciona para `/login`. Enquanto aguarda, o botão exibe “Saindo…” e fica desabilitado. Se houver falha, permite tentar novamente sem limpar os dados. `lib/logout.ts` centraliza o envio e impede requisições duplicadas; o monitor ignora verificações anteriores ao logout e volta a verificar quando a navegação chega ao login. Os testes de logout simulam o HTTP, sem encerrar sessões reais.
+
 ## Adding components
 
 To add components to your app, run the following command:
