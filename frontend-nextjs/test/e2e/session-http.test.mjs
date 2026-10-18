@@ -244,3 +244,15 @@ test("configurações da empresa exigem owner ou admin também no acesso direto"
     assert.equal(response.headers.get("location"), "/organizations")
   }
 })
+
+test("calculadora de taxas exige sessão e renderiza o formulário", async () => {
+  assert.equal((await open("/taxas")).status, 307)
+  const response = await fetch(`${origin}/taxas`, {
+    headers: { cookie: "session=valid" },
+  })
+  assert.equal(response.status, 200)
+  const html = await response.text()
+  assert.match(html, /Calculadora de Taxas de Cartão/)
+  assert.match(html, /Valor da venda/)
+  assert.match(html, /Calcular/)
+})

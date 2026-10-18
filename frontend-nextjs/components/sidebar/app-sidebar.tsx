@@ -104,8 +104,7 @@ export function AppSidebar({ user }: { user: AuthSession["user"] }) {
               return (
                 <SidebarMenuItem key={href}>
                   <SidebarMenuButton
-                    render={href === "/" ? <Link href={href} /> : undefined}
-                    disabled={href !== "/"}
+                    render={<Link href={href} />}
                     isActive={active}
                     aria-current={active ? "page" : undefined}
                     aria-label={label}
