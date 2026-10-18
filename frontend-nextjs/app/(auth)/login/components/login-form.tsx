@@ -1,6 +1,8 @@
 "use client"
 
 import { isAxiosError } from "axios"
+import { useState } from "react"
+import { Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Field,
@@ -22,6 +24,7 @@ const loginFormSchema = z.object({
 type LoginFormData = z.infer<typeof loginFormSchema>
 
 export default function LoginForm() {
+  const [showPassword, setShowPassword] = useState(false)
   const login = useLogin()
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginFormSchema),
@@ -37,8 +40,13 @@ export default function LoginForm() {
   }
 
   return (
-    <form noValidate onSubmit={form.handleSubmit(onSubmit)}>
-      <FieldGroup>
+    <form
+      noValidate
+      onSubmit={form.handleSubmit(onSubmit)}
+      aria-busy={login.isPending}
+      method="post"
+    >
+      <FieldGroup className="gap-4">
         {/* EMAIL */}
         <Controller
           name="email"
@@ -51,7 +59,10 @@ export default function LoginForm() {
                 {...field}
                 id={field.name}
                 type="email"
-                placeholder="Digite seu email"
+                className="h-12"
+                autoComplete="email"
+                disabled={login.isPending}
+                placeholder="Seu e-mail"
                 aria-invalid={fieldState.invalid}
               />
 
@@ -68,18 +79,49 @@ export default function LoginForm() {
             <Field data-invalid={fieldState.invalid}>
               <FieldLabel htmlFor={field.name}>Senha</FieldLabel>
 
-              <Input
-                {...field}
-                id={field.name}
-                type="password"
-                placeholder="Digite sua senha"
-                aria-invalid={fieldState.invalid}
-              />
+              <div className="relative">
+                <Input
+                  {...field}
+                  id={field.name}
+                  type={showPassword ? "text" : "password"}
+                  className="h-12 pr-12"
+                  autoComplete="current-password"
+                  disabled={login.isPending}
+                  placeholder="Digite sua senha"
+                  aria-invalid={fieldState.invalid}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="absolute top-2 right-2"
+                  aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                  aria-controls={field.name}
+                  aria-pressed={showPassword}
+                  disabled={login.isPending}
+                  onClick={() => setShowPassword((value) => !value)}
+                >
+                  {showPassword ? (
+                    <EyeOff aria-hidden="true" />
+                  ) : (
+                    <Eye aria-hidden="true" />
+                  )}
+                </Button>
+              </div>
 
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
             </Field>
           )}
         />
+
+        <Button
+          type="button"
+          variant="link"
+          className="h-auto self-end p-0 underline"
+          disabled
+        >
+          Esqueci minha senha
+        </Button>
 
         {login.isError && (
           <p role="alert" className="text-sm text-destructive">
@@ -89,7 +131,12 @@ export default function LoginForm() {
           </p>
         )}
 
-        <Button type="submit" size={"lg"} disabled={login.isPending}>
+        <Button
+          type="submit"
+          size="lg"
+          className="h-12 w-full"
+          disabled={login.isPending}
+        >
           {login.isPending ? "Entrando..." : "Entrar"}
         </Button>
       </FieldGroup>
