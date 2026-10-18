@@ -23,7 +23,7 @@ export function SidebarDailyIndicators() {
       aria-label="Indicadores de veículos de hoje"
       className="mb-4 h-18 shrink-0 overflow-hidden px-3 transition-[height,margin] duration-200 ease-in-out group-data-[collapsible=icon]:mb-0 group-data-[collapsible=icon]:h-0 motion-reduce:transition-none"
     >
-      <div className="grid w-[calc(var(--sidebar-width)-1.5rem-1px)] grid-cols-2 gap-2 p-0.5 opacity-100 transition-opacity delay-200 duration-100 ease-in-out group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:delay-0 motion-reduce:transition-none motion-reduce:delay-0">
+      <div className="grid w-[calc(var(--sidebar-width)-1.5rem-1px)] grid-cols-2 gap-2 origin-top-left scale-100 p-0.5 opacity-100 transition-[scale,opacity] duration-200 ease-in-out group-data-[collapsible=icon]:scale-0 group-data-[collapsible=icon]:opacity-0 motion-reduce:transition-none">
         {indicators.map(({ label, value, icon: Icon, color }) => (
           <Card
             key={label}

@@ -91,7 +91,7 @@ export function AppSidebar({ user }: { user: AuthSession["user"] }) {
         </IconButton>
       </SidebarHeader>
       <SidebarSeparator />
-      <SidebarContent className="py-3 group-data-[collapsible=icon]:pt-4">
+      <SidebarContent className="py-3 transition-[padding] duration-200 ease-in-out group-data-[collapsible=icon]:pt-4 motion-reduce:transition-none">
         <SidebarDailyIndicators />
         <nav
           aria-label="Navegação principal"
