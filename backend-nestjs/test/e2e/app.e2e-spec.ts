@@ -104,6 +104,8 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
         findAll: vi.fn().mockResolvedValue([
           {
             id: '019a1234-5678-7000-8000-123456789abc',
+            providerId: '019a1234-5678-7000-8000-123456789def',
+            providerName: 'InfinitePay',
             name: 'Visa / Mastercard',
             channel: 'Presencial',
             logoSvg: null,
@@ -241,6 +243,7 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       {
         id: '019a1234-5678-7000-8000-123456789abc',
         name: 'Visa / Mastercard',
+        provider: { id: '019a1234-5678-7000-8000-123456789def', name: 'InfinitePay' },
         channel: 'Presencial',
         logoSvg: null,
         rates: [{ installments: 2, ratePercent: '3.94' }],

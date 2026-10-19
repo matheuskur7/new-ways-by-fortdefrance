@@ -1,3 +1,5 @@
+export const initialCardFeeProviderName = 'InfinitePay';
+
 // Dados de referência do zexperiments; taxas em percentuais decimais exatos.
 export const initialCardFeeGroups = [
   {

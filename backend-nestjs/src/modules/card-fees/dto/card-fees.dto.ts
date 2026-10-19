@@ -1,7 +1,8 @@
 import { z } from 'zod';
 export const cardFeeGroupsSchema = z.array(
   z.object({
-    id: z.string().uuid(),
+    id: z.uuidv7(),
+    provider: z.object({ id: z.uuidv7(), name: z.string() }),
     name: z.string(),
     channel: z.string(),
     logoSvg: z.string().nullable(),

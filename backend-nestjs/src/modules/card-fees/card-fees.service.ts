@@ -11,6 +11,7 @@ export class CardFeesService {
       if (!group) {
         group = {
           id: row.id,
+          provider: { id: row.providerId, name: row.providerName },
           name: row.name,
           channel: row.channel,
           logoSvg: row.logoSvg,

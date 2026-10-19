@@ -14,11 +14,13 @@ describe('seedCardFees', () => {
   const statements = () => query.mock.calls.map(([statement]) => statement.text);
 
   beforeEach(() => {
-    query
-      .mockReset()
-      .mockImplementation(async (statement, values) => ({
-        rows: statement.text.startsWith('insert into "card_fee_groups"') ? [[values?.[0]]] : [],
-      }));
+    query.mockReset().mockImplementation(async (statement, values) => ({
+      rows: statement.text.includes('from "card_fee_providers"')
+        ? [['provider-id']]
+        : statement.text.startsWith('insert into "card_fee_groups"')
+          ? [[`group-${String(values?.[1])}`]]
+          : [],
+    }));
   });
 
   it('preserva os três grupos e as 36 taxas exatas do projeto de origem', () => {
@@ -84,6 +86,15 @@ describe('seedCardFees', () => {
       statement.text.startsWith('insert into "card_fees"'),
     );
     expect(inserts).toHaveLength(3);
+    const providerInsert = query.mock.calls.find(([sql]) =>
+      sql.text.startsWith('insert into "card_fee_providers"'),
+    );
+    expect(providerInsert?.[1]).toEqual(['InfinitePay']);
+    const groupInserts = query.mock.calls.filter(([sql]) =>
+      sql.text.startsWith('insert into "card_fee_groups"'),
+    );
+    expect(groupInserts).toHaveLength(3);
+    for (const [, values] of groupInserts) expect(values?.[0]).toBe('provider-id');
     for (const [, values] of inserts) {
       expect(values).toHaveLength(36);
       expect(values?.filter((_, index) => index % 3 === 1)).toEqual([
@@ -95,13 +106,17 @@ describe('seedCardFees', () => {
   });
 
   it('não sobrescreve nem duplica grupos e taxas em reexecuções', async () => {
-    query.mockResolvedValue({ rows: [] });
+    query.mockImplementation(async (statement) => ({
+      rows: statement.text.includes('from "card_fee_providers"') ? [['provider-id']] : [],
+    }));
     await expect(seedCardFees(database)).resolves.toBe(0);
     expect(
       statements().filter((sql) => sql.startsWith('insert into "card_fee_groups"')),
     ).toHaveLength(3);
     expect(
-      statements().filter((sql) => sql.includes('on conflict ("seed_key") do nothing')),
+      statements().filter((sql) =>
+        sql.includes('on conflict ("provider_id","seed_key") do nothing'),
+      ),
     ).toHaveLength(3);
     expect(
       statements().some(
@@ -114,11 +129,23 @@ describe('seedCardFees', () => {
     query.mockImplementation(async (statement) => {
       if (statement.text.startsWith('insert into "card_fees"')) throw new Error('Falha simulada');
       return {
-        rows: statement.text.startsWith('insert into "card_fee_groups"') ? [['group-id']] : [],
+        rows: statement.text.includes('from "card_fee_providers"')
+          ? [['provider-id']]
+          : statement.text.startsWith('insert into "card_fee_groups"')
+            ? [['group-id']]
+            : [],
       };
     });
     await expect(seedCardFees(database)).rejects.toThrow();
     expect(statements().at(-1)).toBe('rollback');
     expect(statements()).not.toContain('commit');
+  });
+  it('interrompe o seed se o provedor não puder ser consultado', async () => {
+    query.mockResolvedValue({ rows: [] });
+    await expect(seedCardFees(database)).rejects.toThrow(
+      'Provedor inicial de taxas não encontrado.',
+    );
+    expect(statements().at(-1)).toBe('rollback');
+    expect(statements().some((sql) => sql.startsWith('insert into "card_fee_groups"'))).toBe(false);
   });
 });

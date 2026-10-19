@@ -265,7 +265,7 @@ O card de convites continua somente visual, com o botão de envio desativado. Es
 
 ### Taxas de cartão
 
-`GET /card-fees` exige sessão Better Auth e retorna os grupos compartilhados de taxas, ordenados por exibição e parcelas. A tela `/taxas` calcula `valor da venda / (1 - taxa / 100)` para repassar a taxa ao comprador, com exibição em reais.
+`GET /card-fees` exige sessão Better Auth e retorna os grupos compartilhados de taxas, com o provedor (`provider: { id, name }`), ordenados por provedor, exibição e parcelas. A tela `/taxas` calcula `valor da venda / (1 - taxa / 100)` para repassar a taxa ao comprador, com exibição em reais.
 
 O schema Drizzle mantém grupos, logotipos SVG e taxas decimais por parcela (1 a 12), com unicidade por grupo/parcela. Após conferir o banco de destino, execute `pnpm db:migrate` e `pnpm run db:seed` no backend. O seed inclui os três grupos e as 36 taxas do `zexperiments`; execuções posteriores preservam grupos existentes e suas taxas.
 
@@ -279,3 +279,9 @@ No diretório `backend-nestjs`, execute `pnpm run db:seed`. O comando compila o 
 Todos os seeds e seus dados ficam em `src/shared/database/seeds/`. O `SeedsModule` carrega somente configuração e banco; os seeds não são registrados na API nem executados ao iniciá-la. Novos seeds devem ser adicionados nessa pasta e chamados em `src/seed.ts`.
 
 Aplique as migrações antes e configure as variáveis `INITIAL_USER_*` e `INITIAL_ORGANIZATION_*`. Cada seed usa sua própria transação; uma falha interrompe a sequência, retorna código de erro e permite reexecutar o comando. As taxas só são inseridas para grupos ainda não cadastrados, preservando taxas e logotipos existentes.
+
+### Provedores de taxas de cartão
+
+`card_fee_providers` representa o fornecedor das tabelas de taxas e possui somente `id` UUIDv7, `name` único e auditoria temporal (`created_at` e `updated_at`). Cada grupo tem um `provider_id` obrigatório. A chave de seed é única dentro de cada provedor; provedores com grupos vinculados não podem ser excluídos.
+
+O seed centralizado cria ou reutiliza **InfinitePay** e cadastra nela os três grupos e as 36 taxas iniciais, preservando registros existentes. A migração `0007` atribui os grupos anteriores à InfinitePay antes de tornar o vínculo obrigatório. Nenhuma migração é aplicada pelo comando de seed.
