@@ -13,7 +13,7 @@ export default async function SettingsPage() {
       className="flex flex-1 animate-in flex-col gap-6 duration-300 fade-in-0 motion-reduce:animate-none"
     >
       <Link
-        href="/organizations"
+        href="/empresas"
         className={buttonVariants({
           variant: "ghost",
           size: "sm",

@@ -20,7 +20,7 @@ export function useLogout() {
         title: "Você saiu da sua conta",
         type: "info",
       })
-      router.replace("/login")
+      router.replace("/entrar")
     },
     onError: () => {
       toastManager.add({

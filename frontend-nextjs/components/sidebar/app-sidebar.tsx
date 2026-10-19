@@ -133,14 +133,14 @@ export function AppSidebar({ user }: { user: AuthSession["user"] }) {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
-                render={<Link href="/system-settings" />}
+                render={<Link href="/configuracoes" />}
                 isActive={
-                  pathname === "/system-settings" ||
-                  pathname.startsWith("/system-settings/")
+                  pathname === "/configuracoes" ||
+                  pathname.startsWith("/configuracoes/")
                 }
                 aria-current={
-                  pathname === "/system-settings" ||
-                  pathname.startsWith("/system-settings/")
+                  pathname === "/configuracoes" ||
+                  pathname.startsWith("/configuracoes/")
                     ? "page"
                     : undefined
                 }
@@ -252,7 +252,7 @@ function UserDropdown({ user }: { user: AuthSession["user"] }) {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            render={<Link href="/user-settings" />}
+            render={<Link href="/configuracoes-usuario" />}
             onClick={() => setOpenMobile(false)}
           >
             <UserRoundCog aria-hidden="true" />
@@ -260,7 +260,7 @@ function UserDropdown({ user }: { user: AuthSession["user"] }) {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            render={<Link href="/organizations" />}
+            render={<Link href="/empresas" />}
             onClick={() => setOpenMobile(false)}
           >
             <Building2 aria-hidden="true" />

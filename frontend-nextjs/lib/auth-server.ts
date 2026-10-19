@@ -22,7 +22,7 @@ export async function requireSession() {
   if (!session) {
     const cookie = (await headers()).get("cookie") ?? ""
     redirect(
-      hasSessionToken(cookie) ? "/login?reason=session-expired" : "/login"
+      hasSessionToken(cookie) ? "/entrar?reason=session-expired" : "/entrar"
     )
   }
   return session

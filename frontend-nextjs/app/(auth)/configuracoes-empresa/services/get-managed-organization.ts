@@ -6,22 +6,22 @@ import { serverGet } from "@/lib/api-server"
 import {
   canManageOrganization,
   organizationListSchema,
-} from "../../organizations/schemas"
+} from "../../empresas/schemas"
 
 export async function getManagedOrganization(id: string) {
   const response = await serverGet("/organizations")
-  if (response.status === 401) redirect("/login?reason=session-expired")
+  if (response.status === 401) redirect("/entrar?reason=session-expired")
   if (!response.ok)
     throw new Error("Não foi possível verificar o acesso à empresa.")
   const organizations = organizationListSchema.parse(await response.json())
   const organization = organizations.find((item) => item.id === id)
   if (!organization || !canManageOrganization(organization.role))
-    redirect("/organizations")
+    redirect("/empresas")
   const details = await serverGet(
     `/api/auth/organization/get-organization?organizationId=${encodeURIComponent(id)}`
   )
-  if (details.status === 401) redirect("/login?reason=session-expired")
-  if ([400, 403, 404].includes(details.status)) redirect("/organizations")
+  if (details.status === 401) redirect("/entrar?reason=session-expired")
+  if ([400, 403, 404].includes(details.status)) redirect("/empresas")
   if (!details.ok)
     throw new Error("Não foi possível carregar os dados da empresa.")
   const result = managedOrganizationSchema.parse(await details.json())

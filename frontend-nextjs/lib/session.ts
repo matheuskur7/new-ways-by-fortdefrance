@@ -38,6 +38,6 @@ export function getSessionRedirect(
   pathname: string,
   session: AuthSession | null
 ) {
-  if (pathname === "/login") return session ? "/organizations" : null
-  return session ? null : "/login?reason=session-expired"
+  if (pathname === "/entrar") return session ? "/empresas" : null
+  return session ? null : "/entrar?reason=session-expired"
 }

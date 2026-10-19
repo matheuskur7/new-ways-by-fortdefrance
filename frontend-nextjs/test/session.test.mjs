@@ -44,15 +44,15 @@ test("respostas inesperadas e JSON inválido não são interpretados como logout
 })
 
 test("login com sessão válida encaminha para organizações", () => {
-  assert.equal(getSessionRedirect("/login", session), "/organizations")
-  assert.equal(getSessionRedirect("/login", null), null)
+  assert.equal(getSessionRedirect("/entrar", session), "/empresas")
+  assert.equal(getSessionRedirect("/entrar", null), null)
 })
 
 test("páginas autenticadas sem sessão encaminham para o login", () => {
-  for (const pathname of ["/", "/organizations"]) {
+  for (const pathname of ["/", "/empresas"]) {
     assert.equal(
       getSessionRedirect(pathname, null),
-      "/login?reason=session-expired"
+      "/entrar?reason=session-expired"
     )
     assert.equal(getSessionRedirect(pathname, session), null)
   }

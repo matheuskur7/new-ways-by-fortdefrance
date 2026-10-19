@@ -21,7 +21,7 @@ export function useLogin() {
         type: "success",
       })
 
-      router.replace("/organizations")
+      router.replace("/empresas")
     },
     onError: (error) => {
       const message = isAxiosError(error) && error.response?.data?.message

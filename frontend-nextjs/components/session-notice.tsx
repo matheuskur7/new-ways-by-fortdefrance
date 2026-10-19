@@ -14,7 +14,7 @@ export function SessionNotice() {
     // A limpeza síncrona também evita repetição dos efeitos no Strict Mode.
     if (!reason || url.searchParams.get("reason") !== reason) return
 
-    if (pathname === "/login" && reason === "session-expired") {
+    if (pathname === "/entrar" && reason === "session-expired") {
       toastManager.add({
         id: "session-expired",
         title: "Sua sessão expirou",

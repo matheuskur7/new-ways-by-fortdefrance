@@ -1,4 +1,4 @@
-import { settingsTabs } from "@/app/(private)/system-settings/tabs"
+import { settingsTabs } from "@/app/(private)/configuracoes/tabs"
 
 export type HeaderTabsConfig = {
   pathname: string

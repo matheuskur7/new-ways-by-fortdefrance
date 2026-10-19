@@ -24,7 +24,7 @@ import { MemberRoleSelect, type MemberRole } from "./member-role-select"
 import { useOrganizationMembers } from "../hooks/use-organization-members"
 import { useUpdateMemberRole } from "../hooks/use-update-member-role"
 import { MEMBERS_PAGE_SIZE } from "../services/list-organization-members"
-import { isOrganizationOwner } from "../../organizations/schemas"
+import { isOrganizationOwner } from "../../empresas/schemas"
 import type { OrganizationMember } from "../schemas"
 
 const getMemberId = (member: OrganizationMember) => member.id

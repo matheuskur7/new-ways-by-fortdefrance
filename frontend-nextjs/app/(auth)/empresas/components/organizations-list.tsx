@@ -169,7 +169,7 @@ export function OrganizationsList({
                           render={
                             <Link
                               href={{
-                                pathname: "/organization-settings",
+                                pathname: "/configuracoes-empresa",
                                 query: {
                                   organizationId: organization.id,
                                 },

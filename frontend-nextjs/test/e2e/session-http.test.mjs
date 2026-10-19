@@ -136,7 +136,7 @@ before(async () => {
   const deadline = Date.now() + 30_000
   while (Date.now() < deadline) {
     try {
-      const response = await fetch(`${origin}/login`)
+      const response = await fetch(`${origin}/entrar`)
       await response.text()
       if (response.ok) return
     } catch {
@@ -170,18 +170,18 @@ async function open(pathname, cookie) {
 }
 
 test("visitante vê login e é redirecionado ao acessar páginas privadas", async () => {
-  assert.equal((await open("/login")).status, 200)
+  assert.equal((await open("/entrar")).status, 200)
   const protectedPage = await open("/")
   assert.equal(protectedPage.status, 307)
-  assert.equal(protectedPage.headers.get("location"), "/login")
+  assert.equal(protectedPage.headers.get("location"), "/entrar")
   const response = await open("/", "theme=light")
-  assert.equal(response.headers.get("location"), "/login")
+  assert.equal(response.headers.get("location"), "/entrar")
 })
 
 test("sessão válida sai do login e acessa páginas privadas", async () => {
-  const response = await open("/login", "session=valid")
+  const response = await open("/entrar", "session=valid")
   assert.equal(response.status, 307)
-  assert.equal(response.headers.get("location"), "/organizations")
+  assert.equal(response.headers.get("location"), "/empresas")
   assert.equal((await open("/", "session=valid")).status, 200)
   assert.ok(queries.length > 0)
   for (const params of queries) {
@@ -200,7 +200,7 @@ test("cookie inválido ou resposta 401 não libera acesso", async () => {
     assert.equal(response.status, 307)
     assert.equal(
       response.headers.get("location"),
-      "/login?reason=session-expired"
+      "/entrar?reason=session-expired"
     )
   }
 })
@@ -212,8 +212,8 @@ test("erro do backend não redireciona o usuário para o login", async () => {
 })
 
 test("configurações do usuário ficam no auth shell e exigem sessão", async () => {
-  assert.equal((await open("/user-settings")).status, 307)
-  const response = await fetch(`${origin}/user-settings`, {
+  assert.equal((await open("/configuracoes-usuario")).status, 307)
+  const response = await fetch(`${origin}/configuracoes-usuario`, {
     headers: { cookie: "session=valid" },
   })
   assert.equal(response.status, 200)
@@ -238,7 +238,7 @@ test("foto usa redirecionamento privado sem cache e mantém erros de autorizaç�
 })
 
 test("configurações da empresa exigem owner ou admin também no acesso direto", async () => {
-  const path = "/organization-settings?organizationId=org-example"
+  const path = "/configuracoes-empresa?organizationId=org-example"
   assert.equal((await open(path)).status, 307)
   for (const cookie of ["session=valid", "session=admin"]) {
     const response = await fetch(`${origin}${path}`, { headers: { cookie } })
@@ -250,13 +250,13 @@ test("configurações da empresa exigem owner ou admin também no acesso direto"
     assert.match(html, /Minhas empresas/)
   }
   for (const path of [
-    "/organization-settings",
-    "/organization-settings?organizationId=missing",
-    "/organization-settings?organizationId=org-example",
+    "/configuracoes-empresa",
+    "/configuracoes-empresa?organizationId=missing",
+    "/configuracoes-empresa?organizationId=org-example",
   ]) {
     const response = await open(path, "session=member")
     assert.equal(response.status, 307)
-    assert.equal(response.headers.get("location"), "/organizations")
+    assert.equal(response.headers.get("location"), "/empresas")
   }
 })
 
@@ -273,14 +273,14 @@ test("calculadora de taxas exige sessão e renderiza o formulário", async () =>
 })
 
 test("configurações do sistema exigem sessão e vínculo com empresa ativa", async () => {
-  for (const path of ["/system-settings", "/system-settings/taxas"]) {
+  for (const path of ["/configuracoes", "/configuracoes/taxas"]) {
     const anonymous = await open(path)
     assert.equal(anonymous.status, 307)
-    assert.equal(anonymous.headers.get("location"), "/login")
+    assert.equal(anonymous.headers.get("location"), "/entrar")
     for (const cookie of ["session=valid", "session=removed-company"]) {
       const response = await open(path, cookie)
       assert.equal(response.status, 307)
-      assert.equal(response.headers.get("location"), "/organizations")
+      assert.equal(response.headers.get("location"), "/empresas")
     }
     const response = await fetch(`${origin}${path}`, {
       headers: { cookie: "session=active-company" },

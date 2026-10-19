@@ -19,7 +19,7 @@ export default async function OrganizationSettingsPage({
   const { user } = await requireSession()
   const params = await searchParams
   if (typeof params.organizationId !== "string" || !params.organizationId)
-    redirect("/organizations")
+    redirect("/empresas")
   const organization = await getManagedOrganization(params.organizationId)
 
   return (
@@ -29,7 +29,7 @@ export default async function OrganizationSettingsPage({
       className="flex animate-in flex-col gap-3 duration-300 fade-in-0 motion-reduce:animate-none"
     >
       <Link
-        href="/organizations"
+        href="/empresas"
         className={buttonVariants({
           variant: "ghost",
           className: "-ml-2.5 self-start",

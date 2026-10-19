@@ -40,7 +40,7 @@ export function UserBanner({ user }: { user: AuthSession["user"] }) {
             disabled={
               logout.isPending || logout.isSuccess || pendingSelections > 0
             }
-            render={<Link href="/user-settings" />}
+            render={<Link href="/configuracoes-usuario" />}
             nativeButton={false}
           >
             <UserRoundCog aria-hidden="true" />

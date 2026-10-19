@@ -14,7 +14,7 @@ export function SessionMonitor() {
   const queryClient = useQueryClient()
 
   useEffect(() => {
-    if (pathname === "/login") completeSignOut()
+    if (pathname === "/entrar") completeSignOut()
     const controller = new AbortController()
     let checking = false
     let redirecting = false
