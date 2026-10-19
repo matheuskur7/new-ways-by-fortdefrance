@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { saleAmountFormSchema } from "../schemas"
 import { useCardFees } from "../hooks/use-card-fees"
 import { maskCurrency, parseBrazilianAmount } from "@/lib/masks"
+import { ProviderSelect } from "./provider-select"
 import { FeeTable } from "./fee-table"
 
 export function FeeCalculator() {
@@ -28,6 +29,13 @@ export function FeeCalculator() {
   })
   const amountField = register("amount")
   const query = useCardFees()
+  const [selectedProviderId, setSelectedProviderId] = useState<string | null>(
+    null
+  )
+  const providers = query.data ?? []
+  const provider =
+    providers.find((item) => item.id === selectedProviderId) ?? providers[0]
+  const groups = provider?.groups ?? []
   return (
     <section className="mx-auto w-full max-w-6xl">
       <PageHeader
@@ -38,49 +46,59 @@ export function FeeCalculator() {
       />
       <Card className="ring-0">
         <CardContent>
-          <form
-            onSubmit={handleSubmit((values) =>
-              setAmount(parseBrazilianAmount(values.amount))
-            )}
-            className="flex flex-col items-start gap-1.5"
-          >
-            <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-end">
-              <div className="grid w-40 max-w-full gap-2">
-                <Label htmlFor="sale-amount">Valor da venda (R$)</Label>
-                <Input
-                  id="sale-amount"
-                  inputMode="numeric"
-                  autoComplete="off"
-                  placeholder="0,00"
-                  className="h-10 bg-background text-lg"
-                  aria-invalid={!!errors.amount}
-                  aria-describedby={errors.amount ? "amount-error" : undefined}
-                  {...amountField}
-                  onChange={(event) => {
-                    event.target.value = maskCurrency(event.target.value)
-                    void amountField.onChange(event)
-                  }}
-                />
+          <div className="flex flex-col-reverse gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <form
+              onSubmit={handleSubmit((values) =>
+                setAmount(parseBrazilianAmount(values.amount))
+              )}
+              className="flex flex-col items-start gap-1.5"
+            >
+              <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-end">
+                <div className="grid w-40 max-w-full gap-2">
+                  <Label htmlFor="sale-amount">Valor da venda (R$)</Label>
+                  <Input
+                    id="sale-amount"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    placeholder="0,00"
+                    className="h-10 bg-background text-lg"
+                    aria-invalid={!!errors.amount}
+                    aria-describedby={
+                      errors.amount ? "amount-error" : undefined
+                    }
+                    {...amountField}
+                    onChange={(event) => {
+                      event.target.value = maskCurrency(event.target.value)
+                      void amountField.onChange(event)
+                    }}
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="sm:min-w-40"
+                  disabled={!groups.length || query.isError}
+                >
+                  Calcular
+                </Button>
               </div>
-              <Button
-                type="submit"
-                size="lg"
-                className="sm:min-w-40"
-                disabled={!query.data?.length || query.isError}
-              >
-                Calcular
-              </Button>
-            </div>
-            {errors.amount && (
-              <p
-                id="amount-error"
-                role="alert"
-                className="text-sm text-destructive"
-              >
-                {errors.amount.message}
-              </p>
-            )}
-          </form>
+              {errors.amount && (
+                <p
+                  id="amount-error"
+                  role="alert"
+                  className="text-sm text-destructive"
+                >
+                  {errors.amount.message}
+                </p>
+              )}
+            </form>
+            <ProviderSelect
+              providers={providers}
+              value={provider?.id ?? null}
+              onChange={setSelectedProviderId}
+              disabled={query.isPending || query.isError}
+            />
+          </div>
           {query.isPending && (
             <div
               role="status"
@@ -109,12 +127,12 @@ export function FeeCalculator() {
           )}
           {query.data?.length === 0 && (
             <p role="status" className="mt-3 text-sm text-muted-foreground">
-              Nenhum grupo de taxas cadastrado.
+              Nenhum provedor de taxas cadastrado.
             </p>
           )}
           {!query.isError && (
             <div className="mt-3 grid gap-2 lg:grid-cols-3">
-              {query.data?.map((group) => (
+              {groups.map((group) => (
                 <FeeTable key={group.id} group={group} amount={amount} />
               ))}
             </div>

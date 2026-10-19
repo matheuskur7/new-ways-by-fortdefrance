@@ -11,14 +11,22 @@ export const feeRateSchema = z.object({
   installments: z.number().int().min(1).max(12),
   ratePercent: ratePercentSchema,
 })
+export const feeProviderSchema = z.object({
+  id: z.uuidv7(),
+  name: z.string().min(1),
+})
+export type FeeProvider = z.infer<typeof feeProviderSchema>
+
 export const feeGroupSchema = z.object({
-  id: z.string().min(1),
+  id: z.uuidv7(),
+  provider: feeProviderSchema,
   name: z.string().min(2),
   channel: z.string().min(2),
   logoSvg: z.string().nullable(),
-  rates: z.array(feeRateSchema).min(1).max(12),
+  rates: z.array(feeRateSchema).max(12),
 })
 export type FeeGroup = z.infer<typeof feeGroupSchema>
+export type CardFeeProvider = FeeProvider & { groups: FeeGroup[] }
 
 export const feeGroupListSchema = z.array(feeGroupSchema)
 
