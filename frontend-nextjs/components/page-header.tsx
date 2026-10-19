@@ -16,12 +16,7 @@ export function PageHeader({
   className,
 }: PageHeaderProps) {
   return (
-    <div
-      className={cn(
-        "mx-auto w-full animate-in pb-1.5 duration-500 fade-in-0 in-data-[page-enter]:animate-none motion-reduce:animate-none",
-        className
-      )}
-    >
+    <div className={cn("mx-auto w-full pb-1.5", className)}>
       <header className="flex items-stretch justify-start gap-3 px-1 py-2.5 text-left">
         <span className="flex w-14 shrink-0 items-center justify-center rounded-xl border bg-background text-foreground">
           <Icon className="size-8" aria-hidden="true" />

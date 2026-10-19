@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 import { requireSession } from "@/lib/auth-server"
 import { AppSidebar } from "@/components/sidebar/app-sidebar"
 import { NavigationHeader } from "@/components/sidebar/navigation-header"
+import { PageTransition } from "@/components/page-transition"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 
 export default async function PrivateLayout({
@@ -11,10 +12,7 @@ export default async function PrivateLayout({
 }) {
   const { user, session } = await requireSession()
   return (
-    <SidebarProvider
-      data-page-enter
-      className="animate-in duration-300 fade-in-0 motion-reduce:animate-none"
-    >
+    <SidebarProvider>
       <a
         href="#page-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-background focus:p-3 focus:ring-2 focus:ring-primary"
@@ -32,7 +30,7 @@ export default async function PrivateLayout({
           tabIndex={-1}
           className="flex-1 p-1.5 outline-none sm:p-2 lg:p-2.5"
         >
-          {children}
+          <PageTransition>{children}</PageTransition>
         </main>
       </SidebarInset>
     </SidebarProvider>
