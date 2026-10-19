@@ -74,10 +74,25 @@ const backend = createServer((req, res) => {
   } else {
     res.end(
       JSON.stringify(
-        ["session=valid", "session=admin", "session=member"].includes(
-          req.headers.cookie
-        )
-          ? fixture
+        [
+          "session=valid",
+          "session=admin",
+          "session=member",
+          "session=active-company",
+          "session=removed-company",
+        ].includes(req.headers.cookie)
+          ? {
+              ...fixture,
+              session: {
+                ...fixture.session,
+                activeOrganizationId:
+                  req.headers.cookie === "session=active-company"
+                    ? "org-example"
+                    : req.headers.cookie === "session=removed-company"
+                      ? "removed-org"
+                      : null,
+              },
+            }
           : null
       )
     )
@@ -255,4 +270,37 @@ test("calculadora de taxas exige sessão e renderiza o formulário", async () =>
   assert.match(html, /Calculadora de Taxas de Cartão/)
   assert.match(html, /Valor da venda/)
   assert.match(html, /Calcular/)
+})
+
+test("configurações do sistema exigem sessão e vínculo com empresa ativa", async () => {
+  for (const path of ["/system-settings", "/system-settings/taxas"]) {
+    const anonymous = await open(path)
+    assert.equal(anonymous.status, 307)
+    assert.equal(anonymous.headers.get("location"), "/login")
+    for (const cookie of ["session=valid", "session=removed-company"]) {
+      const response = await open(path, cookie)
+      assert.equal(response.status, 307)
+      assert.equal(response.headers.get("location"), "/organizations")
+    }
+    const response = await fetch(`${origin}${path}`, {
+      headers: { cookie: "session=active-company" },
+    })
+    assert.equal(response.status, 200)
+    const html = await response.text()
+    assert.match(html, /aria-label="Configurações"/)
+    if (path.endsWith("taxas")) {
+      assert.match(html, /Configurações de Taxas/)
+      assert.match(html, /Gerencie as taxas e as opções de pagamento/)
+      assert.doesNotMatch(html, /<h1[^>]*>Configurações do Sistema/)
+    } else {
+      assert.match(html, /Configurações do Sistema/)
+      assert.match(html, /Gerencie as configurações gerais do sistema/)
+    }
+    assert.doesNotMatch(html, /Configurações da empresa Empresa de teste/)
+    assert.match(html, /role="tablist"/)
+    assert.match(html, />Geral</)
+    assert.match(html, />Taxas</)
+    assert.match(html, /role="tabpanel"/)
+    if (path.endsWith("taxas")) assert.match(html, /Configurações de taxas/)
+  }
 })

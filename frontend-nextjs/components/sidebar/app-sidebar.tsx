@@ -8,6 +8,7 @@ import {
   Calculator,
   ChevronsUpDown,
   House,
+  Settings,
   UserRoundCog,
   UserRound,
   X,
@@ -123,6 +124,40 @@ export function AppSidebar({ user }: { user: AuthSession["user"] }) {
                 </SidebarMenuItem>
               )
             })}
+          </SidebarMenu>
+        </nav>
+        <nav
+          aria-label="Configurações"
+          className="mt-auto px-3 pt-3 transition-[padding] duration-200 ease-in-out group-data-[collapsible=icon]:px-2 motion-reduce:transition-none"
+        >
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                render={<Link href="/system-settings" />}
+                isActive={
+                  pathname === "/system-settings" ||
+                  pathname.startsWith("/system-settings/")
+                }
+                aria-current={
+                  pathname === "/system-settings" ||
+                  pathname.startsWith("/system-settings/")
+                    ? "page"
+                    : undefined
+                }
+                tooltip="Configurações"
+                aria-label="Configurações"
+                className="h-10 border border-transparent text-[15px] transition-[width,height,padding,font-size] duration-200 ease-in-out group-data-[collapsible=icon]:text-sm motion-reduce:transition-none data-active:shadow-[inset_2px_0_0_var(--primary)]"
+                onClick={() => setOpenMobile(false)}
+              >
+                <Settings
+                  className="size-4.5! transition-[width,height] duration-200 ease-in-out group-data-[collapsible=icon]:size-4! motion-reduce:transition-none"
+                  aria-hidden="true"
+                />
+                <span className="max-w-40 overflow-hidden whitespace-nowrap opacity-100 transition-[max-width,font-size,opacity] duration-200 ease-in-out group-data-[collapsible=icon]:max-w-0 group-data-[collapsible=icon]:text-[0px] group-data-[collapsible=icon]:opacity-0 motion-reduce:transition-none">
+                  Configurações
+                </span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
         </nav>
       </SidebarContent>

@@ -1,4 +1,6 @@
 "use client"
+import { usePathname } from "next/navigation"
+import { SettingsNavigation } from "@/app/(private)/system-settings/components/settings-navigation"
 import { Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react"
 import { IconButton } from "@/components/ui/icon-button"
 import { useSidebar } from "@/components/ui/sidebar"
@@ -11,6 +13,9 @@ export function NavigationHeader({
   userId: string
   activeOrganizationId?: string | null
 }) {
+  const pathname = usePathname()
+  const isSettings =
+    pathname === "/system-settings" || pathname.startsWith("/system-settings/")
   const organizations = useOrganizations(userId)
   const organization = organizations.data?.find(
     (item) => item.id === activeOrganizationId
@@ -31,6 +36,7 @@ export function NavigationHeader({
       >
         <Icon aria-hidden="true" />
       </IconButton>
+      {isSettings && <SettingsNavigation />}
       <div className="ml-auto min-w-0 text-right">
         <p className="text-xs text-muted-foreground">Você está em</p>
         {organizations.isPending ? (
