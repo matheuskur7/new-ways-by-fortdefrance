@@ -84,7 +84,7 @@ export function TabsTab({
   return (
     <TabsPrimitive.Tab
       className={cn(
-        "relative flex my-2 shrink-0 grow cursor-pointer items-center justify-center whitespace-nowrap rounded-md border border-transparent font-medium text-base outline-none transition-none hover:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring data-disabled:pointer-events-none data-[orientation=vertical]:w-full data-[orientation=vertical]:justify-start data-active:text-foreground data-disabled:opacity-64 sm:text-sm",
+        "relative flex my-2 shrink-0 grow cursor-pointer items-center justify-center whitespace-nowrap rounded-md border border-transparent font-medium text-base outline-none transition-colors duration-150 motion-reduce:transition-none hover:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring data-disabled:pointer-events-none data-[orientation=vertical]:w-full data-[orientation=vertical]:justify-start data-active:text-foreground data-disabled:opacity-64 sm:text-sm",
         segmentedControlItemLayoutClassName,
         segmentedControlItemSizeClassNames[resolvedSize],
         className,

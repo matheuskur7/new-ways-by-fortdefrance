@@ -110,7 +110,7 @@ export function AppSidebar({ user }: { user: AuthSession["user"] }) {
                     aria-current={active ? "page" : undefined}
                     aria-label={label}
                     tooltip={label}
-                    className="h-10 border border-transparent text-[15px] transition-[width,height,padding,font-size] duration-200 ease-in-out group-data-[collapsible=icon]:text-sm motion-reduce:transition-none data-active:shadow-[inset_2px_0_0_var(--primary)]"
+                    className="h-10 border-0 text-[15px] shadow-[inset_3px_0_0_transparent] transition-[width,height,padding,font-size,font-weight,color,background-color,box-shadow] duration-200 ease-in-out group-data-[collapsible=icon]:text-sm motion-reduce:transition-none data-active:shadow-[inset_3px_0_0_var(--primary)]"
                     onClick={() => setOpenMobile(false)}
                   >
                     <Icon
@@ -146,7 +146,7 @@ export function AppSidebar({ user }: { user: AuthSession["user"] }) {
                 }
                 tooltip="Configurações"
                 aria-label="Configurações"
-                className="h-10 border border-transparent text-[15px] transition-[width,height,padding,font-size] duration-200 ease-in-out group-data-[collapsible=icon]:text-sm motion-reduce:transition-none data-active:shadow-[inset_2px_0_0_var(--primary)]"
+                className="h-10 border-0 text-[15px] shadow-[inset_3px_0_0_transparent] transition-[width,height,padding,font-size,font-weight,color,background-color,box-shadow] duration-200 ease-in-out group-data-[collapsible=icon]:text-sm motion-reduce:transition-none data-active:shadow-[inset_3px_0_0_var(--primary)]"
                 onClick={() => setOpenMobile(false)}
               >
                 <Settings
