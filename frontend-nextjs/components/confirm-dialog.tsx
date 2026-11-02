@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, type ReactNode } from "react"
+import { useRef, useState } from "react"
 import { Info, type LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -13,6 +13,23 @@ import {
   AlertDialogTitle,
   type AlertDialogTone,
 } from "@/components/ui/alert-dialog"
+
+type Content = {
+  icon: LucideIcon
+  tone: AlertDialogTone
+  title: string
+  description: string
+  confirmLabel: string
+  pendingLabel: string
+  cancelLabel: string
+  blockedReason?: string
+}
+
+function sameContent(a: Content, b: Content) {
+  return (Object.keys(a) as (keyof Content)[]).every((key) =>
+    Object.is(a[key], b[key])
+  )
+}
 
 /**
  * Confirmação de ações destrutivas, como remover uma entidade ou descartar
@@ -38,7 +55,7 @@ export function ConfirmDialog({
   /** Cor do ícone: `warning` para atenção e `destructive` para exclusão. */
   tone?: AlertDialogTone
   title: string
-  description: ReactNode
+  description: string
   confirmLabel: string
   /** Texto do botão de confirmar enquanto a ação está em andamento. */
   pendingLabel?: string
@@ -50,6 +67,21 @@ export function ConfirmDialog({
   onConfirm: () => void
 }) {
   const cancelRef = useRef<HTMLButtonElement>(null)
+  const current: Content = {
+    icon,
+    tone,
+    title,
+    description,
+    confirmLabel,
+    pendingLabel,
+    cancelLabel,
+    blockedReason,
+  }
+  // Quem usa costuma limpar os dados ao fechar; mantém o último conteúdo
+  // aberto durante a animação de saída para o modal não trocar de aparência.
+  const [lastOpen, setLastOpen] = useState(current)
+  if (open && !sameContent(lastOpen, current)) setLastOpen(current)
+  const view = open ? current : lastOpen
 
   return (
     <AlertDialog
@@ -60,14 +92,14 @@ export function ConfirmDialog({
     >
       <AlertDialogContent initialFocus={cancelRef}>
         <AlertDialogHeader>
-          {blockedReason ? (
+          {view.blockedReason ? (
             <AlertDialogIcon icon={Info} tone="info" />
           ) : (
-            <AlertDialogIcon icon={icon} tone={tone} />
+            <AlertDialogIcon icon={view.icon} tone={view.tone} />
           )}
-          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogTitle>{view.title}</AlertDialogTitle>
           <AlertDialogDescription>
-            {blockedReason ?? description}
+            {view.blockedReason ?? view.description}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -78,16 +110,16 @@ export function ConfirmDialog({
             disabled={pending}
             onClick={onCancel}
           >
-            {blockedReason ? "Entendi" : cancelLabel}
+            {view.blockedReason ? "Entendi" : view.cancelLabel}
           </Button>
-          {!blockedReason && (
+          {!view.blockedReason && (
             <Button
               type="button"
               variant="destructive"
               disabled={pending}
               onClick={onConfirm}
             >
-              {pending ? pendingLabel : confirmLabel}
+              {pending ? view.pendingLabel : view.confirmLabel}
             </Button>
           )}
         </AlertDialogFooter>
