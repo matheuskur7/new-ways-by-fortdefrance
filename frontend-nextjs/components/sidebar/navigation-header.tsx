@@ -3,7 +3,7 @@ import { HeaderTabs } from "@/components/sidebar/header-tabs"
 import { Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react"
 import { IconButton } from "@/components/ui/icon-button"
 import { useSidebar } from "@/components/ui/sidebar"
-import { useOrganizations } from "@/app/(auth)/empresas/hooks/use-organizations"
+import { useOrganizations } from "@/features/organization/hooks/use-organizations"
 import { Skeleton } from "@/components/ui/skeleton"
 export function NavigationHeader({
   userId,

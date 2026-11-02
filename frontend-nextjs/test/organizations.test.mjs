@@ -5,7 +5,7 @@ import {
   isOrganizationOwner,
   selectedOrganizationSchema,
   selectOrganizationSchema,
-} from "../app/(auth)/empresas/schemas.ts"
+} from "../features/organization/schemas.ts"
 
 test("interpreta empresas com os papéis retornados pelo backend", () => {
   const result = organizationListSchema.parse([
@@ -77,7 +77,7 @@ test("aceita a resposta nativa de seleção sem exigir papel do membro", () => {
 
 test("somente owner e admin podem gerenciar a empresa, inclusive com múltiplos papéis", async () => {
   const { canManageOrganization } =
-    await import("../app/(auth)/empresas/schemas.ts")
+    await import("../features/organization/schemas.ts")
   for (const role of ["owner", "admin", "member, admin", " admin,owner "])
     assert.equal(canManageOrganization(role), true)
   for (const role of [

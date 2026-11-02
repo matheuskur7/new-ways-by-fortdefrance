@@ -4,7 +4,7 @@ import { cache } from "react"
 import { redirect } from "next/navigation"
 import { requireSession } from "@/lib/auth-server"
 import { serverGet } from "@/lib/api-server"
-import { organizationListSchema } from "@/app/(auth)/empresas/schemas"
+import { organizationListSchema } from "../schemas"
 
 // Layout e página compartilham a mesma verificação dentro do request.
 export const requireActiveOrganization = cache(async () => {

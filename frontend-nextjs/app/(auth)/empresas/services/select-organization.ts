@@ -2,7 +2,7 @@ import { api } from "@/lib/api"
 import {
   selectedOrganizationSchema,
   selectOrganizationSchema,
-} from "../schemas"
+} from "@/features/organization/schemas"
 
 export async function selectOrganization(organizationId: string) {
   const body = selectOrganizationSchema.parse({ organizationId })

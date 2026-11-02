@@ -11,15 +11,10 @@ const resolver = registerHooks({
       )
     if (
       specifier === "../schemas" &&
-      context.parentURL?.includes(
-        "components/global-settings/organization/services/"
-      )
+      context.parentURL?.includes("features/organization/services/")
     )
       return nextResolve(
-        new URL(
-          "../components/global-settings/organization/schemas.ts",
-          import.meta.url
-        ).href,
+        new URL("../features/organization/schemas.ts", import.meta.url).href,
         context
       )
     return nextResolve(specifier, context)
@@ -27,11 +22,11 @@ const resolver = registerHooks({
 })
 const { api } = await import("../lib/api.ts")
 const { updateOrganization } =
-  await import("../components/global-settings/organization/services/update-organization.ts")
+  await import("../features/organization/services/update-organization.ts")
 const { listOrganizationMembers } =
-  await import("../components/global-settings/organization/services/list-organization-members.ts")
+  await import("../features/organization/services/list-organization-members.ts")
 const { updateMemberRole } =
-  await import("../components/global-settings/organization/services/update-member-role.ts")
+  await import("../features/organization/services/update-member-role.ts")
 resolver.deregister()
 afterEach(() => mock.restoreAll())
 

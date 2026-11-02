@@ -13,10 +13,13 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { AnimatedHeight } from "@/components/ui/animated-height"
 import { useIsMutating } from "@tanstack/react-query"
 import { isSigningOut } from "@/lib/logout"
-import { useOrganizations } from "../hooks/use-organizations"
+import { useOrganizations } from "@/features/organization/hooks/use-organizations"
 import { useEnterOrganization } from "../hooks/use-enter-organization"
-import { canManageOrganization, type Organization } from "../schemas"
-import { OrganizationSettingsDialog } from "@/components/global-settings/organization/components/organization-settings-dialog"
+import {
+  canManageOrganization,
+  type Organization,
+} from "@/features/organization/schemas"
+import { OrganizationSettingsDialog } from "@/features/organization/components/organization-settings-dialog"
 
 const roleBadges = [
   {

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { isAxiosError } from "axios"
 import { Building2, CircleAlert, LoaderCircle, Save } from "lucide-react"
-import type { Organization } from "@/app/(auth)/empresas/schemas"
+import type { Organization } from "../schemas"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { AnimatedHeight } from "@/components/ui/animated-height"
 import { Button } from "@/components/ui/button"

@@ -1,6 +1,6 @@
 import { requireSession } from "@/lib/auth-server"
-import { canManageOrganization } from "@/app/(auth)/empresas/schemas"
-import { requireActiveOrganization } from "../services/require-active-organization"
+import { canManageOrganization } from "@/features/organization/schemas"
+import { requireActiveOrganization } from "@/features/organization/services/require-active-organization"
 import { FeeSettings } from "./components/fee-settings"
 
 export default async function FeeSettingsPage() {
