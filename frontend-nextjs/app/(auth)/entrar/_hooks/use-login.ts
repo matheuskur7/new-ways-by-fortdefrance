@@ -2,7 +2,6 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
-import { isAxiosError } from "axios"
 
 import { toastManager } from "@/components/ui/toast"
 import { login } from "../_services/login"
@@ -23,17 +22,6 @@ export function useLogin() {
 
       router.replace("/empresas")
     },
-    onError: (error) => {
-      const message = isAxiosError(error) && error.response?.data?.message
-
-      toastManager.add({
-        title: "Não foi possível entrar",
-        description:
-          message === "Invalid email or password"
-            ? "Email e/ou senha inválido(s)."
-            : message || "Tente novamente mais tarde.",
-        type: "error",
-      })
-    },
+    // A falha é exibida no próprio formulário, junto aos campos.
   })
 }

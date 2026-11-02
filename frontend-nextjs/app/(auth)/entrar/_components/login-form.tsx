@@ -1,9 +1,9 @@
 "use client"
 
-import { isAxiosError } from "axios"
 import { useState } from "react"
 import { Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { getHttpStatus } from "@/lib/api"
 import {
   Tooltip,
   TooltipTrigger,
@@ -122,9 +122,9 @@ export default function LoginForm() {
 
         {login.isError && (
           <p role="alert" className="text-sm text-destructive">
-            {isAxiosError(login.error) && login.error.response?.status === 401
+            {getHttpStatus(login.error) === 401
               ? "Email ou senha inválidos."
-              : "Ocorreu um erro desconhecido."}
+              : "Não foi possível entrar. Tente novamente mais tarde."}
           </p>
         )}
 
