@@ -51,7 +51,8 @@ test("repasse da taxa preserva o valor líquido e divide o total em parcelas", (
   for (const rate of ["100.00", "-1.00", "3,94"]) {
     assert.throws(() => calculateCardFee(1000, rate, 2))
   }
-  assert.throws(() => calculateCardFee(1000, "3.94", 13))
+  assert.ok(calculateCardFee(1000, "3.94", 24).installment > 0)
+  assert.throws(() => calculateCardFee(1000, "3.94", 32768))
 })
 
 test("máscara e formatação monetária compartilham o padrão brasileiro", () => {

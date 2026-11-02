@@ -57,6 +57,13 @@
       "when": 1792375245398,
       "tag": "0007_silent_kabuki",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792378567299,
+      "tag": "0008_blushing_onslaught",
+      "breakpoints": true
     }
   ]
 }

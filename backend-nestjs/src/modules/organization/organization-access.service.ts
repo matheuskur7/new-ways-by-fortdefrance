@@ -20,4 +20,15 @@ export class OrganizationAccessService {
     }
     return organizationId;
   }
+
+  async requireManager(session: AuthSession) {
+    const organizationId = await this.requireActiveOrganization(session);
+    const membership = await this.repository.findMembership(organizationId, session.user.id);
+    if (!membership?.role.split(',').some((role) => ['owner', 'admin'].includes(role.trim()))) {
+      throw new ForbiddenException(
+        'Somente proprietários e administradores podem gerenciar as taxas.',
+      );
+    }
+    return organizationId;
+  }
 }

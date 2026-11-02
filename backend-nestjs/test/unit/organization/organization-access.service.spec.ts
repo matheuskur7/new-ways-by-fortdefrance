@@ -32,3 +32,18 @@ describe('OrganizationAccessService', () => {
     expect(repository.findMembership).toHaveBeenNthCalledWith(2, 'org-test', 'user-test');
   });
 });
+
+describe('Permissões de gerenciamento de taxas', () => {
+  it('aceita owner/admin em papéis compostos e rejeita membro comum ou removido', async () => {
+    const repository = { findMembership: vi.fn() };
+    const service = new OrganizationAccessService(repository as unknown as OrganizationRepository);
+    for (const role of ['owner', 'admin', 'member, admin']) {
+      repository.findMembership.mockResolvedValue({ role });
+      await expect(service.requireManager(authSession)).resolves.toBe('org-test');
+    }
+    for (const membership of [{ role: 'member' }, undefined]) {
+      repository.findMembership.mockResolvedValue(membership);
+      await expect(service.requireManager(authSession)).rejects.toThrow(ForbiddenException);
+    }
+  });
+});

@@ -8,8 +8,6 @@ export default async function SystemSettingsLayout({
 }) {
   await requireActiveOrganization()
   return (
-    <section className="mx-auto flex w-full max-w-6xl flex-col gap-3">
-      {children}
-    </section>
+    <section className="flex w-full min-w-0 flex-col gap-3">{children}</section>
   )
 }

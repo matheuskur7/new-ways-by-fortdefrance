@@ -74,10 +74,7 @@ export function FeeTable({
                 ? null
                 : calculateCardFee(amount, rate.ratePercent, rate.installments)
             return (
-              <TableRow
-                key={rate.installments}
-                className="h-11 odd:bg-muted/25 even:bg-background hover:bg-muted/35"
-              >
+              <TableRow key={rate.installments} className="h-11">
                 <TableCell className="px-2 py-1 text-center">
                   <span className="block font-medium">
                     {rate.installments}x

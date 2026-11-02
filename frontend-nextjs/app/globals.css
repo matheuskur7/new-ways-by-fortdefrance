@@ -169,3 +169,8 @@
     @apply font-sans;
   }
 }
+
+html[data-dragging-group],
+html[data-dragging-group] * {
+  cursor: grabbing !important;
+}

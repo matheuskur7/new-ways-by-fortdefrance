@@ -81,7 +81,7 @@ describe('seedCardFees', () => {
   });
 
   it('insere grupos e suas 12 parcelas na mesma transação', async () => {
-    await expect(seedCardFees(database)).resolves.toBe(3);
+    await expect(seedCardFees(database, 'org-id')).resolves.toBe(3);
     const inserts = query.mock.calls.filter(([statement]) =>
       statement.text.startsWith('insert into "card_fees"'),
     );
@@ -89,15 +89,16 @@ describe('seedCardFees', () => {
     const providerInsert = query.mock.calls.find(([sql]) =>
       sql.text.startsWith('insert into "card_fee_providers"'),
     );
-    expect(providerInsert?.[1]).toEqual(['InfinitePay']);
+    expect(providerInsert?.[1]).toEqual(['org-id', 'InfinitePay']);
     const groupInserts = query.mock.calls.filter(([sql]) =>
       sql.text.startsWith('insert into "card_fee_groups"'),
     );
     expect(groupInserts).toHaveLength(3);
-    for (const [, values] of groupInserts) expect(values?.[0]).toBe('provider-id');
+    for (const [, values] of groupInserts) expect(values?.[0]).toBe('org-id');
+    for (const [, values] of groupInserts) expect(values?.[1]).toBe('provider-id');
     for (const [, values] of inserts) {
-      expect(values).toHaveLength(36);
-      expect(values?.filter((_, index) => index % 3 === 1)).toEqual([
+      expect(values).toHaveLength(48);
+      expect(values?.filter((_, index) => index % 4 === 2)).toEqual([
         1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
       ]);
     }
@@ -109,7 +110,7 @@ describe('seedCardFees', () => {
     query.mockImplementation(async (statement) => ({
       rows: statement.text.includes('from "card_fee_providers"') ? [['provider-id']] : [],
     }));
-    await expect(seedCardFees(database)).resolves.toBe(0);
+    await expect(seedCardFees(database, 'org-id')).resolves.toBe(0);
     expect(
       statements().filter((sql) => sql.startsWith('insert into "card_fee_groups"')),
     ).toHaveLength(3);
@@ -136,13 +137,13 @@ describe('seedCardFees', () => {
             : [],
       };
     });
-    await expect(seedCardFees(database)).rejects.toThrow();
+    await expect(seedCardFees(database, 'org-id')).rejects.toThrow();
     expect(statements().at(-1)).toBe('rollback');
     expect(statements()).not.toContain('commit');
   });
   it('interrompe o seed se o provedor não puder ser consultado', async () => {
     query.mockResolvedValue({ rows: [] });
-    await expect(seedCardFees(database)).rejects.toThrow(
+    await expect(seedCardFees(database, 'org-id')).rejects.toThrow(
       'Provedor inicial de taxas não encontrado.',
     );
     expect(statements().at(-1)).toBe('rollback');

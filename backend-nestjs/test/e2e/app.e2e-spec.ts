@@ -235,20 +235,9 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       .expect(401);
   });
 
-  it('exige sessão para taxas globais e permite consulta sem empresa ativa', async () => {
+  it('exige sessão e empresa ativa para consultar taxas', async () => {
     await request(app.getHttpServer()).get('/card-fees').expect(401);
-    const response = await owner.get('/card-fees').expect(200);
-    expect(response.headers['cache-control']).toBe('private, no-store');
-    expect(response.body).toEqual([
-      {
-        id: '019a1234-5678-7000-8000-123456789abc',
-        name: 'Visa / Mastercard',
-        provider: { id: '019a1234-5678-7000-8000-123456789def', name: 'InfinitePay' },
-        channel: 'Presencial',
-        logoSvg: null,
-        rates: [{ installments: 2, ratePercent: '3.94' }],
-      },
-    ]);
+    await owner.get('/card-fees').expect(403);
   });
 
   it('cria organização, lista e seleciona como ativa', async () => {
@@ -270,6 +259,21 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       .expect(200);
     const activeSession = await owner.get('/api/auth/get-session').expect(200);
     expect(activeSession.body.session.activeOrganizationId).toBe(organizationId);
+  });
+
+  it('consulta somente as taxas da empresa ativa', async () => {
+    const response = await owner.get('/card-fees').expect(200);
+    expect(response.headers['cache-control']).toBe('private, no-store');
+    expect(response.body).toEqual([
+      {
+        id: '019a1234-5678-7000-8000-123456789abc',
+        name: 'Visa / Mastercard',
+        provider: { id: '019a1234-5678-7000-8000-123456789def', name: 'InfinitePay' },
+        channel: 'Presencial',
+        logoSvg: null,
+        rates: [{ installments: 2, ratePercent: '3.94' }],
+      },
+    ]);
   });
 
   it('renova por duas horas somente a sessão validada e não recupera sessões expiradas', async () => {

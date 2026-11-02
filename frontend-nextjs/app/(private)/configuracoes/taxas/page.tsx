@@ -1,8 +1,13 @@
-import { Percent } from "lucide-react"
-import { PageHeader } from "@/components/page-header"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { requireSession } from "@/lib/auth-server"
+import { canManageOrganization } from "@/app/(auth)/empresas/schemas"
+import { requireActiveOrganization } from "../services/require-active-organization"
+import { FeeManagement } from "./components/fee-management"
 
-export default function FeeSettingsPage() {
+export default async function FeeSettingsPage() {
+  const [{ user }, organization] = await Promise.all([
+    requireSession(),
+    requireActiveOrganization(),
+  ])
   return (
     <div
       id="settings-fees-panel"
@@ -10,17 +15,12 @@ export default function FeeSettingsPage() {
       aria-labelledby="settings-fees-tab"
       className="flex flex-col gap-3"
     >
-      <PageHeader
-        icon={Percent}
-        title="Configurações de Taxas"
-        subtitle="Gerencie as taxas e as opções de pagamento."
+      <FeeManagement
+        key={organization.id}
+        userId={user.id}
+        organizationId={organization.id}
+        canEdit={canManageOrganization(organization.role)}
       />
-      <Card className="ring-0">
-        <CardHeader>
-          <CardTitle>Configurações de taxas</CardTitle>
-        </CardHeader>
-        <CardContent className="min-h-24" />
-      </Card>
     </div>
   )
 }

@@ -8,7 +8,7 @@ export const ratePercentSchema = z
 export const saleAmountSchema = z.number().positive().max(1_000_000_000)
 
 export const feeRateSchema = z.object({
-  installments: z.number().int().min(1).max(12),
+  installments: z.number().int().min(1).max(32767),
   ratePercent: ratePercentSchema,
 })
 export const feeProviderSchema = z.object({
@@ -23,7 +23,7 @@ export const feeGroupSchema = z.object({
   name: z.string().min(2),
   channel: z.string().min(2),
   logoSvg: z.string().nullable(),
-  rates: z.array(feeRateSchema).max(12),
+  rates: z.array(feeRateSchema).max(32767),
 })
 export type FeeGroup = z.infer<typeof feeGroupSchema>
 export type CardFeeProvider = FeeProvider & { groups: FeeGroup[] }

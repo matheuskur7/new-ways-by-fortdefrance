@@ -68,3 +68,10 @@ Para notificações ancoradas em elementos, use `anchoredToastManager` com `posi
 ## Layout privado
 
 As páginas de `app/(private)/` compartilham o layout com sidebar recolhível, menu móvel, indicadores visuais de veículos e opções do perfil, adaptado de `zexperiments/frontend`. A sessão continua validada no layout e em cada página privada. O monitor de sessão permanece no layout raiz. O cabeçalho resolve o nome da empresa ativa pela listagem autenticada existente; o menu reutiliza `useLogout()` para sair e oferece acesso a `/empresas`. Calculadora de taxas e ajustes do usuário ficam desabilitados até suas páginas serem implementadas. Os indicadores de entradas e saídas ainda são demonstrativos.
+
+
+## Gerenciamento de taxas
+
+`/configuracoes/taxas` permite cadastrar e editar provedores, grupos e taxas da empresa ativa. Formulários ficam em componentes separados, com React Hook Form e Zod; requisições e validação de respostas ficam em `services/card-fee-management.ts`; React Query coordena carregamento, salvamento e invalidação do catálogo e da calculadora. O cache do catálogo é separado por usuário e empresa. Falhas mantêm o formulário aberto com as edições, e salvamentos em andamento bloqueiam fechamento e novos envios.
+
+O cadastro do grupo define sua quantidade de parcelas e os percentuais correspondentes, inclusive acima de 12. Owner/admin podem editar; os demais membros consultam os dados. Essa permissão é verificada novamente pelo backend a cada operação. A calculadora também exige empresa ativa e usa apenas as taxas dessa empresa.

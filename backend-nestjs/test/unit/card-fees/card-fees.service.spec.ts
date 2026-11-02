@@ -1,7 +1,13 @@
+import type { AuthSession } from '../../../src/modules/auth/auth.factory.js';
+import type { OrganizationAccessService } from '../../../src/modules/organization/organization-access.service.js';
 import { describe, expect, it, vi } from 'vitest';
 import { CardFeesService } from '../../../src/modules/card-fees/card-fees.service.js';
 import type { CardFeesRepository } from '../../../src/modules/card-fees/card-fees.repository.js';
 
+const session = {} as AuthSession;
+const access = {
+  requireActiveOrganization: vi.fn().mockResolvedValue('org-id'),
+} as unknown as OrganizationAccessService;
 describe('CardFeesService', () => {
   it('agrupa taxas mantendo ordem, precisão e grupos sem taxas', async () => {
     const group = {
@@ -37,8 +43,8 @@ describe('CardFeesService', () => {
         },
       ]),
     };
-    const service = new CardFeesService(repository as unknown as CardFeesRepository);
-    expect(await service.findAll()).toEqual([
+    const service = new CardFeesService(repository as unknown as CardFeesRepository, access);
+    expect(await service.findAll(session)).toEqual([
       {
         ...group,
         provider,
@@ -53,7 +59,7 @@ describe('CardFeesService', () => {
   it('retorna lista vazia sem grupos cadastrados', async () => {
     const repository = { findAll: vi.fn().mockResolvedValue([]) };
     await expect(
-      new CardFeesService(repository as unknown as CardFeesRepository).findAll(),
+      new CardFeesService(repository as unknown as CardFeesRepository, access).findAll(session),
     ).resolves.toEqual([]);
   });
   it('mantém grupos com o mesmo nome separados por provedor', async () => {
@@ -76,7 +82,10 @@ describe('CardFeesService', () => {
         },
       ]),
     };
-    const groups = await new CardFeesService(repository as unknown as CardFeesRepository).findAll();
+    const groups = await new CardFeesService(
+      repository as unknown as CardFeesRepository,
+      access,
+    ).findAll(session);
     expect(groups).toHaveLength(2);
     expect(groups[0]?.provider.name).toBe('InfinitePay');
     expect(groups[1]?.provider.name).toBe('Outro provedor');

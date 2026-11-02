@@ -265,9 +265,9 @@ O card de convites continua somente visual, com o botão de envio desativado. Es
 
 ### Taxas de cartão
 
-`GET /card-fees` exige sessão Better Auth e retorna os grupos compartilhados de taxas, com o provedor (`provider: { id, name }`), ordenados por provedor, exibição e parcelas. A tela `/taxas` calcula `valor da venda / (1 - taxa / 100)` para repassar a taxa ao comprador, com exibição em reais.
+`GET /card-fees` exige sessão Better Auth, empresa ativa e vínculo atual no banco, retornando os grupos de taxas exclusivos dessa empresa, com o provedor (`provider: { id, name }`), ordenados por provedor, exibição e parcelas. A tela `/taxas` calcula `valor da venda / (1 - taxa / 100)` para repassar a taxa ao comprador, com exibição em reais.
 
-O schema Drizzle mantém grupos, logotipos SVG e taxas decimais por parcela (1 a 12), com unicidade por grupo/parcela. Após conferir o banco de destino, execute `pnpm db:migrate` e `pnpm run db:seed` no backend. O seed inclui os três grupos e as 36 taxas do `zexperiments`; execuções posteriores preservam grupos existentes e suas taxas.
+O schema Drizzle mantém grupos, logotipos SVG e taxas decimais por parcela (1 a 32.767, limite do smallint), com unicidade por grupo/parcela. Após conferir o banco de destino, execute `pnpm db:migrate` e `pnpm run db:seed` no backend. O seed inclui os três grupos e as 36 taxas do `zexperiments`; execuções posteriores preservam grupos existentes e suas taxas.
 
 ### Execução centralizada dos seeds
 
@@ -282,6 +282,15 @@ Aplique as migrações antes e configure as variáveis `INITIAL_USER_*` e `INITI
 
 ### Provedores de taxas de cartão
 
-`card_fee_providers` representa o fornecedor das tabelas de taxas e possui somente `id` UUIDv7, `name` único e auditoria temporal (`created_at` e `updated_at`). Cada grupo tem um `provider_id` obrigatório. A chave de seed é única dentro de cada provedor; provedores com grupos vinculados não podem ser excluídos.
+`card_fee_providers` representa o fornecedor das tabelas de taxas e possui somente `id` UUIDv7, `organization_id`, `name` único por empresa e auditoria temporal (`created_at` e `updated_at`). Cada grupo tem um `provider_id` obrigatório. A chave de seed é única dentro de cada provedor; provedores com grupos vinculados não podem ser excluídos.
 
 O seed centralizado cria ou reutiliza **InfinitePay** e cadastra nela os três grupos e as 36 taxas iniciais, preservando registros existentes. A migração `0007` atribui os grupos anteriores à InfinitePay antes de tornar o vínculo obrigatório. Nenhuma migração é aplicada pelo comando de seed.
+
+
+### Gerenciamento de taxas por empresa
+
+A tela `/configuracoes/taxas` usa `GET /card-fees/catalog` para listar todos os provedores da empresa ativa, incluindo os que ainda não têm grupos. `POST /card-fees/providers` e `PATCH /card-fees/providers/:id` cadastram e editam provedores. `POST /card-fees/groups` e `PATCH /card-fees/groups/:id` salvam os dados do grupo e a lista de taxas em uma transação. Reduzir a lista remove as taxas excedentes; as parcelas mantidas preservam seus IDs. Taxas individuais usam `POST /card-fees/groups/:groupId/rates` e `PATCH /card-fees/groups/:groupId/rates/:id`.
+
+O corpo do grupo recebe `providerId`, `name`, `channel`, `displayOrder`, `logoSvg` (ou null) e `rates: [{ installments, ratePercent }]`. Percentuais usam strings decimais com duas casas, de `0.00` a `99.99`. A quantidade de parcelas é definida no cadastro e pode ultrapassar 12. Não envie `organizationId`: o backend deriva a empresa da sessão validada, confirma o vínculo a cada operação e permite alterações apenas a owner/admin. Chaves estrangeiras compostas também impedem relacionar registros de empresas diferentes.
+
+A migração `0008` transforma o catálogo global em cópias independentes para cada empresa existente, preservando os IDs na primeira empresa e gerando os demais no PostgreSQL. Se houver catálogo sem nenhuma empresa, a migração interrompe com uma mensagem para cadastrar a empresa antes. O seed explícito passa a criar o catálogo de referência separadamente em cada empresa existente, sem sobrescrever grupos cadastrados. Empresas novas podem iniciar com catálogo vazio. A migração foi gerada, mas deve ser revisada e aplicada ao banco de destino antes de usar as novas rotas.

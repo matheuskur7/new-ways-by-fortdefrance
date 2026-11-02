@@ -32,7 +32,10 @@ function TableBody({ className, ...props }: React.ComponentProps<"tbody">) {
   return (
     <tbody
       data-slot="table-body"
-      className={cn("[&_tr:last-child]:border-0", className)}
+      className={cn(
+        "[&_tr:last-child]:border-0 [&>tr:nth-child(even)]:bg-muted/35 [&>tr:nth-child(even):hover]:bg-muted/50 [&>tr[data-state=selected]]:bg-muted",
+        className
+      )}
       {...props}
     />
   )

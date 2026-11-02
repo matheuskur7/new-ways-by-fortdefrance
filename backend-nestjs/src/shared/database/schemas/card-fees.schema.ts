@@ -1,6 +1,8 @@
+import { organization } from './organization.schema.js';
 import { relations, sql } from 'drizzle-orm';
 import {
   check,
+  foreignKey,
   integer,
   smallint,
   numeric,
@@ -11,17 +13,27 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
-export const cardFeeProviders = pgTable('card_fee_providers', {
-  id: uuid()
-    .primaryKey()
-    .default(sql`uuidv7()`),
-  name: text().notNull().unique(),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true })
-    .notNull()
-    .defaultNow()
-    .$onUpdate(() => new Date()),
-});
+export const cardFeeProviders = pgTable(
+  'card_fee_providers',
+  {
+    id: uuid()
+      .primaryKey()
+      .default(sql`uuidv7()`),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    name: text().notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    unique().on(table.organizationId, table.name),
+    unique().on(table.organizationId, table.id),
+  ],
+);
 
 export const cardFeeGroups = pgTable(
   'card_fee_groups',
@@ -29,6 +41,9 @@ export const cardFeeGroups = pgTable(
     id: uuid()
       .primaryKey()
       .default(sql`uuidv7()`),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
     providerId: uuid('provider_id')
       .notNull()
       .references(() => cardFeeProviders.id, { onDelete: 'restrict' }),
@@ -43,7 +58,14 @@ export const cardFeeGroups = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date()),
   },
-  (table) => [unique().on(table.providerId, table.seedKey)],
+  (table) => [
+    unique().on(table.providerId, table.seedKey),
+    unique().on(table.organizationId, table.id),
+    foreignKey({
+      columns: [table.organizationId, table.providerId],
+      foreignColumns: [cardFeeProviders.organizationId, cardFeeProviders.id],
+    }),
+  ],
 );
 
 export const cardFees = pgTable(
@@ -52,6 +74,9 @@ export const cardFees = pgTable(
     id: uuid()
       .primaryKey()
       .default(sql`uuidv7()`),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
     groupId: uuid('group_id')
       .notNull()
       .references(() => cardFeeGroups.id, { onDelete: 'cascade' }),
@@ -60,7 +85,11 @@ export const cardFees = pgTable(
   },
   (table) => [
     unique().on(table.groupId, table.installments),
-    check('card_fees_installments_check', sql`${table.installments} between 1 and 12`),
+    foreignKey({
+      columns: [table.organizationId, table.groupId],
+      foreignColumns: [cardFeeGroups.organizationId, cardFeeGroups.id],
+    }),
+    check('card_fees_installments_check', sql`${table.installments} between 1 and 32767`),
     check('card_fees_rate_check', sql`${table.ratePercent} >= 0 and ${table.ratePercent} < 100`),
   ],
 );

@@ -262,8 +262,12 @@ test("configurações da empresa exigem owner ou admin também no acesso direto"
 
 test("calculadora de taxas exige sessão e renderiza o formulário", async () => {
   assert.equal((await open("/taxas")).status, 307)
+  assert.equal(
+    (await open("/taxas", "session=valid")).headers.get("location"),
+    "/empresas"
+  )
   const response = await fetch(`${origin}/taxas`, {
-    headers: { cookie: "session=valid" },
+    headers: { cookie: "session=active-company" },
   })
   assert.equal(response.status, 200)
   const html = await response.text()
@@ -290,7 +294,10 @@ test("configurações do sistema exigem sessão e vínculo com empresa ativa", a
     assert.match(html, /aria-label="Configurações"/)
     if (path.endsWith("taxas")) {
       assert.match(html, /Configurações de Taxas/)
-      assert.match(html, /Gerencie as taxas e as opções de pagamento/)
+      assert.match(
+        html,
+        /Gerencie provedores, grupos e taxas de pagamento da empresa ativa/
+      )
       assert.doesNotMatch(html, /<h1[^>]*>Configurações do Sistema/)
     } else {
       assert.match(html, /Configurações do Sistema/)
@@ -301,6 +308,5 @@ test("configurações do sistema exigem sessão e vínculo com empresa ativa", a
     assert.match(html, />Geral</)
     assert.match(html, />Taxas</)
     assert.match(html, /role="tabpanel"/)
-    if (path.endsWith("taxas")) assert.match(html, /Configurações de taxas/)
   }
 })

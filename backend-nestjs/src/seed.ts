@@ -1,3 +1,4 @@
+import { organization } from './shared/database/schemas/organization.schema.js';
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import type { INestApplicationContext } from '@nestjs/common';
@@ -17,7 +18,10 @@ try {
   console.info(
     initialChanged ? 'Dados iniciais criados ou atualizados.' : 'Dados iniciais já cadastrados.',
   );
-  const groupsCreated = await seedCardFees(app.get(DatabaseService));
+  const database = app.get(DatabaseService);
+  const organizations = await database.db.select({ id: organization.id }).from(organization);
+  let groupsCreated = 0;
+  for (const company of organizations) groupsCreated += await seedCardFees(database, company.id);
   console.info(
     `Taxas de cartão: ${groupsCreated} grupo(s) criado(s); grupos existentes preservados.`,
   );
