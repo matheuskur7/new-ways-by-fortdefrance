@@ -11,6 +11,7 @@ import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { AuthService } from '../../src/modules/auth/auth.service.js';
 import { createAuthOptions } from '../../src/modules/auth/auth.options.js';
+import type { AuthEmailSender } from '../../src/modules/auth/auth-emails.service.js';
 import { DatabaseService } from '../../src/shared/database/database.service.js';
 import { OrganizationRepository } from '../../src/modules/organization/organization.repository.js';
 import { ImagesRepository } from '../../src/modules/images/images.repository.js';
@@ -75,6 +76,33 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
     expiresIn: 300,
   };
 
+  const emails = {
+    sendPasswordReset: vi.fn<AuthEmailSender['sendPasswordReset']>(async () => {}),
+    sendEmailVerification: vi.fn<AuthEmailSender['sendEmailVerification']>(async () => {}),
+    sendInvitation: vi.fn<AuthEmailSender['sendInvitation']>(async () => {}),
+    sendMemberRoleChanged: vi.fn<AuthEmailSender['sendMemberRoleChanged']>(async () => {}),
+  };
+  const verificationToken = (email: string) => {
+    const call = emails.sendEmailVerification.mock.calls.findLast(
+      ([data]) => data.user.email === email,
+    );
+    if (!call) throw new Error(`Nenhum e-mail de verificação para ${email}.`);
+    return new URL(call[0].url).searchParams.get('token')!;
+  };
+  // Cadastra e confirma o e-mail pelo link enviado, que inicia a sessão do agente.
+  const signUpVerified = async (
+    agent: ReturnType<typeof request.agent>,
+    body: { name: string; email: string; password: string },
+  ) => {
+    const signup = await agent
+      .post('/api/auth/sign-up/email')
+      .set('Origin', 'http://localhost:3000')
+      .send(body)
+      .expect(200);
+    await agent.get(`/api/auth/verify-email?token=${verificationToken(body.email)}`).expect(200);
+    return signup;
+  };
+
   beforeAll(async () => {
     vi.stubEnv('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/test');
     vi.stubEnv('S3_REGION', 'us-east-1');
@@ -93,7 +121,7 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
     );
     // Executa os handlers reais do Better Auth; somente a persistência é substituída.
     const auth = betterAuth({
-      ...createAuthOptions(config),
+      ...createAuthOptions(config, emails),
       database: memoryAdapter(store),
       rateLimit: { enabled: false },
     });
@@ -212,7 +240,7 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
     expect(response.headers['access-control-allow-credentials']).toBe('true');
   });
 
-  it('cadastra e autentica com cookie, rejeita senha inválida e permite foto sem empresa', async () => {
+  it('cadastra sem sessão, não reenvia ao entrar e reenvia o link somente quando solicitado', async () => {
     const signup = await owner
       .post('/api/auth/sign-up/email')
       .set('Origin', 'http://localhost:3000')
@@ -220,10 +248,44 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
         name: 'Owner',
         email: 'owner@example.com',
         password: 'test-password-123',
+        callbackURL: '/convite/abc',
       })
       .expect(200);
-    expect(signup.headers['set-cookie']).toBeDefined();
+    expect(signup.body.token).toBeNull();
     expect(JSON.stringify(signup.body)).not.toContain('test-password-123');
+    expect(emails.sendEmailVerification).toHaveBeenCalledTimes(1);
+    const sent = new URL(emails.sendEmailVerification.mock.calls[0]![0].url);
+    expect(sent.searchParams.get('callbackURL')).toBe('/convite/abc');
+    await owner.get('/api/auth/get-session').expect(200).expect('null');
+
+    const blocked = await request(app.getHttpServer())
+      .post('/api/auth/sign-in/email')
+      .set('Origin', 'http://localhost:3000')
+      .send({ email: 'owner@example.com', password: 'test-password-123' })
+      .expect(403);
+    expect(blocked.body.code).toBe('EMAIL_NOT_VERIFIED');
+    expect(emails.sendEmailVerification).toHaveBeenCalledTimes(1);
+
+    for (const email of ['owner@example.com', 'missing@example.com']) {
+      await request(app.getHttpServer())
+        .post('/api/auth/send-verification-email')
+        .set('Origin', 'http://localhost:3000')
+        .send({ email, callbackURL: '/convite/abc' })
+        .expect(200)
+        .expect({ status: true });
+    }
+    expect(emails.sendEmailVerification).toHaveBeenCalledTimes(2);
+    const resent = new URL(emails.sendEmailVerification.mock.calls[1]![0].url);
+    expect(resent.searchParams.get('callbackURL')).toBe('/convite/abc');
+
+    await request(app.getHttpServer()).get('/api/auth/verify-email?token=invalid').expect(401);
+    const verified = await owner
+      .get(`/api/auth/verify-email?token=${verificationToken('owner@example.com')}`)
+      .expect(200);
+    expect(verified.headers['set-cookie']).toBeDefined();
+  });
+
+  it('autentica com cookie, rejeita senha inválida e permite foto sem empresa', async () => {
     const session = await owner.get('/api/auth/get-session').expect(200);
     expect(session.body.user.email).toBe('owner@example.com');
     await owner.get('/organizations').expect(200).expect([]);
@@ -276,12 +338,115 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
     ]);
   });
 
+  it('envia convite por e-mail e o convidado aceita depois de confirmar a conta', async () => {
+    const inviter = request.agent(app.getHttpServer());
+    await signUpVerified(inviter, {
+      name: 'Inviter',
+      email: 'inviter@example.com',
+      password: 'test-password-123',
+    });
+    const company = await inviter
+      .post('/api/auth/organization/create')
+      .set('Origin', 'http://localhost:3000')
+      .send({ name: 'Invite Org', slug: 'invite-org' })
+      .expect(200);
+    const invite = (body: Record<string, unknown>) =>
+      inviter
+        .post('/api/auth/organization/invite-member')
+        .set('Origin', 'http://localhost:3000')
+        .send({ role: 'member', organizationId: company.body.id, ...body });
+
+    emails.sendInvitation.mockRejectedValueOnce(new Error('private-smtp-detail'));
+    const failed = await invite({ email: 'invitee@example.com' }).expect(502);
+    expect(failed.body.code).toBe('INVITATION_EMAIL_FAILED');
+    expect(JSON.stringify(failed.body)).not.toContain('private-smtp-detail');
+    const resend = await invite({ email: 'invitee@example.com', resend: true }).expect(400);
+    expect(resend.body.code).toBe('INVITATION_RESEND_UNSUPPORTED');
+
+    // Convidar novamente cancela o convite pendente anterior e envia outro e-mail.
+    const invited = await invite({ email: 'invitee@example.com' }).expect(200);
+    expect(emails.sendInvitation).toHaveBeenLastCalledWith({
+      id: invited.body.id,
+      email: 'invitee@example.com',
+      role: 'member',
+      expiresAt: expect.any(Date),
+      organizationName: 'Invite Org',
+      inviter: expect.objectContaining({ name: 'Inviter', email: 'inviter@example.com' }),
+    });
+    expect(
+      store.invitation.filter(
+        (entry) => entry.email === 'invitee@example.com' && entry.status === 'pending',
+      ),
+    ).toHaveLength(1);
+
+    const invitee = request.agent(app.getHttpServer());
+    const signup = await signUpVerified(invitee, {
+      name: 'Invitee',
+      email: 'invitee@example.com',
+      password: 'test-password-123',
+    });
+    const details = await invitee
+      .get(`/api/auth/organization/get-invitation?id=${invited.body.id}`)
+      .expect(200);
+    expect(details.body).toMatchObject({ organizationName: 'Invite Org', role: 'member' });
+    await invitee
+      .post('/api/auth/organization/accept-invitation')
+      .set('Origin', 'http://localhost:3000')
+      .send({ invitationId: invited.body.id })
+      .expect(200);
+    expect(
+      store.member.some(
+        (entry) => entry.organizationId === company.body.id && entry.userId === signup.body.user.id,
+      ),
+    ).toBe(true);
+  });
+
+  it('redefine a senha pelo token enviado e encerra as sessões existentes', async () => {
+    const agent = request.agent(app.getHttpServer());
+    await signUpVerified(agent, {
+      name: 'Reset',
+      email: 'reset@example.com',
+      password: 'old-password-123',
+    });
+    for (const email of ['reset@example.com', 'missing@example.com']) {
+      await request(app.getHttpServer())
+        .post('/api/auth/request-password-reset')
+        .set('Origin', 'http://localhost:3000')
+        .send({ email })
+        .expect(200);
+    }
+    expect(emails.sendPasswordReset).toHaveBeenCalledTimes(1);
+    const { token } = emails.sendPasswordReset.mock.calls[0]![0];
+    await request(app.getHttpServer())
+      .post('/api/auth/reset-password')
+      .set('Origin', 'http://localhost:3000')
+      .send({ token, newPassword: 'new-password-123' })
+      .expect(200);
+    await agent.get('/api/auth/get-session').expect(200).expect('null');
+    await request(app.getHttpServer())
+      .post('/api/auth/reset-password')
+      .set('Origin', 'http://localhost:3000')
+      .send({ token, newPassword: 'other-password-123' })
+      .expect(400);
+    await request(app.getHttpServer())
+      .post('/api/auth/sign-in/email')
+      .set('Origin', 'http://localhost:3000')
+      .send({ email: 'reset@example.com', password: 'old-password-123' })
+      .expect(401);
+    await request(app.getHttpServer())
+      .post('/api/auth/sign-in/email')
+      .set('Origin', 'http://localhost:3000')
+      .send({ email: 'reset@example.com', password: 'new-password-123' })
+      .expect(200);
+  });
+
   it('renova por duas horas somente a sessão validada e não recupera sessões expiradas', async () => {
     const agent = request.agent(app.getHttpServer());
-    const signup = await agent
-      .post('/api/auth/sign-up/email')
-      .send({ name: 'Sliding', email: 'sliding@example.com', password: 'test-password-123' })
-      .expect(200);
+    const signup = await signUpVerified(agent, {
+      name: 'Sliding',
+      email: 'sliding@example.com',
+      password: 'test-password-123',
+    });
     const current = store.session.find((entry) => entry.userId === signup.body.user.id)!;
     const otherLogin = await request(app.getHttpServer())
       .post('/api/auth/sign-in/email')
@@ -415,15 +580,11 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
   });
 
   it('impede acesso a imagens e seleção de organização de outro usuário', async () => {
-    await outsider
-      .post('/api/auth/sign-up/email')
-      .set('Origin', 'http://localhost:3000')
-      .send({
-        name: 'Other',
-        email: 'other@example.com',
-        password: 'test-password-123',
-      })
-      .expect(200);
+    await signUpVerified(outsider, {
+      name: 'Other',
+      email: 'other@example.com',
+      password: 'test-password-123',
+    });
     const otherOrg = await outsider
       .post('/api/auth/organization/create')
       .set('Origin', 'http://localhost:3000')
@@ -576,6 +737,13 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       .set('Origin', 'http://localhost:3000')
       .send({ organizationId, memberId: member.id, role: 'admin' })
       .expect(200);
+    expect(emails.sendMemberRoleChanged).toHaveBeenCalledTimes(1);
+    expect(emails.sendMemberRoleChanged).toHaveBeenCalledWith({
+      user: expect.objectContaining({ id: member.userId, email: 'other@example.com' }),
+      organizationName: 'Owner Org',
+      previousRole: 'member',
+      role: 'admin',
+    });
     await outsider
       .post('/api/auth/organization/update')
       .set('Origin', 'http://localhost:3000')
@@ -586,6 +754,21 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       .set('Origin', 'http://localhost:3000')
       .send({ organizationId, memberId: ownerMember.id, role: 'member' })
       .expect(403);
+    await owner
+      .post('/api/auth/organization/update-member-role')
+      .set('Origin', 'http://localhost:3000')
+      .send({ organizationId, memberId: member.id, role: 'member' })
+      .expect(200);
+    expect(emails.sendMemberRoleChanged).toHaveBeenLastCalledWith(
+      expect.objectContaining({ previousRole: 'admin', role: 'member' }),
+    );
+    // Falha no e-mail não desfaz nem bloqueia a alteração já salva.
+    emails.sendMemberRoleChanged.mockRejectedValueOnce(new Error('smtp'));
+    await owner
+      .post('/api/auth/organization/update-member-role')
+      .set('Origin', 'http://localhost:3000')
+      .send({ organizationId, memberId: member.id, role: 'admin' })
+      .expect(200);
     await owner
       .post('/api/auth/organization/update-member-role')
       .set('Origin', 'http://localhost:3000')

@@ -7,8 +7,16 @@ import type { Environment } from './src/shared/config/env.js';
 import * as schema from './src/shared/database/schemas/index.js';
 
 const env = validateEnv(process.env);
+// A CLI só gera e confere o schema; nenhum e-mail é enviado.
+const noEmails = {
+  sendPasswordReset: async () => {},
+  sendEmailVerification: async () => {},
+  sendInvitation: async () => {},
+  sendMemberRoleChanged: async () => {},
+};
 // Pool lazy: gerar/verificar o schema não consulta nem aplica migrações no banco.
 export const auth = createAuth(
   new ConfigService<Environment, true>(env),
   drizzle({ connection: env.DATABASE_URL, schema }),
+  noEmails,
 );

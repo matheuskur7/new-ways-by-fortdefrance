@@ -5,6 +5,7 @@ import type { IncomingHttpHeaders } from 'node:http';
 import type { Response } from 'express';
 import type { Environment } from '../../shared/config/env.js';
 import { DatabaseService } from '../../shared/database/database.service.js';
+import { AuthEmailsService } from './auth-emails.service.js';
 import { createAuth } from './auth.factory.js';
 import type { Auth } from './auth.factory.js';
 
@@ -15,8 +16,9 @@ export class AuthService {
   constructor(
     @Inject(ConfigService) config: ConfigService<Environment, true>,
     @Inject(DatabaseService) database: DatabaseService,
+    @Inject(AuthEmailsService) emails: AuthEmailsService,
   ) {
-    this.auth = createAuth(config, database.db);
+    this.auth = createAuth(config, database.db, emails);
   }
 
   async getSession(headers: IncomingHttpHeaders, response: Response) {
