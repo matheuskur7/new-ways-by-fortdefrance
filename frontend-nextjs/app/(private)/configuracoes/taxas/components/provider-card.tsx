@@ -94,7 +94,7 @@ export function ProviderCard({
                     />
                   )}
                 </span>
-                <span className="min-w-0 flex-1 truncate" title={brand.name}>
+                <span className="min-w-0 flex-1 truncate">
                   {brand.name}
                 </span>
                 <span className="shrink-0 rounded-md border bg-muted/40 px-1.5 py-0.5 text-[11px] leading-none text-muted-foreground">
