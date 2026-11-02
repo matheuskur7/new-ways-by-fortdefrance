@@ -90,10 +90,21 @@
   --animate-toast-error-odd: toast-error-odd 0.28s cubic-bezier(0.5, 1, 0.89, 1);
   --animate-toast-error-even: toast-error-even 0.28s
     cubic-bezier(0.5, 1, 0.89, 1);
+  --animate-drop-ring: drop-ring 0.6s ease-in-out both;
   --color-destructive-foreground: var(--destructive-foreground);
   --color-info: var(--info);
   --color-success: var(--success);
   --color-warning: var(--warning);
+  @keyframes drop-ring {
+    0%,
+    100% {
+      outline-color: transparent;
+    }
+    30%,
+    55% {
+      outline-color: color-mix(in oklab, var(--primary) 45%, transparent);
+    }
+  }
   @keyframes toast-success-odd {
     0% {
       scale: 1;
