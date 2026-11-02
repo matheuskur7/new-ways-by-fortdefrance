@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import { useState } from "react"
 import { UserImage } from "@/components/user-image"
 import { LoaderCircle, LogOut, UserRound, UserRoundCog } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -8,9 +8,11 @@ import { IconButton } from "@/components/ui/icon-button"
 import { useLogout } from "@/hooks/use-logout"
 import { useIsMutating } from "@tanstack/react-query"
 import type { AuthSession } from "@/lib/session"
+import { UserSettingsDialog } from "@/components/user-settings/user-settings-dialog"
 
 export function UserBanner({ user }: { user: AuthSession["user"] }) {
   const logout = useLogout()
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const pendingSelections = useIsMutating({
     mutationKey: ["enter-organization"],
   })
@@ -40,8 +42,7 @@ export function UserBanner({ user }: { user: AuthSession["user"] }) {
             disabled={
               logout.isPending || logout.isSuccess || pendingSelections > 0
             }
-            render={<Link href="/configuracoes-usuario" />}
-            nativeButton={false}
+            onClick={() => setSettingsOpen(true)}
           >
             <UserRoundCog aria-hidden="true" />
           </IconButton>
@@ -66,6 +67,11 @@ export function UserBanner({ user }: { user: AuthSession["user"] }) {
           </Button>
         </div>
       </div>
+      <UserSettingsDialog
+        user={user}
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+      />
     </footer>
   )
 }

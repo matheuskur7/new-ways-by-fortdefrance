@@ -11,7 +11,13 @@ let origin
 const queries = []
 const fixture = {
   session: { id: "session-example", expiresAt: "2030-01-01T12:00:00Z" },
-  user: { id: "user-example", name: "Usuário", email: "user@example.com" },
+  user: {
+    id: "user-example",
+    name: "Usuário",
+    email: "user@example.com",
+    createdAt: "2026-01-01T12:00:00Z",
+    updatedAt: "2026-02-01T12:00:00Z",
+  },
 }
 
 // Somente o backend é simulado; as páginas e redirects são do Next.js real.
@@ -211,13 +217,9 @@ test("erro do backend não redireciona o usuário para o login", async () => {
   assert.equal(response.headers.get("location"), null)
 })
 
-test("configurações do usuário ficam no auth shell e exigem sessão", async () => {
-  assert.equal((await open("/configuracoes-usuario")).status, 307)
-  const response = await fetch(`${origin}/configuracoes-usuario`, {
-    headers: { cookie: "session=valid" },
-  })
-  assert.equal(response.status, 200)
-  assert.match(await response.text(), /Ajustes do usuário/)
+test("ajustes do usuário abrem em modal, sem rota própria", async () => {
+  const response = await open("/configuracoes-usuario", "session=valid")
+  assert.equal(response.status, 404)
 })
 
 test("foto usa redirecionamento privado sem cache e mantém erros de autorização", async () => {

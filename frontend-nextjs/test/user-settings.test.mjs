@@ -12,14 +12,11 @@ const resolver = registerHooks({
       )
     }
     if (
-      specifier === "../schemas" &&
-      context.parentURL?.includes("configuracoes-usuario/services/")
+      specifier === "./schemas" &&
+      context.parentURL?.includes("components/user-settings/")
     ) {
       return nextResolve(
-        new URL(
-          "../app/(auth)/configuracoes-usuario/schemas.ts",
-          import.meta.url
-        ).href,
+        new URL("../components/user-settings/schemas.ts", import.meta.url).href,
         context
       )
     }
@@ -28,7 +25,7 @@ const resolver = registerHooks({
 })
 const { api } = await import("../lib/api.ts")
 const { updateUser } =
-  await import("../app/(auth)/configuracoes-usuario/services/update-user.ts")
+  await import("../components/user-settings/update-user.ts")
 resolver.deregister()
 Object.defineProperty(globalThis, "window", {
   value: { location: { origin: "https://app.example.com" } },

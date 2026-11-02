@@ -11,6 +11,8 @@ const sessionSchema = z.object({
     name: z.string(),
     email: z.email(),
     image: z.string().nullish(),
+    createdAt: z.coerce.date(),
+    updatedAt: z.coerce.date(),
   }),
 })
 

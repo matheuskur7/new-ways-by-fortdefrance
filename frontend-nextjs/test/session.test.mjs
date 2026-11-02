@@ -12,7 +12,13 @@ const session = {
     expiresAt: "2030-01-01T12:00:00.000Z",
     token: "not-exposed-by-the-helper",
   },
-  user: { id: "user-example", name: "Usuário", email: "user@example.com" },
+  user: {
+    id: "user-example",
+    name: "Usuário",
+    email: "user@example.com",
+    createdAt: "2026-01-01T12:00:00.000Z",
+    updatedAt: "2026-02-01T12:00:00.000Z",
+  },
 }
 
 test("interpreta uma sessão válida sem repassar o token do backend", async () => {

@@ -2,6 +2,7 @@
 
 import { UserImage } from "@/components/user-image"
 import Link from "next/link"
+import { useState } from "react"
 import { usePathname } from "next/navigation"
 import {
   Building2,
@@ -21,6 +22,7 @@ import { Brand } from "@/components/brand/brand"
 import { BusinessBrand } from "@/components/brand/business-brand"
 import { SidebarDailyIndicators } from "@/components/sidebar/sidebar-daily-indicators"
 import { IconButton } from "@/components/ui/icon-button"
+import { UserSettingsDialog } from "@/components/user-settings/user-settings-dialog"
 import {
   Tooltip,
   TooltipContent,
@@ -176,6 +178,7 @@ export function AppSidebar({ user }: { user: AuthSession["user"] }) {
 function UserDropdown({ user }: { user: AuthSession["user"] }) {
   const { isMobile, state, setOpenMobile } = useSidebar()
   const logout = useLogout()
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const pendingSelections = useIsMutating({
     mutationKey: ["enter-organization"],
   })
@@ -184,106 +187,111 @@ function UserDropdown({ user }: { user: AuthSession["user"] }) {
     names.length > 1 ? `${names[0]} ${names.at(-1)}` : user.name
 
   return (
-    <DropdownMenu>
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <DropdownMenuTrigger
-              render={
-                <SidebarMenuButton
-                  size="lg"
-                  aria-label="Abrir opções do perfil"
-                  className="h-auto! cursor-pointer duration-200 ease-in-out group-data-[collapsible=icon]:h-auto! motion-reduce:transition-none"
-                />
-              }
-            />
-          }
-        >
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-md border bg-background transition-[width,height] duration-200 ease-in-out group-data-[collapsible=icon]:size-8 motion-reduce:transition-none">
-            <UserImage
-              src={user.image}
-              size={40}
-              fallback={
-                <UserRound
-                  className="size-5! transition-[width,height] duration-200 ease-in-out group-data-[collapsible=icon]:size-4! motion-reduce:transition-none"
-                  aria-hidden="true"
-                />
-              }
-            />
-          </span>
-          <span className="grid max-w-40 min-w-0 flex-1 overflow-hidden text-left whitespace-nowrap opacity-100 transition-[max-width,opacity] duration-200 ease-in-out group-data-[collapsible=icon]:max-w-0 group-data-[collapsible=icon]:opacity-0 motion-reduce:transition-none">
-            <span className="truncate text-sm leading-tight font-medium transition-[font-size] duration-200 ease-in-out group-data-[collapsible=icon]:text-[0px] motion-reduce:transition-none">
-              {displayName}
-            </span>
-            <span className="truncate text-xs leading-normal text-muted-foreground transition-[font-size] duration-200 ease-in-out group-data-[collapsible=icon]:text-[0px] motion-reduce:transition-none">
-              {user.email}
-            </span>
-          </span>
-          <ChevronsUpDown
-            className="ml-auto transition-[width,opacity] duration-200 ease-in-out group-data-[collapsible=icon]:w-0! group-data-[collapsible=icon]:opacity-0 motion-reduce:transition-none"
-            aria-hidden="true"
-          />
-        </TooltipTrigger>
-        <TooltipContent
-          side={!isMobile && state === "collapsed" ? "right" : "top"}
-        >
-          Opções do perfil
-        </TooltipContent>
-      </Tooltip>
-      <DropdownMenuContent
-        side={!isMobile && state === "collapsed" ? "right" : "top"}
-        align="end"
-        sideOffset={!isMobile && state === "collapsed" ? 12 : 8}
-        className={`${!isMobile && state === "collapsed" ? "min-w-60" : "min-w-0"} translate-y-0 opacity-100 transition-[opacity,translate] duration-200 ease-in-out data-ending-style:translate-y-2 data-ending-style:opacity-0 data-starting-style:translate-y-2 data-starting-style:opacity-0 motion-reduce:transition-none`}
-      >
-        <DropdownMenuGroup>
-          <DropdownMenuLabel className="flex items-center gap-2">
-            <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-background text-foreground">
+    <>
+      <DropdownMenu>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <DropdownMenuTrigger
+                render={
+                  <SidebarMenuButton
+                    size="lg"
+                    aria-label="Abrir opções do perfil"
+                    className="h-auto! cursor-pointer duration-200 ease-in-out group-data-[collapsible=icon]:h-auto! motion-reduce:transition-none"
+                  />
+                }
+              />
+            }
+          >
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-md border bg-background transition-[width,height] duration-200 ease-in-out group-data-[collapsible=icon]:size-8 motion-reduce:transition-none">
               <UserImage
                 src={user.image}
                 size={40}
-                fallback={<UserRound className="size-5" aria-hidden="true" />}
+                fallback={
+                  <UserRound
+                    className="size-5! transition-[width,height] duration-200 ease-in-out group-data-[collapsible=icon]:size-4! motion-reduce:transition-none"
+                    aria-hidden="true"
+                  />
+                }
               />
             </span>
-            <span className="grid min-w-0 gap-1">
-              <span className="truncate text-foreground">{user.name}</span>
-              <span className="truncate font-normal">{user.email}</span>
+            <span className="grid max-w-40 min-w-0 flex-1 overflow-hidden text-left whitespace-nowrap opacity-100 transition-[max-width,opacity] duration-200 ease-in-out group-data-[collapsible=icon]:max-w-0 group-data-[collapsible=icon]:opacity-0 motion-reduce:transition-none">
+              <span className="truncate text-sm leading-tight font-medium transition-[font-size] duration-200 ease-in-out group-data-[collapsible=icon]:text-[0px] motion-reduce:transition-none">
+                {displayName}
+              </span>
+              <span className="truncate text-xs leading-normal text-muted-foreground transition-[font-size] duration-200 ease-in-out group-data-[collapsible=icon]:text-[0px] motion-reduce:transition-none">
+                {user.email}
+              </span>
             </span>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            render={<Link href="/configuracoes-usuario" />}
-            onClick={() => setOpenMobile(false)}
+            <ChevronsUpDown
+              className="ml-auto transition-[width,opacity] duration-200 ease-in-out group-data-[collapsible=icon]:w-0! group-data-[collapsible=icon]:opacity-0 motion-reduce:transition-none"
+              aria-hidden="true"
+            />
+          </TooltipTrigger>
+          <TooltipContent
+            side={!isMobile && state === "collapsed" ? "right" : "top"}
           >
-            <UserRoundCog aria-hidden="true" />
-            Ajustes do Usuário
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            render={<Link href="/empresas" />}
-            onClick={() => setOpenMobile(false)}
-          >
-            <Building2 aria-hidden="true" />
-            Minhas empresas
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            disabled={
-              logout.isPending || logout.isSuccess || pendingSelections > 0
-            }
-            onClick={() => logout.mutate()}
-          >
-            {logout.isPending ? (
-              <LoaderCircle
-                className="animate-spin motion-reduce:animate-none"
-                aria-hidden="true"
-              />
-            ) : (
-              <LogOut aria-hidden="true" />
-            )}
-            {logout.isPending ? "Saindo…" : "Sair"}
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+            Opções do perfil
+          </TooltipContent>
+        </Tooltip>
+        <DropdownMenuContent
+          side={!isMobile && state === "collapsed" ? "right" : "top"}
+          align="end"
+          sideOffset={!isMobile && state === "collapsed" ? 12 : 8}
+          className={`${!isMobile && state === "collapsed" ? "min-w-60" : "min-w-0"} translate-y-0 opacity-100 transition-[opacity,translate] duration-200 ease-in-out data-ending-style:translate-y-2 data-ending-style:opacity-0 data-starting-style:translate-y-2 data-starting-style:opacity-0 motion-reduce:transition-none`}
+        >
+          <DropdownMenuGroup>
+            <DropdownMenuLabel className="flex items-center gap-2">
+              <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-background text-foreground">
+                <UserImage
+                  src={user.image}
+                  size={40}
+                  fallback={<UserRound className="size-5" aria-hidden="true" />}
+                />
+              </span>
+              <span className="grid min-w-0 gap-1">
+                <span className="truncate text-foreground">{user.name}</span>
+                <span className="truncate font-normal">{user.email}</span>
+              </span>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {/* Sem fechar a sidebar móvel: o modal pertence a ela e seria desmontado. */}
+            <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
+              <UserRoundCog aria-hidden="true" />
+              Ajustes do Usuário
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              render={<Link href="/empresas" />}
+              onClick={() => setOpenMobile(false)}
+            >
+              <Building2 aria-hidden="true" />
+              Minhas empresas
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={
+                logout.isPending || logout.isSuccess || pendingSelections > 0
+              }
+              onClick={() => logout.mutate()}
+            >
+              {logout.isPending ? (
+                <LoaderCircle
+                  className="animate-spin motion-reduce:animate-none"
+                  aria-hidden="true"
+                />
+              ) : (
+                <LogOut aria-hidden="true" />
+              )}
+              {logout.isPending ? "Saindo…" : "Sair"}
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <UserSettingsDialog
+        user={user}
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+      />
+    </>
   )
 }

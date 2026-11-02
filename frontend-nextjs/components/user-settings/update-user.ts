@@ -4,8 +4,8 @@ import {
   imageUploadSchema,
   userSettingsSchema,
   userUpdateResponseSchema,
-} from "../schemas"
-import type { UserSettingsData } from "../schemas"
+} from "./schemas"
+import type { UserSettingsData } from "./schemas"
 
 export type UpdateUserData = UserSettingsData & {
   image?: Blob
