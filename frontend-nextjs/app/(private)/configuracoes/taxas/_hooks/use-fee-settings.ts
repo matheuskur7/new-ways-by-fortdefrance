@@ -1,9 +1,9 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { isAxiosError } from "axios"
 import { toastManager } from "@/components/ui/toast"
-import { cardFeeKeys } from "@/features/card-fees/hooks/use-card-fees"
+import { mutationErrorToast } from "@/lib/mutation-error"
+import { cardFeeKeys } from "@/features/card-fees/hooks/query-keys"
 import {
   listFeeSettings,
   removeBrand,
@@ -14,35 +14,31 @@ import {
 } from "../_services/fee-settings"
 import type { BrandForm, ProviderForm } from "../schemas"
 
-function statusOf(error: unknown) {
-  return isAxiosError(error) ? error.response?.status : undefined
-}
-
 function failure(
   title: string,
   messages: Partial<Record<number, string>>,
   fallback: string
 ) {
-  return (error: unknown) => {
-    const status = statusOf(error)
-    toastManager.add({
-      title,
-      description:
-        (status && messages[status]) ??
-        (status === 403
-          ? "Você não tem permissão para alterar as taxas."
-          : fallback),
-      type: "error",
-    })
-  }
+  return mutationErrorToast({
+    title,
+    fallback,
+    messages: {
+      403: "Você não tem permissão para alterar as taxas.",
+      ...messages,
+    },
+  })
 }
 
 export function useFeeSettings(userId: string, organizationId: string) {
   const client = useQueryClient()
-  const refresh = () => client.invalidateQueries({ queryKey: cardFeeKeys.all })
+  // Atualiza também a calculadora, que lê as mesmas taxas.
+  const refresh = () =>
+    client.invalidateQueries({
+      queryKey: cardFeeKeys.scope(userId, organizationId),
+    })
 
   const query = useQuery({
-    queryKey: [...cardFeeKeys.all, "settings", userId, organizationId],
+    queryKey: cardFeeKeys.settings(userId, organizationId),
     queryFn: ({ signal }) => listFeeSettings(signal),
   })
 

@@ -1,13 +1,8 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { isAxiosError } from "axios"
 import { listOrganizationMembers } from "../services/list-organization-members"
-
-export const organizationMembersKey = (
-  userId: string,
-  organizationId: string
-) => ["organization-members", userId, organizationId] as const
+import { organizationKeys } from "./query-keys"
 
 export function useOrganizationMembers(
   userId: string,
@@ -15,17 +10,8 @@ export function useOrganizationMembers(
   pageIndex: number
 ) {
   return useQuery({
-    queryKey: [...organizationMembersKey(userId, organizationId), pageIndex],
+    queryKey: organizationKeys.membersPage(userId, organizationId, pageIndex),
     queryFn: ({ signal }) =>
       listOrganizationMembers(organizationId, pageIndex, signal),
-    staleTime: 0,
-    retry: (failureCount, error) => {
-      if (
-        isAxiosError(error) &&
-        [400, 401, 403, 404].includes(error.response?.status ?? 0)
-      )
-        return false
-      return failureCount < 1
-    },
   })
 }

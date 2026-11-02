@@ -2,8 +2,9 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
-import { isAxiosError } from "axios"
 import { toastManager } from "@/components/ui/toast"
+import { mutationErrorToast } from "@/lib/mutation-error"
+import { enterOrganizationMutationKey } from "@/features/organization/hooks/query-keys"
 import { selectOrganization } from "../_services/select-organization"
 
 export function useEnterOrganization() {
@@ -11,7 +12,7 @@ export function useEnterOrganization() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationKey: ["enter-organization"],
+    mutationKey: enterOrganizationMutationKey,
     mutationFn: selectOrganization,
     onSuccess: async (organization) => {
       // Dados obtidos no contexto da empresa anterior não devem ser reaproveitados.
@@ -25,16 +26,11 @@ export function useEnterOrganization() {
       })
       router.replace("/")
     },
-    onError: (error) => {
-      toastManager.add({
-        id: "organization-selection-error",
-        title: "Não foi possível entrar na empresa",
-        description:
-          isAxiosError(error) && error.response?.status === 403
-            ? "Você não possui mais acesso a essa empresa."
-            : "Tente novamente em instantes.",
-        type: "error",
-      })
-    },
+    onError: mutationErrorToast({
+      id: "organization-selection-error",
+      title: "Não foi possível entrar na empresa",
+      messages: { 403: "Você não possui mais acesso a essa empresa." },
+      fallback: "Tente novamente em instantes.",
+    }),
   })
 }

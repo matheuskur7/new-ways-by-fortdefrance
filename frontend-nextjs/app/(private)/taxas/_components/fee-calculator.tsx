@@ -17,7 +17,13 @@ import { maskCurrency, parseBrazilianAmount } from "@/lib/masks"
 import { ProviderSelect } from "./provider-select"
 import { FeeTable } from "./fee-table"
 
-export function FeeCalculator() {
+export function FeeCalculator({
+  userId,
+  organizationId,
+}: {
+  userId: string
+  organizationId: string
+}) {
   const [amount, setAmount] = useState<number | null>(null)
   const {
     register,
@@ -28,7 +34,7 @@ export function FeeCalculator() {
     defaultValues: { amount: "" },
   })
   const amountField = register("amount")
-  const query = useCardFees()
+  const query = useCardFees(userId, organizationId)
   const [selectedProviderId, setSelectedProviderId] = useState<string | null>(
     null
   )

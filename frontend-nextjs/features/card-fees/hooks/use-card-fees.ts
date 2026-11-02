@@ -2,15 +2,11 @@
 
 import { useQuery } from "@tanstack/react-query"
 import { listCardFees } from "../services/list-card-fees"
+import { cardFeeKeys } from "./query-keys"
 
-export const cardFeeKeys = {
-  all: ["card-fees"] as const,
-  list: () => [...cardFeeKeys.all, "list"] as const,
-}
-
-export function useCardFees() {
+export function useCardFees(userId: string, organizationId: string) {
   return useQuery({
-    queryKey: cardFeeKeys.list(),
+    queryKey: cardFeeKeys.list(userId, organizationId),
     queryFn: ({ signal }) => listCardFees(signal),
   })
 }
