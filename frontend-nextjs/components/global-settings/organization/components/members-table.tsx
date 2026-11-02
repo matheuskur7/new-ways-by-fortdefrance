@@ -4,6 +4,7 @@ import { useMemo, useState } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
 import { UserImage } from "@/components/user-image"
 import { DataTable } from "@/components/data-table"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -97,9 +98,9 @@ export function MembersTable({
         header: "Cargo",
         cell: ({ row: { original: member } }) =>
           isOrganizationOwner(member.role) ? (
-            <span className="inline-flex h-9 w-40 items-center rounded-md border border-primary/15 bg-primary/5 px-2.5 text-sm font-medium text-primary/80">
+            <Badge variant="neutral" size="md" className="h-9 w-40">
               Proprietário
-            </span>
+            </Badge>
           ) : member.role === "admin" || member.role === "member" ? (
             <MemberRoleSelect
               value={member.role}
@@ -137,11 +138,11 @@ export function MembersTable({
         title="Membros da empresa"
         description="Quem faz parte da equipe e seus cargos."
         action={
-          <span className="rounded-md border bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground">
+          <Badge>
             {query.isPending
               ? "Carregando…"
               : `${total} ${total === 1 ? "membro" : "membros"}`}
-          </span>
+          </Badge>
         }
       >
         {query.isPending ? (
