@@ -277,7 +277,7 @@ test("calculadora de taxas exige sessão e renderiza o formulário", async () =>
 })
 
 test("configurações do sistema exigem sessão e vínculo com empresa ativa", async () => {
-  for (const path of ["/configuracoes", "/configuracoes/taxas"]) {
+  for (const path of ["/configuracoes"]) {
     const anonymous = await open(path)
     assert.equal(anonymous.status, 307)
     assert.equal(anonymous.headers.get("location"), "/entrar")
@@ -292,21 +292,11 @@ test("configurações do sistema exigem sessão e vínculo com empresa ativa", a
     assert.equal(response.status, 200)
     const html = await response.text()
     assert.match(html, /aria-label="Configurações"/)
-    if (path.endsWith("taxas")) {
-      assert.match(html, /Configurações de Taxas/)
-      assert.match(
-        html,
-        /Gerencie provedores, grupos e taxas de pagamento da empresa ativa/
-      )
-      assert.doesNotMatch(html, /<h1[^>]*>Configurações do Sistema/)
-    } else {
-      assert.match(html, /Configurações do Sistema/)
-      assert.match(html, /Gerencie as configurações gerais do sistema/)
-    }
+    assert.match(html, /Configurações do Sistema/)
+    assert.match(html, /Gerencie as configurações gerais do sistema/)
     assert.doesNotMatch(html, /Configurações da empresa Empresa de teste/)
     assert.match(html, /role="tablist"/)
     assert.match(html, />Geral</)
-    assert.match(html, />Taxas</)
     assert.match(html, /role="tabpanel"/)
   }
 })

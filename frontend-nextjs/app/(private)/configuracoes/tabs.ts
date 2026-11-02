@@ -11,12 +11,5 @@ export const settingsTabs: HeaderTabsConfig = {
       id: "settings-general-tab",
       panelId: "settings-general-panel",
     },
-    {
-      value: "fees",
-      label: "Taxas",
-      href: "/configuracoes/taxas",
-      id: "settings-fees-tab",
-      panelId: "settings-fees-panel",
-    },
   ],
 }
