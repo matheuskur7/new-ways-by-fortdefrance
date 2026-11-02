@@ -1,11 +1,13 @@
 import "server-only"
 
+import { cache } from "react"
 import { redirect } from "next/navigation"
 import { requireSession } from "@/lib/auth-server"
 import { serverGet } from "@/lib/api-server"
 import { organizationListSchema } from "@/app/(auth)/empresas/schemas"
 
-export async function requireActiveOrganization() {
+// Layout e página compartilham a mesma verificação dentro do request.
+export const requireActiveOrganization = cache(async () => {
   const { session } = await requireSession()
   if (!session.activeOrganizationId) redirect("/empresas")
   const response = await serverGet("/organizations")
@@ -17,4 +19,4 @@ export async function requireActiveOrganization() {
     .find((item) => item.id === session.activeOrganizationId)
   if (!organization) redirect("/empresas")
   return organization
-}
+})
