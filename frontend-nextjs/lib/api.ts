@@ -1,8 +1,9 @@
 import axios from "axios"
+import { BACKEND_PROXY_PATH } from "@/lib/backend-proxy"
 import { requestSessionCheck } from "@/lib/session-events"
 
 export const api = axios.create({
-  baseURL: "/backend",
+  baseURL: BACKEND_PROXY_PATH,
   withCredentials: true,
 })
 
@@ -20,3 +21,13 @@ api.interceptors.response.use(
     return Promise.reject(error)
   }
 )
+
+/** Status HTTP de uma falha do cliente `api`, ou `undefined` sem resposta. */
+export function getHttpStatus(error: unknown) {
+  return axios.isAxiosError(error) ? error.response?.status : undefined
+}
+
+/** Garante que o servidor confirmou a operação com 204 No Content. */
+export function expectNoContent(response: { status: number }, message: string) {
+  if (response.status !== 204) throw new Error(message)
+}

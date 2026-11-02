@@ -1,4 +1,4 @@
-import { api } from "@/lib/api"
+import { api, expectNoContent } from "@/lib/api"
 import {
   brandFormSchema,
   feeBrandSchema,
@@ -60,9 +60,10 @@ export async function saveBrand(
 }
 
 async function remove(path: string) {
-  const response = await api.delete(path)
-  if (response.status !== 204)
-    throw new Error("A remoção não foi confirmada pelo servidor.")
+  expectNoContent(
+    await api.delete(path),
+    "A remoção não foi confirmada pelo servidor."
+  )
 }
 
 export async function removeProvider(id: string) {
@@ -77,10 +78,11 @@ export async function reorderBrands(providerId: string, brandIds: string[]) {
   const ids = brandIds.map((id) => idSchema.parse(id))
   if (!ids.length || new Set(ids).size !== ids.length)
     throw new Error("Ordenação inválida.")
-  const response = await api.patch(
-    `/card-fees/providers/${idSchema.parse(providerId)}/brands/order`,
-    { brandIds: ids }
+  expectNoContent(
+    await api.patch(
+      `/card-fees/providers/${idSchema.parse(providerId)}/brands/order`,
+      { brandIds: ids }
+    ),
+    "A ordenação não foi confirmada pelo servidor."
   )
-  if (response.status !== 204)
-    throw new Error("A ordenação não foi confirmada pelo servidor.")
 }

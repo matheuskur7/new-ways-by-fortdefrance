@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { isAxiosError } from "axios"
+import { getHttpStatus } from "@/lib/api"
 import { Building2, CircleAlert, LoaderCircle, Save } from "lucide-react"
 import type { Organization } from "../schemas"
 import { ConfirmDialog } from "@/components/confirm-dialog"
@@ -145,9 +145,7 @@ function OrganizationSettingsContent({
     )
 
   if (query.isError) {
-    const status = isAxiosError(query.error)
-      ? query.error.response?.status
-      : undefined
+    const status = getHttpStatus(query.error)
     return (
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p role="alert" className="text-sm text-muted-foreground">
