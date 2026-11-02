@@ -1,17 +1,17 @@
 import { api } from "@/lib/api"
-import { feeGroupListSchema, type CardFeeProvider } from "../schemas"
+import { feeBrandListSchema, type CardFeeProvider } from "../schemas"
 
 export async function listCardFees(signal?: AbortSignal) {
   const response = await api.get<unknown>("/card-fees", { signal })
-  const groups = feeGroupListSchema.parse(response.data)
+  const brands = feeBrandListSchema.parse(response.data)
   const providers = new Map<string, CardFeeProvider>()
-  for (const group of groups) {
-    let provider = providers.get(group.provider.id)
+  for (const brand of brands) {
+    let provider = providers.get(brand.provider.id)
     if (!provider) {
-      provider = { ...group.provider, groups: [] }
+      provider = { ...brand.provider, brands: [] }
       providers.set(provider.id, provider)
     }
-    provider.groups.push(group)
+    provider.brands.push(brand)
   }
   return [...providers.values()]
 }

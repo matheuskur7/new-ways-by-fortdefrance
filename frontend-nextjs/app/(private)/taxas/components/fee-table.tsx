@@ -8,7 +8,7 @@ import {
   TableCell,
 } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
-import type { FeeGroup } from "../schemas"
+import type { FeeBrand } from "../schemas"
 import { calculateCardFee } from "../calculator"
 import { formatMoney } from "@/lib/masks"
 
@@ -27,32 +27,32 @@ function FeeValue({ value }: { value: number | undefined }) {
 }
 
 export function FeeTable({
-  group,
+  brand,
   amount,
 }: {
-  group: FeeGroup
+  brand: FeeBrand
   amount: number | null
 }) {
   return (
     <div className="min-w-0 overflow-hidden rounded-lg border">
       <header className="flex flex-col items-center justify-center gap-2 border-b bg-muted/50 px-4 py-1.5 text-center">
-        {group.logoSvg && (
+        {brand.logo && (
           // SVGs do banco são isolados em uma imagem, sem executar HTML na página.
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(group.logoSvg)}`}
-            alt={group.name}
+            src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(brand.logo)}`}
+            alt={brand.name}
             className="h-8 w-auto max-w-full object-contain"
           />
         )}
-        <h2 className={group.logoSvg ? "sr-only" : "text-sm font-semibold"}>
-          {group.name}
+        <h2 className={brand.logo ? "sr-only" : "text-sm font-semibold"}>
+          {brand.name}
         </h2>
-        <p className="text-xs text-muted-foreground">{group.channel}</p>
+        <p className="text-xs text-muted-foreground">{brand.channel}</p>
       </header>
       <Table className="table-fixed text-sm">
         <TableCaption className="sr-only">
-          Taxas de {group.name}, {group.channel}
+          Taxas de {brand.name}, {brand.channel}
         </TableCaption>
         <TableHeader>
           <TableRow>
@@ -68,7 +68,7 @@ export function FeeTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {group.rates.map((rate) => {
+          {brand.rates.map((rate) => {
             const values =
               amount === null
                 ? null

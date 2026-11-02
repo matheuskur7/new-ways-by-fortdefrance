@@ -35,7 +35,7 @@ export function FeeCalculator() {
   const providers = query.data ?? []
   const provider =
     providers.find((item) => item.id === selectedProviderId) ?? providers[0]
-  const groups = provider?.groups ?? []
+  const brands = provider?.brands ?? []
   return (
     <section className="mx-auto w-full max-w-6xl">
       <PageHeader
@@ -77,7 +77,7 @@ export function FeeCalculator() {
                   type="submit"
                   size="lg"
                   className="sm:min-w-40"
-                  disabled={!groups.length || query.isError}
+                  disabled={!brands.length || query.isError}
                 >
                   Calcular
                 </Button>
@@ -132,8 +132,8 @@ export function FeeCalculator() {
           )}
           {!query.isError && (
             <div className="mt-3 grid gap-2 lg:grid-cols-3">
-              {groups.map((group) => (
-                <FeeTable key={group.id} group={group} amount={amount} />
+              {brands.map((brand) => (
+                <FeeTable key={brand.id} brand={brand} amount={amount} />
               ))}
             </div>
           )}
