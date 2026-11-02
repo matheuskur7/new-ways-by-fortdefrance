@@ -211,26 +211,26 @@ html[data-dragging-group] * {
 ::view-transition-old(.tab-forward) {
   --tab-slide-offset: -48px;
   animation:
-    150ms ease-in both tab-fade reverse,
-    300ms ease-in both tab-slide reverse;
+    100ms ease-in both tab-fade reverse,
+    200ms ease-in both tab-slide reverse;
 }
 ::view-transition-new(.tab-forward) {
   --tab-slide-offset: 48px;
   animation:
-    210ms ease-out 120ms both tab-fade,
-    360ms ease-out both tab-slide;
+    140ms ease-out 80ms both tab-fade,
+    240ms ease-out both tab-slide;
 }
 ::view-transition-old(.tab-back) {
   --tab-slide-offset: 48px;
   animation:
-    150ms ease-in both tab-fade reverse,
-    300ms ease-in both tab-slide reverse;
+    100ms ease-in both tab-fade reverse,
+    200ms ease-in both tab-slide reverse;
 }
 ::view-transition-new(.tab-back) {
   --tab-slide-offset: -48px;
   animation:
-    210ms ease-out 120ms both tab-fade,
-    360ms ease-out both tab-slide;
+    140ms ease-out 80ms both tab-fade,
+    240ms ease-out both tab-slide;
 }
 
 @keyframes tab-fade {
