@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 import { requireSession } from "@/lib/auth-server"
-import { AppSidebar } from "@/components/sidebar/app-sidebar"
-import { NavigationHeader } from "@/components/sidebar/navigation-header"
+import { AppSidebar } from "@/components/layout/app-sidebar"
+import { NavigationHeader } from "@/components/layout/navigation-header"
 import { PageTransition } from "@/components/page-transition"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 

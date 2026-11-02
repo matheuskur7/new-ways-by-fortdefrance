@@ -1,5 +1,5 @@
 "use client"
-import { HeaderTabs } from "@/components/sidebar/header-tabs"
+import { HeaderTabs } from "@/components/layout/header-tabs"
 import { Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react"
 import { IconButton } from "@/components/ui/icon-button"
 import { useSidebar } from "@/components/ui/sidebar"
