@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { isAxiosError } from "axios"
 import { toastManager } from "@/components/ui/toast"
 import { requestSessionCheck } from "@/lib/session-events"
-import { updateUser } from "./update-user"
+import { updateUser } from "../services/update-user"
 
 export function useUpdateUser() {
   const router = useRouter()

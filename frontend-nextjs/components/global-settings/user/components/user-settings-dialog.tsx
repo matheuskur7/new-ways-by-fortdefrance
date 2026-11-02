@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { useUpdateUser } from "./use-update-user"
+import { useUpdateUser } from "../hooks/use-update-user"
 import { UserSettingsForm } from "./user-settings-form"
 
 /**

@@ -15,9 +15,9 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import type { useUpdateUser } from "./use-update-user"
-import { userSettingsSchema } from "./schemas"
-import type { UserSettingsData } from "./schemas"
+import type { useUpdateUser } from "../hooks/use-update-user"
+import { userSettingsSchema } from "../schemas"
+import type { UserSettingsData } from "../schemas"
 import { UserImagePicker } from "./user-image-picker"
 
 /**

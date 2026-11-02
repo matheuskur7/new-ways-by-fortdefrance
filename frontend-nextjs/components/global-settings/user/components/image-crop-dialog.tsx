@@ -15,7 +15,7 @@ import { IconButton } from "@/components/ui/icon-button"
 import { Crop, ZoomIn, ZoomOut } from "lucide-react"
 import { Slider } from "@/components/ui/slider"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { prepareUserImage } from "./prepare-user-image"
+import { prepareUserImage } from "../utils/prepare-user-image"
 
 export function ImageCropDialog({
   source,

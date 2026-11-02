@@ -22,7 +22,7 @@ import { Brand } from "@/components/brand/brand"
 import { BusinessBrand } from "@/components/brand/business-brand"
 import { SidebarDailyIndicators } from "@/components/sidebar/sidebar-daily-indicators"
 import { IconButton } from "@/components/ui/icon-button"
-import { UserSettingsDialog } from "@/components/user-settings/user-settings-dialog"
+import { UserSettingsDialog } from "@/components/global-settings/user/components/user-settings-dialog"
 import {
   Tooltip,
   TooltipContent,
