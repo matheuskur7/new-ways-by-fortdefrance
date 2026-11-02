@@ -1,7 +1,7 @@
 import { requireSession } from "@/lib/auth-server"
 import { canManageOrganization } from "@/features/organization/schemas"
 import { requireActiveOrganization } from "@/features/organization/services/require-active-organization"
-import { FeeSettings } from "./components/fee-settings"
+import { FeeSettings } from "./_components/fee-settings"
 
 export default async function FeeSettingsPage() {
   const [{ user }, organization] = await Promise.all([

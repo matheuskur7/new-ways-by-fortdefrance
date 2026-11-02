@@ -22,7 +22,7 @@ const resolver = registerHooks({
   },
 })
 const { api } = await import("../lib/api.ts")
-const services = await import(`${settingsDir}services/fee-settings.ts`)
+const services = await import(`${settingsDir}_services/fee-settings.ts`)
 const schemas = await import(`${settingsDir}schemas.ts`)
 const { moveIds, nextDisplayOrder, applyOrder } = await import(
   `${settingsDir}reorder.ts`

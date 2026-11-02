@@ -11,7 +11,7 @@ import {
   reorderBrands,
   saveBrand,
   saveProvider,
-} from "../services/fee-settings"
+} from "../_services/fee-settings"
 import type { BrandForm, ProviderForm } from "../schemas"
 
 function statusOf(error: unknown) {

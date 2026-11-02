@@ -1,8 +1,8 @@
 import { Building2 } from "lucide-react"
 import { PageHeader } from "@/components/page-header"
 import { requireSession } from "@/lib/auth-server"
-import { OrganizationsList } from "./components/organizations-list"
-import { UserBanner } from "./components/user-banner"
+import { OrganizationsList } from "./_components/organizations-list"
+import { UserBanner } from "./_components/user-banner"
 
 export default async function OrganizationsPage() {
   const { user, session } = await requireSession()

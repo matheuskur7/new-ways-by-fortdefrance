@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { isAxiosError } from "axios"
 import { toastManager } from "@/components/ui/toast"
-import { selectOrganization } from "../services/select-organization"
+import { selectOrganization } from "../_services/select-organization"
 
 export function useEnterOrganization() {
   const router = useRouter()

@@ -14,7 +14,7 @@ import { AnimatedHeight } from "@/components/ui/animated-height"
 import { useIsMutating } from "@tanstack/react-query"
 import { isSigningOut } from "@/features/session/logout"
 import { useOrganizations } from "@/features/organization/hooks/use-organizations"
-import { useEnterOrganization } from "../hooks/use-enter-organization"
+import { useEnterOrganization } from "../_hooks/use-enter-organization"
 import {
   canManageOrganization,
   type Organization,

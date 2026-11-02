@@ -19,7 +19,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { toastManager } from "@/components/ui/toast"
-import type { useFeeSettings } from "../hooks/use-fee-settings"
+import type { useFeeSettings } from "../_hooks/use-fee-settings"
 import { applyOrder, nextDisplayOrder } from "../reorder"
 import { providerBrands } from "../summary"
 import {

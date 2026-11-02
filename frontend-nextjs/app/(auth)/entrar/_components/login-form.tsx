@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import z from "zod"
-import { useLogin } from "../hooks/use-login"
+import { useLogin } from "../_hooks/use-login"
 
 const loginFormSchema = z.object({
   email: z.email({ message: "Digite um email Válido!" }),

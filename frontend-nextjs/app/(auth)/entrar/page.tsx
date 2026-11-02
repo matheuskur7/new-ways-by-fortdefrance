@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button"
-import LoginForm from "./components/login-form"
+import LoginForm from "./_components/login-form"
 import { redirect } from "next/navigation"
 import { getSession } from "@/lib/auth-server"
 
