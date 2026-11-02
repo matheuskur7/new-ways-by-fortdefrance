@@ -10,12 +10,15 @@ import {
 
 export function IconButton({
   label,
+  tooltip,
   children,
   size = "icon",
   tooltipSide,
   ...props
 }: ComponentProps<typeof Button> & {
   label: string
+  /** Texto visível do tooltip; por padrão, o mesmo do `label` (lido por leitores de tela). */
+  tooltip?: string
   tooltipSide?: ComponentProps<typeof TooltipContent>["side"]
 }) {
   return (
@@ -25,7 +28,7 @@ export function IconButton({
       >
         {children}
       </TooltipTrigger>
-      <TooltipContent side={tooltipSide}>{label}</TooltipContent>
+      <TooltipContent side={tooltipSide}>{tooltip ?? label}</TooltipContent>
     </Tooltip>
   )
 }

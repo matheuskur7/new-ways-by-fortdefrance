@@ -5,6 +5,7 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
 import { cn } from "cn"
 
 import { Button } from "@/components/ui/button"
+import { SectionCard } from "@/components/ui/section-card"
 import { XIcon, type LucideIcon } from "lucide-react"
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
@@ -119,41 +120,10 @@ function DialogHeader({
   )
 }
 
-function DialogSection({
-  icon: Icon,
-  title,
-  description,
-  className,
-  children,
-  ...props
-}: React.ComponentProps<"section"> & {
-  icon?: LucideIcon
-  title: string
-  description?: string
-}) {
-  return (
-    <section
-      data-slot="dialog-section"
-      className={cn(
-        "grid min-w-0 content-start gap-4 rounded-lg border p-4",
-        className
-      )}
-      {...props}
-    >
-      <div>
-        <h3 className="flex items-center gap-2 text-sm font-semibold">
-          {Icon && (
-            <Icon className="size-4 text-muted-foreground" aria-hidden="true" />
-          )}
-          {title}
-        </h3>
-        {description && (
-          <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-        )}
-      </div>
-      {children}
-    </section>
-  )
+function DialogSection(
+  props: Omit<React.ComponentProps<typeof SectionCard>, "headingLevel">
+) {
+  return <SectionCard data-slot="dialog-section" headingLevel="h3" {...props} />
 }
 
 function DialogFooter({

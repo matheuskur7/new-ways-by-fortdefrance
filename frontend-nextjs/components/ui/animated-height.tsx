@@ -1,8 +1,15 @@
 "use client"
 
 import { useEffect, useRef, type ReactNode } from "react"
+import { cn } from "cn"
 
-export function AnimatedHeight({ children }: { children: ReactNode }) {
+export function AnimatedHeight({
+  children,
+  className,
+}: {
+  children: ReactNode
+  className?: string
+}) {
   const containerRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
 
@@ -12,7 +19,8 @@ export function AnimatedHeight({ children }: { children: ReactNode }) {
     if (!container || !content) return
 
     const updateHeight = () => {
-      container.style.height = `${content.getBoundingClientRect().height}px`
+      // Altura de layout: ignora transformações, como o zoom de entrada de um modal.
+      container.style.height = `${content.offsetHeight}px`
     }
 
     updateHeight()
@@ -25,7 +33,10 @@ export function AnimatedHeight({ children }: { children: ReactNode }) {
   return (
     <div
       ref={containerRef}
-      className="overflow-hidden transition-[height] duration-300 ease-in-out motion-reduce:transition-none"
+      className={cn(
+        "overflow-hidden transition-[height] duration-300 ease-in-out motion-reduce:transition-none",
+        className
+      )}
     >
       <div ref={contentRef} className="flow-root">
         {children}
