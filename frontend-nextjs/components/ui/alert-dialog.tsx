@@ -38,7 +38,10 @@ function AlertDialogHeader({
   return (
     <div
       data-slot="alert-dialog-header"
-      className={cn("flex flex-col gap-2 px-6 pt-6 pb-5 text-left", className)}
+      className={cn(
+        "flex flex-col items-center gap-2 px-6 pt-8 pb-6 text-center",
+        className
+      )}
       {...props}
     />
   )
@@ -54,11 +57,11 @@ function AlertDialogIcon({
   return (
     <span
       className={cn(
-        "flex size-9 shrink-0 items-center justify-center rounded-md border bg-muted/50 text-muted-foreground",
+        "mb-2 flex size-16 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary",
         className
       )}
     >
-      <Icon className="size-4" aria-hidden="true" />
+      <Icon className="size-8" aria-hidden="true" />
     </span>
   )
 }
@@ -71,7 +74,7 @@ function AlertDialogTitle({
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
       className={cn(
-        "font-heading text-base leading-tight font-semibold text-foreground",
+        "font-heading text-lg leading-tight font-semibold text-foreground",
         className
       )}
       {...props}
