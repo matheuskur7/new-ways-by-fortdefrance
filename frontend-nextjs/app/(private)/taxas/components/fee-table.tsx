@@ -10,6 +10,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import type { FeeBrand } from "../schemas"
 import { calculateCardFee } from "../calculator"
+import { svgDataUrl } from "../logo"
 import { formatMoney } from "@/lib/masks"
 
 function FeeValue({ value }: { value: number | undefined }) {
@@ -37,10 +38,9 @@ export function FeeTable({
     <div className="min-w-0 overflow-hidden rounded-lg border">
       <header className="flex flex-col items-center justify-center gap-2 border-b bg-muted/50 px-4 py-1.5 text-center">
         {brand.logo && (
-          // SVGs do banco são isolados em uma imagem, sem executar HTML na página.
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(brand.logo)}`}
+            src={svgDataUrl(brand.logo)}
             alt={brand.name}
             className="h-8 w-auto max-w-full object-contain"
           />

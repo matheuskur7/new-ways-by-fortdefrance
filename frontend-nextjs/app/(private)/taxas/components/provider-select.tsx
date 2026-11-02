@@ -11,6 +11,24 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import type { FeeProvider } from "../schemas"
+import { svgDataUrl } from "../logo"
+
+function ProviderLabel({ provider }: { provider: FeeProvider }) {
+  return (
+    <span className="flex min-w-0 items-center gap-2">
+      {provider.logo && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={svgDataUrl(provider.logo)}
+          alt=""
+          aria-hidden="true"
+          className="size-5 shrink-0 object-contain"
+        />
+      )}
+      <span className="truncate">{provider.name}</span>
+    </span>
+  )
+}
 
 export function ProviderSelect({
   providers,
@@ -42,14 +60,23 @@ export function ProviderSelect({
           id="card-fee-provider"
           className="h-10 w-full shadow-none"
         >
-          <SelectValue placeholder="Selecione um provedor" />
+          <SelectValue placeholder="Selecione um provedor">
+            {(id: string | null) => {
+              const provider = providers.find((item) => item.id === id)
+              return provider ? (
+                <ProviderLabel provider={provider} />
+              ) : (
+                "Selecione um provedor"
+              )
+            }}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent alignItemWithTrigger={false}>
           <SelectGroup>
             <SelectLabel>Provedor de taxas</SelectLabel>
-            {items.map((item) => (
-              <SelectItem key={item.value} value={item.value}>
-                {item.label}
+            {providers.map((provider) => (
+              <SelectItem key={provider.id} value={provider.id}>
+                <ProviderLabel provider={provider} />
               </SelectItem>
             ))}
           </SelectGroup>
