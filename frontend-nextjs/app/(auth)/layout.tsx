@@ -51,7 +51,7 @@ export default function AuthLayout({
         className="pointer-events-none absolute inset-0 -z-10 bg-foreground/20"
       />
       <Card className="group/auth-shell grid w-full max-w-5xl gap-0 rounded-3xl border p-0 shadow-xl has-data-[auth-shell=wide]:max-w-[96rem] has-data-[auth-shell=wide]:shadow-none lg:min-h-155 lg:grid-cols-2 lg:has-data-[auth-shell=wide]:min-h-0 lg:has-data-[auth-shell=wide]:grid-cols-[32rem_minmax(0,1fr)]">
-        <aside className="relative flex flex-col justify-between gap-12 overflow-hidden border-b bg-muted p-8 text-center sm:p-12 lg:min-h-96 lg:border-r lg:border-b-0 lg:text-left">
+        <aside className="relative flex flex-col justify-between gap-12 overflow-hidden border-b bg-muted p-8 text-center sm:p-12 lg:min-h-96 lg:border-b-0 lg:text-left lg:[clip-path:polygon(0_0,100%_0,88%_100%,0_100%)]">
           <div className="relative z-10">
             <Brand />
             <div
