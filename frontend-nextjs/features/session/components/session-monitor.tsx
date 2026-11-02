@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { useQueryClient } from "@tanstack/react-query"
 import { toastManager } from "@/components/ui/toast"
+import { BACKEND_PROXY_PATH } from "@/lib/backend-proxy"
 import { getSessionRedirect, readSession } from "@/lib/session"
 import { SESSION_CHECK_EVENT } from "@/lib/session-events"
 import { completeSignOut, getSessionRevision, isSigningOut } from "../logout"
@@ -35,7 +36,7 @@ export function SessionMonitor() {
         revision !== getSessionRevision()
       try {
         const response = await fetch(
-          "/backend/api/auth/get-session?disableCookieCache=true",
+          `${BACKEND_PROXY_PATH}/api/auth/get-session?disableCookieCache=true`,
           {
             credentials: "include",
             cache: "no-store",

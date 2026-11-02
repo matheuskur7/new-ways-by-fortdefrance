@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { BACKEND_PROXY_PATH } from "@/lib/backend-proxy"
 
 const signOutResponseSchema = z.object({ success: z.literal(true) })
 let signingOut = false
@@ -28,7 +29,7 @@ export function signOut(): Promise<void> {
 
   pendingSignOut = Promise.resolve()
     .then(async () => {
-      const response = await fetch("/backend/api/auth/sign-out", {
+      const response = await fetch(`${BACKEND_PROXY_PATH}/api/auth/sign-out`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: "{}",

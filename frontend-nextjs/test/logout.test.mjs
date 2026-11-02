@@ -1,11 +1,20 @@
 import assert from "node:assert/strict"
+import { registerHooks } from "node:module"
 import { afterEach, mock, test } from "node:test"
-import {
-  completeSignOut,
-  getSessionRevision,
-  isSigningOut,
-  signOut,
-} from "../features/session/logout.ts"
+
+const resolver = registerHooks({
+  resolve(specifier, context, nextResolve) {
+    if (specifier.startsWith("@/"))
+      return nextResolve(
+        new URL(`../${specifier.slice(2)}.ts`, import.meta.url).href,
+        context
+      )
+    return nextResolve(specifier, context)
+  },
+})
+const { completeSignOut, getSessionRevision, isSigningOut, signOut } =
+  await import("../features/session/logout.ts")
+resolver.deregister()
 
 afterEach(() => {
   mock.restoreAll()
