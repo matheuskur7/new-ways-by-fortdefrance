@@ -177,7 +177,7 @@ function OrganizationSettingsContent({
           onDirtyChange={onDirtyChange}
           onSaved={onSaved}
         />
-        <MemberInvitation />
+        <MemberInvitation organizationId={organizationId} />
       </div>
       <MembersTable organizationId={organizationId} userId={userId} />
     </div>

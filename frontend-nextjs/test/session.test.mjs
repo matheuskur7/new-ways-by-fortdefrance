@@ -64,6 +64,28 @@ test("páginas autenticadas sem sessão encaminham para o login", () => {
   }
 })
 
+test("telas de convidado levam quem já entrou para as empresas", () => {
+  for (const pathname of ["/cadastro", "/esqueci-senha"]) {
+    assert.equal(getSessionRedirect(pathname, session), "/empresas")
+    assert.equal(getSessionRedirect(pathname, null), null)
+  }
+})
+
+test("links de e-mail abrem com ou sem sessão", () => {
+  for (const pathname of [
+    "/redefinir-senha",
+    "/verificar-email",
+    "/convite/abc",
+  ]) {
+    assert.equal(getSessionRedirect(pathname, session), null)
+    assert.equal(getSessionRedirect(pathname, null), null)
+  }
+  assert.equal(
+    getSessionRedirect("/convite", null),
+    "/entrar?reason=session-expired"
+  )
+})
+
 test("somente cookies de sessão identificam uma sessão anterior no servidor", () => {
   for (const cookie of [
     "",

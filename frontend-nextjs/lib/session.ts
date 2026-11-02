@@ -36,10 +36,24 @@ export async function readSession(
   return sessionSchema.nullable().parse(await response.json())
 }
 
+/** Telas para quem ainda não entrou; com sessão, a pessoa segue para as empresas. */
+const GUEST_ONLY_PATHS = ["/entrar", "/cadastro", "/esqueci-senha"]
+/** Telas abertas por links de e-mail, válidas com ou sem sessão. */
+const PUBLIC_PATHS = ["/redefinir-senha", "/verificar-email"]
+
+export function isPublicPath(pathname: string) {
+  return (
+    GUEST_ONLY_PATHS.includes(pathname) ||
+    PUBLIC_PATHS.includes(pathname) ||
+    pathname.startsWith("/convite/")
+  )
+}
+
 export function getSessionRedirect(
   pathname: string,
   session: AuthSession | null
 ) {
-  if (pathname === "/entrar") return session ? "/empresas" : null
+  if (GUEST_ONLY_PATHS.includes(pathname)) return session ? "/empresas" : null
+  if (isPublicPath(pathname)) return null
   return session ? null : "/entrar?reason=session-expired"
 }

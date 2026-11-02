@@ -27,6 +27,8 @@ const { listOrganizationMembers } =
   await import("../features/organization/services/list-organization-members.ts")
 const { updateMemberRole } =
   await import("../features/organization/services/update-member-role.ts")
+const { inviteMember } =
+  await import("../features/organization/services/invite-member.ts")
 resolver.deregister()
 afterEach(() => mock.restoreAll())
 
@@ -169,5 +171,54 @@ test("falhas HTTP e cargos não confirmados pelo backend não são tratados como
   await assert.rejects(
     updateMemberRole("org-a", { memberId: "member-a", role: "admin" }),
     failure
+  )
+})
+
+test("convida pela rota nativa com e-mail normalizado e cargo permitido", async () => {
+  const calls = []
+  mock.method(api, "post", async (...args) => {
+    calls.push(args)
+    return {
+      data: {
+        id: "invitation-a",
+        organizationId: "org-a",
+        email: "novo@example.com",
+        role: "admin",
+        status: "pending",
+        expiresAt: "2030-01-01T12:00:00.000Z",
+      },
+    }
+  })
+  const invitation = await inviteMember("org-a", {
+    email: " Novo@Example.com ",
+    role: "admin",
+  })
+  assert.deepEqual(calls, [
+    [
+      "/api/auth/organization/invite-member",
+      { organizationId: "org-a", email: "novo@example.com", role: "admin" },
+    ],
+  ])
+  assert.equal(invitation.expiresAt.toISOString(), "2030-01-01T12:00:00.000Z")
+})
+
+test("não convida proprietários e rejeita convite de outra empresa", async () => {
+  const post = mock.method(api, "post", async () => ({
+    data: {
+      id: "invitation-a",
+      organizationId: "org-b",
+      email: "novo@example.com",
+      role: "member",
+      status: "pending",
+      expiresAt: "2030-01-01T12:00:00.000Z",
+    },
+  }))
+  await assert.rejects(
+    inviteMember("org-a", { email: "novo@example.com", role: "owner" })
+  )
+  assert.equal(post.mock.callCount(), 0)
+  await assert.rejects(
+    inviteMember("org-a", { email: "novo@example.com", role: "member" }),
+    /não corresponde/
   )
 })

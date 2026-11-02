@@ -27,6 +27,18 @@ export function getHttpStatus(error: unknown) {
   return axios.isAxiosError(error) ? error.response?.status : undefined
 }
 
+/** Código de erro do Better Auth (por exemplo, `EMAIL_NOT_VERIFIED`), quando presente. */
+export function getErrorCode(error: unknown) {
+  if (!axios.isAxiosError(error)) return undefined
+  const data: unknown = error.response?.data
+  return data &&
+    typeof data === "object" &&
+    "code" in data &&
+    typeof data.code === "string"
+    ? data.code
+    : undefined
+}
+
 /** Garante que o servidor confirmou a operação com 204 No Content. */
 export function expectNoContent(response: { status: number }, message: string) {
   if (response.status !== 204) throw new Error(message)

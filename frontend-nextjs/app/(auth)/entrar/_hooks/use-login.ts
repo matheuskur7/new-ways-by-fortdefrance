@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { toastManager } from "@/components/ui/toast"
 import { login } from "../_services/login"
 
-export function useLogin() {
+export function useLogin(next: string) {
   const router = useRouter()
   const queryClient = useQueryClient()
 
@@ -20,7 +20,7 @@ export function useLogin() {
         type: "success",
       })
 
-      router.replace("/empresas")
+      router.replace(next)
     },
     // A falha é exibida no próprio formulário, junto aos campos.
   })

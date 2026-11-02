@@ -12,7 +12,8 @@ import { signOut } from "../logout"
 
 export const logoutMutationKey = ["logout"] as const
 
-export function useLogout() {
+/** `loginHref` permite voltar a um fluxo, como um convite, depois de entrar novamente. */
+export function useLogout(loginHref = "/entrar") {
   const router = useRouter()
   const queryClient = useQueryClient()
 
@@ -27,7 +28,7 @@ export function useLogout() {
         title: "Você saiu da sua conta",
         type: "info",
       })
-      router.replace("/entrar")
+      router.replace(loginHref)
     },
     onError: () => {
       toastManager.add({
@@ -44,8 +45,8 @@ export function useLogout() {
  * Saída da conta pelos menus do usuário. `disabled` também bloqueia ações da
  * conta enquanto a saída ou a troca de empresa estiverem em andamento.
  */
-export function useLogoutAction() {
-  const logout = useLogout()
+export function useLogoutAction(loginHref?: string) {
+  const logout = useLogout(loginHref)
   const pendingSelections = useIsMutating({
     mutationKey: enterOrganizationMutationKey,
   })

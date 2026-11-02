@@ -1,14 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import { Eye, EyeOff } from "lucide-react"
+import Link from "next/link"
+import { MailCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { getHttpStatus } from "@/lib/api"
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip"
+import { PasswordInput } from "@/components/password-input"
+import { getErrorCode, getHttpStatus } from "@/lib/api"
 import {
   Field,
   FieldError,
@@ -19,6 +15,7 @@ import { Input } from "@/components/ui/input"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import z from "zod"
+import { ResendVerificationButton } from "@/features/session/components/resend-verification-button"
 import { useLogin } from "../_hooks/use-login"
 
 const loginFormSchema = z.object({
@@ -28,9 +25,15 @@ const loginFormSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginFormSchema>
 
-export default function LoginForm() {
-  const [showPassword, setShowPassword] = useState(false)
-  const login = useLogin()
+function loginErrorMessage(error: unknown) {
+  if (getHttpStatus(error) === 401) return "Email ou senha inválidos."
+  if (getHttpStatus(error) === 429)
+    return "Muitas tentativas. Aguarde alguns instantes e tente novamente."
+  return "Não foi possível entrar. Tente novamente mais tarde."
+}
+
+export default function LoginForm({ next }: { next: string }) {
+  const login = useLogin(next)
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginFormSchema),
     defaultValues: {
@@ -45,6 +48,8 @@ export default function LoginForm() {
   function onSubmit(data: LoginFormData) {
     login.mutate(data)
   }
+
+  const unverified = getErrorCode(login.error) === "EMAIL_NOT_VERIFIED"
 
   return (
     <form
@@ -70,63 +75,56 @@ export default function LoginForm() {
         </Field>
         <Field data-invalid={Boolean(errors.password)}>
           <FieldLabel htmlFor="password">Senha</FieldLabel>
-          <div className="relative">
-            <Input
-              {...form.register("password")}
-              id="password"
-              type={showPassword ? "text" : "password"}
-              className="h-12 pr-12"
-              autoComplete="current-password"
-              disabled={login.isPending}
-              placeholder="Digite sua senha"
-              aria-invalid={Boolean(errors.password)}
-            />
-            <Tooltip>
-              <TooltipTrigger
-                className="absolute top-2 right-2"
-                render={<span />}
-              >
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-                  aria-controls="password"
-                  aria-pressed={showPassword}
-                  disabled={login.isPending}
-                  onClick={() => setShowPassword((value) => !value)}
-                >
-                  {showPassword ? (
-                    <EyeOff aria-hidden="true" />
-                  ) : (
-                    <Eye aria-hidden="true" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {showPassword ? "Ocultar senha" : "Mostrar senha"}
-              </TooltipContent>
-            </Tooltip>
-          </div>
+          <PasswordInput
+            {...form.register("password")}
+            id="password"
+            autoComplete="current-password"
+            disabled={login.isPending}
+            placeholder="Digite sua senha"
+            aria-invalid={Boolean(errors.password)}
+          />
           {errors.password && <FieldError errors={[errors.password]} />}
         </Field>
 
         <Button
-          type="button"
           variant="link"
           className="h-auto self-end p-0 underline"
-          disabled
+          nativeButton={false}
+          render={<Link href="/esqueci-senha" />}
         >
           Esqueci minha senha
         </Button>
 
-        {login.isError && (
-          <p role="alert" className="text-sm text-destructive">
-            {getHttpStatus(login.error) === 401
-              ? "Email ou senha inválidos."
-              : "Não foi possível entrar. Tente novamente mais tarde."}
-          </p>
-        )}
+        {login.isError &&
+          (unverified ? (
+            <div
+              role="alert"
+              className="grid gap-3 rounded-md border border-info/20 bg-info/10 p-3 text-sm text-foreground"
+            >
+              <p className="flex gap-2">
+                <MailCheck
+                  className="mt-0.5 size-4 shrink-0 text-info"
+                  aria-hidden="true"
+                />
+                <span>
+                  Confirme seu e-mail para entrar. Use o link enviado para{" "}
+                  <strong>{login.variables?.email}</strong> ou peça um novo.
+                </span>
+              </p>
+              {login.variables && (
+                <ResendVerificationButton
+                  key={login.variables.email}
+                  email={login.variables.email}
+                  next={next}
+                  className="justify-self-end bg-background"
+                />
+              )}
+            </div>
+          ) : (
+            <p role="alert" className="text-sm text-destructive">
+              {loginErrorMessage(login.error)}
+            </p>
+          ))}
 
         <Button
           type="submit"

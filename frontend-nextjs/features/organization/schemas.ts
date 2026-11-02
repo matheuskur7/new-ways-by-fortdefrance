@@ -83,3 +83,45 @@ export const updateMemberRoleSchema = z.object({
 })
 export type UpdateMemberRoleData = z.infer<typeof updateMemberRoleSchema>
 export const updatedMemberSchema = organizationMemberSchema.omit({ user: true })
+
+const roleLabels: Record<string, string> = {
+  owner: "Proprietário",
+  admin: "Administrador",
+  member: "Membro",
+}
+
+/** Traduz um ou mais cargos do Better Auth ("admin,member") para exibição. */
+export function formatRoles(role: string) {
+  return role
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .map((value) => roleLabels[value] ?? value)
+    .join(", ")
+}
+
+export const inviteMemberSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .pipe(z.email("Informe um e-mail válido.").max(254)),
+  role: memberRoleSchema,
+})
+export type InviteMemberData = z.infer<typeof inviteMemberSchema>
+
+export const invitationSchema = z.object({
+  id: z.string().min(1),
+  organizationId: z.string().min(1),
+  email: z.email(),
+  role: z.string().min(1),
+  status: z.string().min(1),
+  expiresAt: z.coerce.date(),
+})
+
+/** Convite visto pelo destinatário, com os dados da empresa e de quem convidou. */
+export const invitationDetailsSchema = invitationSchema.extend({
+  organizationName: z.string().min(1),
+  inviterEmail: z.email(),
+})
+export type InvitationDetails = z.infer<typeof invitationDetailsSchema>
