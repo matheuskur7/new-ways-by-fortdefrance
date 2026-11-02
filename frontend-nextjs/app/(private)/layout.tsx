@@ -28,7 +28,7 @@ export default async function PrivateLayout({
         <main
           id="page-content"
           tabIndex={-1}
-          className="flex-1 p-1.5 outline-none sm:p-2 lg:p-2.5"
+          className="flex flex-1 flex-col p-1.5 outline-none sm:p-2 lg:p-2.5"
         >
           <PageTransition>{children}</PageTransition>
         </main>
