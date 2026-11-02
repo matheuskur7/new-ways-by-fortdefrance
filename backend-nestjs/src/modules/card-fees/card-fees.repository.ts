@@ -34,7 +34,13 @@ export class CardFeesRepository {
 
   listProviders(organizationId: string) {
     return this.database.db
-      .select({ id: taxProviders.id, name: taxProviders.name, logo: taxProviders.logo })
+      .select({
+        id: taxProviders.id,
+        name: taxProviders.name,
+        logo: taxProviders.logo,
+        createdAt: taxProviders.createdAt,
+        updatedAt: taxProviders.updatedAt,
+      })
       .from(taxProviders)
       .where(eq(taxProviders.organizationId, organizationId))
       .orderBy(asc(taxProviders.name), asc(taxProviders.id));

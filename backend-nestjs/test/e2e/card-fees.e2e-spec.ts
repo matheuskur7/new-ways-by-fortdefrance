@@ -33,7 +33,10 @@ const brandData = {
 describe('Gerenciamento HTTP de taxas', () => {
   let app: INestApplication;
   let revoked = false;
-  const audit = { organizationId: 'org-test', createdAt: new Date(), updatedAt: new Date() };
+  const createdAt = new Date('2026-01-01T10:00:00.000Z');
+  const updatedAt = new Date('2026-02-01T12:30:00.000Z');
+  const audit = { organizationId: 'org-test', createdAt, updatedAt };
+  const isoDates = { createdAt: createdAt.toISOString(), updatedAt: updatedAt.toISOString() };
   const repository = {
     reorderBrands: vi.fn(async (organizationId: string, id: string, ids: string[]) =>
       organizationId !== 'org-test' || id !== providerId
@@ -124,16 +127,18 @@ describe('Gerenciamento HTTP de taxas', () => {
       .get('/card-fees/catalog')
       .set('x-test-user', 'owner')
       .expect(200);
-    expect(response.body.providers).toEqual([{ id: providerId, ...provider }]);
+    expect(response.body.providers).toEqual([{ id: providerId, ...provider, ...isoDates }]);
     expect(response.body.brands[0].rates).toHaveLength(18);
     expect(Object.keys(response.body.brands[0]).sort()).toEqual([
       'channel',
+      'createdAt',
       'displayOrder',
       'id',
       'logo',
       'name',
       'providerId',
       'rates',
+      'updatedAt',
     ]);
     expect(Object.keys(response.body.brands[0].rates[0]).sort()).toEqual([
       'installments',
@@ -156,6 +161,7 @@ describe('Gerenciamento HTTP de taxas', () => {
         id: providerId,
         name: 'Provedor',
         logo: '<svg viewBox="0 0 1 1"></svg>',
+        ...isoDates,
       });
     }
     for (const [method, path] of [
@@ -167,7 +173,7 @@ describe('Gerenciamento HTTP de taxas', () => {
         .set('x-test-user', 'owner')
         .send(brandData)
         .expect(method === 'post' ? 201 : 200);
-      expect(response.body).toEqual({ ...brandData, id: brandId });
+      expect(response.body).toEqual({ ...brandData, id: brandId, ...isoDates });
     }
     await request(app.getHttpServer())
       .post(`/card-fees/brands/${brandId}/rates`)

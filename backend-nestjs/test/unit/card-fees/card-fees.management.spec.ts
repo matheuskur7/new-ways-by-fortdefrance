@@ -11,6 +11,10 @@ import {
 import { authSession } from '../../fixtures/auth.js';
 
 const id = '019a1234-5678-7000-8000-123456789abc';
+const createdAt = new Date('2026-01-01T10:00:00.000Z');
+const updatedAt = new Date('2026-02-01T12:30:00.000Z');
+const dates = { createdAt, updatedAt };
+const isoDates = { createdAt: createdAt.toISOString(), updatedAt: updatedAt.toISOString() };
 const logo = '<svg xmlns="http://www.w3.org/2000/svg"></svg>';
 const provider = { name: 'InfinitePay', logo };
 const data = {
@@ -47,9 +51,9 @@ function setup() {
 describe('Gerenciamento de taxas por empresa', () => {
   it('consulta o catálogo da empresa validada e inclui provedores sem bandeiras', async () => {
     const { repository, service } = setup();
-    repository.listProviders.mockResolvedValue([{ id, ...provider }]);
+    repository.listProviders.mockResolvedValue([{ id, ...provider, ...dates }]);
     await expect(service.catalog(authSession)).resolves.toEqual({
-      providers: [{ id, ...provider }],
+      providers: [{ id, ...provider, ...isoDates }],
       brands: [],
     });
     expect(repository.listProviders).toHaveBeenCalledWith('org-test');
@@ -78,6 +82,7 @@ describe('Gerenciamento de taxas por empresa', () => {
     repository.findProvider.mockResolvedValue({ id });
     repository.saveBrand.mockImplementation(async (_org: string, values: typeof data) => ({
       ...values,
+      ...dates,
       id,
     }));
     const result = await service.saveBrand({ ...data, rates }, authSession);
@@ -132,10 +137,10 @@ describe('Gerenciamento de taxas por empresa', () => {
 });
 
 describe('Respostas com registros completos do Drizzle', () => {
-  const audit = { organizationId: 'org-test', createdAt: new Date(), updatedAt: new Date() };
+  const audit = { organizationId: 'org-test', ...dates };
   const providerRow = { ...audit, id, ...provider };
   const brandRow = { ...audit, ...data, id };
-  const expectedBrand = { ...data, id };
+  const expectedBrand = { ...data, id, ...isoDates };
 
   it('retorna o catálogo sem campos internos', async () => {
     const { repository, service } = setup();
@@ -143,7 +148,7 @@ describe('Respostas com registros completos do Drizzle', () => {
     repository.listBrands.mockResolvedValue([brandRow]);
 
     await expect(service.catalog(authSession)).resolves.toEqual({
-      providers: [{ id, ...provider }],
+      providers: [{ id, ...provider, ...isoDates }],
       brands: [expectedBrand],
     });
   });
@@ -158,6 +163,7 @@ describe('Respostas com registros completos do Drizzle', () => {
       await expect(service.saveProvider(provider, authSession, resourceId)).resolves.toEqual({
         id,
         ...provider,
+        ...isoDates,
       });
       await expect(service.saveBrand(data, authSession, resourceId)).resolves.toEqual(
         expectedBrand,

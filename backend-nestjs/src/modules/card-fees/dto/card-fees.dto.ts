@@ -33,16 +33,21 @@ export const brandInputSchema = z.strictObject({
     ),
 });
 
-export const providerResponseSchema = providerInputSchema.extend({ id: z.uuidv7() });
-export const brandResponseSchema = brandInputSchema.extend({ id: z.uuidv7() });
+const providerSchema = providerInputSchema.extend({ id: z.uuidv7() });
+const brandSchema = brandInputSchema.extend({ id: z.uuidv7() });
+// Datas de auditoria (ISO 8601) exibidas nos modais de gerenciamento.
+const auditSchema = z.object({ createdAt: z.iso.datetime(), updatedAt: z.iso.datetime() });
+
+export const providerResponseSchema = providerSchema.extend(auditSchema.shape);
+export const brandResponseSchema = brandSchema.extend(auditSchema.shape);
 export const catalogResponseSchema = z.object({
   providers: z.array(providerResponseSchema),
   brands: z.array(brandResponseSchema),
 });
 
 export const taxBrandsSchema = z.array(
-  brandResponseSchema.omit({ providerId: true, displayOrder: true }).extend({
-    provider: providerResponseSchema,
+  brandSchema.omit({ providerId: true, displayOrder: true }).extend({
+    provider: providerSchema,
   }),
 );
 

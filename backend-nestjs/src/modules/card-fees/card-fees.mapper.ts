@@ -7,11 +7,26 @@ export function toRates(rates: readonly TaxRate[]): TaxRate[] {
     .sort((a, b) => a.installments - b.installments);
 }
 
-export function toProviderResponse({ id, name, logo }: ProviderResponse): ProviderResponse {
-  return providerResponseSchema.parse({ id, name, logo });
+/** Registro do banco: as datas chegam como `Date` e saem em ISO 8601. */
+type Stored<T> = Omit<T, 'createdAt' | 'updatedAt'> & { createdAt: Date; updatedAt: Date };
+
+export function toProviderResponse({
+  id,
+  name,
+  logo,
+  createdAt,
+  updatedAt,
+}: Stored<ProviderResponse>): ProviderResponse {
+  return providerResponseSchema.parse({
+    id,
+    name,
+    logo,
+    createdAt: createdAt.toISOString(),
+    updatedAt: updatedAt.toISOString(),
+  });
 }
 
-export function toBrandResponse(brand: BrandResponse): BrandResponse {
+export function toBrandResponse(brand: Stored<BrandResponse>): BrandResponse {
   return brandResponseSchema.parse({
     id: brand.id,
     providerId: brand.providerId,
@@ -20,5 +35,7 @@ export function toBrandResponse(brand: BrandResponse): BrandResponse {
     displayOrder: brand.displayOrder,
     logo: brand.logo,
     rates: toRates(brand.rates),
+    createdAt: brand.createdAt.toISOString(),
+    updatedAt: brand.updatedAt.toISOString(),
   });
 }
