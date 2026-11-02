@@ -12,7 +12,7 @@ import {
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { AnimatedHeight } from "@/components/ui/animated-height"
 import { useIsMutating } from "@tanstack/react-query"
-import { isSigningOut } from "@/lib/logout"
+import { isSigningOut } from "@/features/session/logout"
 import { useOrganizations } from "@/features/organization/hooks/use-organizations"
 import { useEnterOrganization } from "../hooks/use-enter-organization"
 import {

@@ -15,7 +15,7 @@ import {
   X,
 } from "lucide-react"
 import type { AuthSession } from "@/lib/session"
-import { useLogout } from "@/hooks/use-logout"
+import { useLogout } from "@/features/session/hooks/use-logout"
 import { useIsMutating } from "@tanstack/react-query"
 import { LogOut, LoaderCircle } from "lucide-react"
 import { Brand } from "@/components/brand/brand"

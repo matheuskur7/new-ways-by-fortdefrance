@@ -6,8 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { QueryProvider } from "@/components/query-provider"
 import { AnchoredToastProvider, ToastProvider } from "@/components/ui/toast"
 import { cn } from "@/lib/utils"
-import { SessionMonitor } from "@/components/session-monitor"
-import { SessionNotice } from "@/components/session-notice"
+import { SessionMonitor } from "@/features/session/components/session-monitor"
+import { SessionNotice } from "@/features/session/components/session-notice"
 
 const roboto = Roboto({ subsets: ["latin"], variable: "--font-roboto" })
 

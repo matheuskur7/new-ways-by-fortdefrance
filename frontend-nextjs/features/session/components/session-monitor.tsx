@@ -6,7 +6,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import { toastManager } from "@/components/ui/toast"
 import { getSessionRedirect, readSession } from "@/lib/session"
 import { SESSION_CHECK_EVENT } from "@/lib/session-events"
-import { completeSignOut, getSessionRevision, isSigningOut } from "@/lib/logout"
+import { completeSignOut, getSessionRevision, isSigningOut } from "../logout"
 
 export function SessionMonitor() {
   const pathname = usePathname()

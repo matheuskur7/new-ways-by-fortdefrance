@@ -5,7 +5,7 @@ import {
   getSessionRevision,
   isSigningOut,
   signOut,
-} from "../lib/logout.ts"
+} from "../features/session/logout.ts"
 
 afterEach(() => {
   mock.restoreAll()
