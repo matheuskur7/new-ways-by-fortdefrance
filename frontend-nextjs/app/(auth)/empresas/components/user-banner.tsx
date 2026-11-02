@@ -8,7 +8,7 @@ import { IconButton } from "@/components/ui/icon-button"
 import { useLogout } from "@/hooks/use-logout"
 import { useIsMutating } from "@tanstack/react-query"
 import type { AuthSession } from "@/lib/session"
-import { UserSettingsDialog } from "@/components/global-settings/user/components/user-settings-dialog"
+import { UserSettingsDialog } from "@/features/user/components/user-settings-dialog"
 
 export function UserBanner({ user }: { user: AuthSession["user"] }) {
   const logout = useLogout()
