@@ -1,16 +1,23 @@
 "use client"
 
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import {
+  useIsMutating,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { toastManager } from "@/components/ui/toast"
+import { enterOrganizationMutationKey } from "@/features/organization/hooks/query-keys"
 import { signOut } from "../logout"
+
+export const logoutMutationKey = ["logout"] as const
 
 export function useLogout() {
   const router = useRouter()
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationKey: ["logout"],
+    mutationKey: logoutMutationKey,
     mutationFn: signOut,
     onSuccess: async () => {
       await queryClient.cancelQueries()
@@ -31,4 +38,19 @@ export function useLogout() {
       })
     },
   })
+}
+
+/**
+ * Saída da conta pelos menus do usuário. `disabled` também bloqueia ações da
+ * conta enquanto a saída ou a troca de empresa estiverem em andamento.
+ */
+export function useLogoutAction() {
+  const logout = useLogout()
+  const pendingSelections = useIsMutating({
+    mutationKey: enterOrganizationMutationKey,
+  })
+  return {
+    logout,
+    disabled: logout.isPending || logout.isSuccess || pendingSelections > 0,
+  }
 }

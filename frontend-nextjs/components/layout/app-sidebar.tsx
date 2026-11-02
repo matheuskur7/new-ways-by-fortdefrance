@@ -15,8 +15,7 @@ import {
   X,
 } from "lucide-react"
 import type { AuthSession } from "@/lib/session"
-import { useLogout } from "@/features/session/hooks/use-logout"
-import { useIsMutating } from "@tanstack/react-query"
+import { useLogoutAction } from "@/features/session/hooks/use-logout"
 import { LogOut, LoaderCircle } from "lucide-react"
 import { Brand } from "@/components/brand/brand"
 import { BusinessBrand } from "@/components/brand/business-brand"
@@ -177,11 +176,8 @@ export function AppSidebar({ user }: { user: AuthSession["user"] }) {
 
 function UserDropdown({ user }: { user: AuthSession["user"] }) {
   const { isMobile, state, setOpenMobile } = useSidebar()
-  const logout = useLogout()
+  const { logout, disabled } = useLogoutAction()
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const pendingSelections = useIsMutating({
-    mutationKey: ["enter-organization"],
-  })
   const names = user.name.trim().split(/\s+/)
   const displayName =
     names.length > 1 ? `${names[0]} ${names.at(-1)}` : user.name
@@ -269,9 +265,7 @@ function UserDropdown({ user }: { user: AuthSession["user"] }) {
               Minhas empresas
             </DropdownMenuItem>
             <DropdownMenuItem
-              disabled={
-                logout.isPending || logout.isSuccess || pendingSelections > 0
-              }
+              disabled={disabled}
               onClick={() => logout.mutate()}
             >
               {logout.isPending ? (

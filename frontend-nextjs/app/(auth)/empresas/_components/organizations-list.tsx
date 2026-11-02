@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { AnimatedHeight } from "@/components/ui/animated-height"
 import { useIsMutating } from "@tanstack/react-query"
 import { isSigningOut } from "@/features/session/logout"
+import { logoutMutationKey } from "@/features/session/hooks/use-logout"
 import { useOrganizations } from "@/features/organization/hooks/use-organizations"
 import { useEnterOrganization } from "../_hooks/use-enter-organization"
 import {
@@ -47,7 +48,7 @@ export function OrganizationsList({
   userId: string
   activeOrganizationId?: string | null
 }) {
-  const pendingLogouts = useIsMutating({ mutationKey: ["logout"] })
+  const pendingLogouts = useIsMutating({ mutationKey: logoutMutationKey })
   const enterOrganization = useEnterOrganization()
   const organizations = useOrganizations(
     userId,

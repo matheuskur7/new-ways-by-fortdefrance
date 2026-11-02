@@ -5,17 +5,13 @@ import { UserImage } from "@/components/user-image"
 import { LoaderCircle, LogOut, UserRound, UserRoundCog } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { IconButton } from "@/components/ui/icon-button"
-import { useLogout } from "@/features/session/hooks/use-logout"
-import { useIsMutating } from "@tanstack/react-query"
+import { useLogoutAction } from "@/features/session/hooks/use-logout"
 import type { AuthSession } from "@/lib/session"
 import { UserSettingsDialog } from "@/features/user/components/user-settings-dialog"
 
 export function UserBanner({ user }: { user: AuthSession["user"] }) {
-  const logout = useLogout()
+  const { logout, disabled } = useLogoutAction()
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const pendingSelections = useIsMutating({
-    mutationKey: ["enter-organization"],
-  })
   return (
     <footer className="mt-auto animate-in pt-2 duration-500 fade-in-0 motion-reduce:animate-none">
       <div className="flex flex-wrap items-center gap-4 rounded-xl border bg-muted/40 p-4">
@@ -39,9 +35,7 @@ export function UserBanner({ user }: { user: AuthSession["user"] }) {
           <IconButton
             label="Ajustes do usuário"
             variant="ghost"
-            disabled={
-              logout.isPending || logout.isSuccess || pendingSelections > 0
-            }
+            disabled={disabled}
             onClick={() => setSettingsOpen(true)}
           >
             <UserRoundCog aria-hidden="true" />
@@ -49,9 +43,7 @@ export function UserBanner({ user }: { user: AuthSession["user"] }) {
           <Button
             type="button"
             variant="ghost"
-            disabled={
-              logout.isPending || logout.isSuccess || pendingSelections > 0
-            }
+            disabled={disabled}
             aria-busy={logout.isPending}
             onClick={() => logout.mutate()}
           >
