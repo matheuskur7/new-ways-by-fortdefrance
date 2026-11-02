@@ -1,11 +1,34 @@
 import Image from "next/image"
-import type { ReactNode } from "react"
+import type { CSSProperties, ReactNode } from "react"
+import { AuthShellTransition } from "@/components/auth-shell-transition"
 import { Brand } from "@/components/brand/brand"
 import { Card } from "@/components/ui/card"
 
-function CompanyIdentity() {
+/**
+ * Nome próprio na View Transition do shell. Os retratos do cartão e da lateral
+ * contêm só fundos e bordas, que esticam até o novo tamanho; marca, logo e marca
+ * d'água deslizam (`auth-shell-part`) e o formulário troca com esmaecimento
+ * (`auth-shell-content`). `nearest` aninha cada parte no grupo do elemento pai,
+ * que a recorta: a marca d'água nunca sai da lateral. Estilos em globals.css.
+ */
+function transitionName(
+  name: string,
+  className = "auth-shell-part"
+): CSSProperties {
+  return {
+    viewTransitionName: name,
+    viewTransitionClass: className,
+    // Propriedade recente, ainda sem tipo no React.
+    ...({ viewTransitionGroup: "nearest" } as CSSProperties),
+  }
+}
+
+function CompanyIdentity({ name }: { name: string }) {
   return (
-    <div className="relative z-10 flex items-center justify-center gap-0 sm:gap-2 lg:justify-start">
+    <div
+      style={transitionName(name)}
+      className="relative z-10 flex items-center justify-center gap-0 sm:gap-2 lg:justify-start"
+    >
       <Image
         src="/brand/logo.png"
         loading="eager"
@@ -23,9 +46,10 @@ function CompanyIdentity() {
   )
 }
 
-function BrandWatermark() {
+function BrandWatermark({ name }: { name: string }) {
   return (
     <Image
+      style={transitionName(name)}
       src="/brand/logo.png"
       loading="eager"
       alt=""
@@ -50,31 +74,42 @@ export default function AuthLayout({
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 -z-10 bg-foreground/20"
       />
-      <Card className="group/auth-shell grid w-full max-w-5xl gap-0 rounded-3xl border p-0 shadow-xl has-data-[auth-shell=wide]:max-w-[96rem] has-data-[auth-shell=wide]:shadow-none lg:min-h-155 lg:grid-cols-2 lg:has-data-[auth-shell=wide]:min-h-0 lg:has-data-[auth-shell=wide]:grid-cols-[32rem_minmax(0,1fr)]">
-        <aside className="relative flex flex-col justify-between gap-12 overflow-hidden border-b bg-muted p-8 text-center sm:p-12 lg:min-h-96 lg:border-b-0 lg:text-left lg:[clip-path:polygon(0_0,100%_0,88%_100%,0_100%)]">
-          <div className="relative z-10">
-            <Brand />
-            <div
-              aria-hidden="true"
-              className="mx-auto my-5 h-1 w-12 rounded-full bg-primary lg:mx-0"
-            />
-            <p className="text-base leading-snug text-muted-foreground sm:text-lg">
-              Sistema de Gestão para Oficinas
-            </p>
-          </div>
-          <div className="hidden lg:block">
-            <CompanyIdentity />
-            <BrandWatermark />
-          </div>
-        </aside>
-        <section className="flex min-w-0 flex-col justify-center px-7 py-10 [--card:color-mix(in_oklab,var(--muted)_40%,transparent)] has-data-[auth-shell=wide]:px-5 has-data-[auth-shell=wide]:py-5 sm:p-12 sm:has-data-[auth-shell=wide]:p-6">
-          {children}
-        </section>
-        <footer className="relative overflow-hidden border-t bg-muted p-8 text-center sm:p-12 lg:hidden">
-          <CompanyIdentity />
-          <BrandWatermark />
-        </footer>
-      </Card>
+      <AuthShellTransition>
+        <Card className="group/auth-shell grid w-full max-w-5xl gap-0 rounded-3xl border p-0 has-data-[auth-shell=wide]:max-w-384 lg:min-h-155 lg:grid-cols-2 lg:has-data-[auth-shell=compact]:min-h-0 lg:has-data-[auth-shell=wide]:min-h-0 lg:has-data-[auth-shell=wide]:grid-cols-[32rem_minmax(0,1fr)]">
+          <aside
+            style={transitionName("auth-aside", "auth-shell-panel")}
+            className="relative flex flex-col justify-between gap-12 overflow-hidden border-b bg-muted p-8 text-center sm:p-12 lg:min-h-96 lg:border-r lg:border-b-0 lg:text-left"
+          >
+            <div style={transitionName("auth-brand")} className="relative z-10">
+              <Brand />
+              <div
+                aria-hidden="true"
+                className="mx-auto my-5 h-1 w-12 rounded-full bg-primary lg:mx-0"
+              />
+              <p className="text-base leading-snug text-muted-foreground sm:text-lg">
+                Sistema de Gestão para Oficinas
+              </p>
+            </div>
+            <div className="hidden lg:block">
+              <CompanyIdentity name="auth-company-aside" />
+              <BrandWatermark name="auth-watermark-aside" />
+            </div>
+          </aside>
+          <section
+            style={transitionName("auth-content", "auth-shell-content")}
+            className="flex min-w-0 flex-col justify-center px-7 py-10 [--card:color-mix(in_oklab,var(--muted)_40%,transparent)] has-data-[auth-shell=wide]:px-5 has-data-[auth-shell=wide]:py-5 sm:p-12 sm:has-data-[auth-shell=wide]:p-6"
+          >
+            {children}
+          </section>
+          <footer
+            style={transitionName("auth-footer", "auth-shell-panel")}
+            className="relative overflow-hidden border-t bg-muted p-8 text-center sm:p-12 lg:hidden"
+          >
+            <CompanyIdentity name="auth-company-footer" />
+            <BrandWatermark name="auth-watermark-footer" />
+          </footer>
+        </Card>
+      </AuthShellTransition>
     </main>
   )
 }

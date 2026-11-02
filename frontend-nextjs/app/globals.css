@@ -8,7 +8,7 @@
   --card-foreground: #4a4a4a;
   --popover: oklch(1 0 0);
   --popover-foreground: #4a4a4a;
-  --primary: #FF001C;
+  --primary: #ff001c;
   --primary-foreground: #ffffff;
   --secondary: oklch(0.967 0.001 286.375);
   --secondary-foreground: #4a4a4a;
@@ -231,6 +231,56 @@ html[data-dragging-group] * {
   animation:
     140ms ease-out 80ms both tab-fade,
     240ms ease-out both tab-slide;
+}
+
+/*
+ * Cartão das telas de autenticação: ao navegar entre login, cadastro e
+ * recuperação de senha, cartão e lateral interpolam largura e altura. Os
+ * retratos deles contêm só fundos e bordas, então podem esticar; marca, logo e
+ * marca d'água deslizam e o formulário troca com esmaecimento.
+ */
+::view-transition-group(.auth-shell),
+::view-transition-group(.auth-shell-panel),
+::view-transition-group(.auth-shell-part),
+::view-transition-group(.auth-shell-content) {
+  animation-duration: 400ms;
+  animation-timing-function: cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+::view-transition-group(.auth-shell) {
+  overflow: clip;
+  border-radius: var(--radius-3xl);
+}
+::view-transition-group(.auth-shell-panel) {
+  overflow: clip;
+}
+::view-transition-old(.auth-shell),
+::view-transition-new(.auth-shell),
+::view-transition-old(.auth-shell-panel),
+::view-transition-new(.auth-shell-panel) {
+  block-size: 100%;
+  animation: none;
+}
+::view-transition-old(.auth-shell),
+::view-transition-old(.auth-shell-panel) {
+  opacity: 0;
+}
+/* O formulário antigo sai antes de o novo entrar, sem sobrepor os textos. */
+::view-transition-old(.auth-shell-content) {
+  animation: 140ms ease-in both tab-fade reverse;
+}
+::view-transition-new(.auth-shell-content) {
+  animation: 240ms ease-out 120ms both tab-fade;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(.auth-shell),
+  ::view-transition-group(.auth-shell-panel),
+  ::view-transition-group(.auth-shell-part),
+  ::view-transition-group(.auth-shell-content),
+  ::view-transition-old(.auth-shell-content),
+  ::view-transition-new(.auth-shell-content) {
+    animation: none;
+  }
 }
 
 @keyframes tab-fade {
