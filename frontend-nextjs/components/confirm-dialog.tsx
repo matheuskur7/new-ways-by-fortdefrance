@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, type ReactNode } from "react"
-import type { LucideIcon } from "lucide-react"
+import { Info, type LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   AlertDialog,
@@ -11,15 +11,18 @@ import {
   AlertDialogHeader,
   AlertDialogIcon,
   AlertDialogTitle,
+  type AlertDialogTone,
 } from "@/components/ui/alert-dialog"
 
 /**
  * Confirmação de ações destrutivas, como remover uma entidade ou descartar
- * edições não salvas. O foco inicial fica em cancelar.
+ * edições não salvas. O foco inicial fica em cancelar. Com `blockedReason`,
+ * vira um aviso informativo, sem a ação de confirmar.
  */
 export function ConfirmDialog({
   open,
   icon,
+  tone = "destructive",
   title,
   description,
   confirmLabel,
@@ -32,6 +35,8 @@ export function ConfirmDialog({
 }: {
   open: boolean
   icon: LucideIcon
+  /** Cor do ícone: `warning` para atenção e `destructive` para exclusão. */
+  tone?: AlertDialogTone
   title: string
   description: ReactNode
   confirmLabel: string
@@ -55,7 +60,11 @@ export function ConfirmDialog({
     >
       <AlertDialogContent initialFocus={cancelRef}>
         <AlertDialogHeader>
-          <AlertDialogIcon icon={icon} />
+          {blockedReason ? (
+            <AlertDialogIcon icon={Info} tone="info" />
+          ) : (
+            <AlertDialogIcon icon={icon} tone={tone} />
+          )}
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>
             {blockedReason ?? description}

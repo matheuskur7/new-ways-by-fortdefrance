@@ -47,17 +47,30 @@ function AlertDialogHeader({
   )
 }
 
+/** Informação em azul, atenção em amarelo e exclusão ou ações sérias em vermelho. */
+type AlertDialogTone = "info" | "warning" | "destructive"
+
+const toneClasses: Record<AlertDialogTone, string> = {
+  info: "border-info/20 bg-info/10 text-info",
+  warning: "border-warning/25 bg-warning/10 text-warning",
+  destructive: "border-destructive/20 bg-destructive/10 text-destructive",
+}
+
 function AlertDialogIcon({
   icon: Icon,
+  tone = "destructive",
   className,
 }: {
   icon: LucideIcon
+  tone?: AlertDialogTone
   className?: string
 }) {
   return (
     <span
+      data-tone={tone}
       className={cn(
-        "mb-2 flex size-16 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary",
+        "mb-2 flex size-16 shrink-0 items-center justify-center rounded-2xl border",
+        toneClasses[tone],
         className
       )}
     >
@@ -114,6 +127,7 @@ function AlertDialogFooter({
   )
 }
 
+export type { AlertDialogTone }
 export {
   AlertDialog,
   AlertDialogContent,

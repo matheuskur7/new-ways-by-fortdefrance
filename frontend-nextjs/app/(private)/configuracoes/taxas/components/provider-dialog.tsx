@@ -295,6 +295,7 @@ export function ProviderDialog({
         <ConfirmDialog
           open={discarding !== null}
           icon={CircleAlert}
+          tone="warning"
           title={creating ? "Descartar cadastro?" : "Descartar alterações?"}
           description={
             creating
