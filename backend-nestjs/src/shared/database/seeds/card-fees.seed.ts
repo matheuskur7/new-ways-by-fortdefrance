@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import type { DatabaseService } from '../database.service.js';
 import { taxProviders, taxBrands } from '../schemas/taxes.schema.js';
 import { initialTaxBrands, initialTaxProvider } from './card-fees.data.js';
@@ -11,7 +11,12 @@ export async function seedCardFees(
     await tx
       .insert(taxProviders)
       .values({ ...initialTaxProvider, organizationId })
-      .onConflictDoNothing({ target: [taxProviders.organizationId, taxProviders.name] });
+      // Completa o logo de um provedor existente sem substituir um logo já cadastrado.
+      .onConflictDoUpdate({
+        target: [taxProviders.organizationId, taxProviders.name],
+        set: { logo: sql`excluded.logo` },
+        setWhere: isNull(taxProviders.logo),
+      });
     // Serializa seeds concorrentes do mesmo provedor para não duplicar bandeiras.
     const [provider] = await tx
       .select({ id: taxProviders.id })

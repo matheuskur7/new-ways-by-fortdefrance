@@ -1,4 +1,8 @@
-export const initialTaxProvider = { name: 'InfinitePay', logo: null } as const;
+export const initialTaxProvider = {
+  name: 'InfinitePay',
+  // Somente o ícone do logotipo oficial, sem o texto.
+  logo: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 210"><defs><linearGradient id="infinitepay-ring" x1="105" y1="35.924" x2="105" y2="174.09" gradientUnits="userSpaceOnUse"><stop stop-color="#00EF26"/><stop offset="1" stop-color="#FFC700"/></linearGradient></defs><path fill="#171527" d="M105 210C162.988 210 210 162.988 210 105C210 47.012 162.988 0 105 0C47.012 0 0 47.012 0 105C0 162.988 47.012 210 105 210Z"/><path fill="url(#infinitepay-ring)" fill-rule="evenodd" clip-rule="evenodd" d="M105 157.962C134.246 157.962 157.962 134.246 157.962 105C157.962 75.754 134.246 52.038 105 52.038C75.754 52.038 52.038 75.754 52.038 105C52.038 134.246 75.754 157.962 105 157.962ZM174.076 105C174.076 143.15 143.15 174.076 105 174.076C66.85 174.076 35.924 143.15 35.924 105C35.924 66.85 66.85 35.924 105 35.924C143.15 35.924 174.076 66.85 174.076 105Z"/></svg>',
+} as const;
 
 // Dados de referência do zexperiments; taxas em percentuais decimais exatos.
 export const initialTaxBrands = [

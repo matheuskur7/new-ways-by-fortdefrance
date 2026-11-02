@@ -3,7 +3,10 @@ import type { Pool } from 'pg';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DatabaseService } from '../../../src/shared/database/database.service.js';
 import { seedCardFees } from '../../../src/shared/database/seeds/card-fees.seed.js';
-import { initialTaxBrands } from '../../../src/shared/database/seeds/card-fees.data.js';
+import {
+  initialTaxBrands,
+  initialTaxProvider,
+} from '../../../src/shared/database/seeds/card-fees.data.js';
 import * as schema from '../../../src/shared/database/schemas/index.js';
 
 describe('seedCardFees', () => {
@@ -17,6 +20,15 @@ describe('seedCardFees', () => {
     query.mockReset().mockImplementation(async (statement) => ({
       rows: statement.text.includes('from "tax_providers"') ? [['provider-id']] : [],
     }));
+  });
+
+  it('usa somente o ícone SVG da InfinitePay, sem o texto do logotipo', () => {
+    const logo = initialTaxProvider.logo;
+    expect(logo).toMatch(
+      /^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" viewBox="0 0 210 210">.*<\/svg>$/,
+    );
+    expect(logo.match(/<path /g)).toHaveLength(2);
+    expect(logo).not.toMatch(/fill="black"|<script|clip-path=|\son\w+=/i);
   });
 
   it('preserva as três bandeiras e as 36 taxas exatas do projeto de origem', () => {
@@ -84,7 +96,14 @@ describe('seedCardFees', () => {
     const providerInsert = query.mock.calls.find(([sql]) =>
       sql.text.startsWith('insert into "tax_providers"'),
     );
-    expect(providerInsert?.[1]).toEqual(['org-id', 'InfinitePay', null]);
+    expect(providerInsert?.[1]?.slice(0, 3)).toEqual([
+      'org-id',
+      'InfinitePay',
+      initialTaxProvider.logo,
+    ]);
+    expect(providerInsert?.[0].text).toMatch(
+      /on conflict \("organization_id","name"\) do update set "logo" = excluded\.logo, "updated_at" = \$4 where "tax_providers"\."logo" is null$/,
+    );
     const brandInserts = query.mock.calls.filter(([sql]) =>
       sql.text.startsWith('insert into "tax_brands"'),
     );
