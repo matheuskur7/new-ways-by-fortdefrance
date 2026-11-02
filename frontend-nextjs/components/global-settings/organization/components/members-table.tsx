@@ -137,7 +137,7 @@ export function MembersTable({
         title="Membros da empresa"
         description="Quem faz parte da equipe e seus cargos."
         action={
-          <span className="rounded-full border bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground">
+          <span className="rounded-md border bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground">
             {query.isPending
               ? "Carregando…"
               : `${total} ${total === 1 ? "membro" : "membros"}`}
