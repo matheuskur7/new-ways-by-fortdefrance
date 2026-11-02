@@ -5,6 +5,7 @@ import { isAxiosError } from "axios"
 import { Building2, CircleAlert, LoaderCircle, Save } from "lucide-react"
 import type { Organization } from "@/app/(auth)/empresas/schemas"
 import { ConfirmDialog } from "@/components/confirm-dialog"
+import { AnimatedHeight } from "@/components/ui/animated-height"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -73,13 +74,15 @@ export function OrganizationSettingsDialog({
             equipe.
           </DialogDescription>
         </DialogHeader>
-        <OrganizationSettingsContent
-          organizationId={organization.id}
-          userId={userId}
-          update={update}
-          onDirtyChange={setUnsaved}
-          onSaved={() => onOpenChange(false)}
-        />
+        <AnimatedHeight>
+          <OrganizationSettingsContent
+            organizationId={organization.id}
+            userId={userId}
+            update={update}
+            onDirtyChange={setUnsaved}
+            onSaved={() => onOpenChange(false)}
+          />
+        </AnimatedHeight>
         <DialogFooter className="-mx-6 -mb-6 border-t bg-muted/60 px-6 py-4">
           <Button form={FORM_ID} type="submit" disabled={pending || !unsaved}>
             {pending ? (
