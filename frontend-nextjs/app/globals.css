@@ -185,3 +185,77 @@ html[data-dragging-group],
 html[data-dragging-group] * {
   cursor: grabbing !important;
 }
+
+/*
+ * Troca de abas da topbar: o conteúdo sai e entra deslizando no sentido da
+ * aba escolhida (tipos tab-forward/tab-back definidos em HeaderTabs). A
+ * topbar e a sidebar ficam paradas como referência.
+ */
+::view-transition {
+  pointer-events: none;
+}
+
+:root:active-view-transition-type(tab-forward, tab-back) {
+  &::view-transition-old(root),
+  &::view-transition-new(root) {
+    animation: none;
+  }
+}
+
+/* Mantém o deslize dentro da área do conteúdo, sem cobrir a sidebar. */
+::view-transition-group(.tab-forward),
+::view-transition-group(.tab-back) {
+  overflow: clip;
+}
+
+::view-transition-old(.tab-forward) {
+  --tab-slide-offset: -48px;
+  animation:
+    150ms ease-in both tab-fade reverse,
+    300ms ease-in both tab-slide reverse;
+}
+::view-transition-new(.tab-forward) {
+  --tab-slide-offset: 48px;
+  animation:
+    210ms ease-out 120ms both tab-fade,
+    360ms ease-out both tab-slide;
+}
+::view-transition-old(.tab-back) {
+  --tab-slide-offset: 48px;
+  animation:
+    150ms ease-in both tab-fade reverse,
+    300ms ease-in both tab-slide reverse;
+}
+::view-transition-new(.tab-back) {
+  --tab-slide-offset: -48px;
+  animation:
+    210ms ease-out 120ms both tab-fade,
+    360ms ease-out both tab-slide;
+}
+
+@keyframes tab-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes tab-slide {
+  from {
+    translate: var(--tab-slide-offset);
+  }
+  to {
+    translate: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(.tab-forward),
+  ::view-transition-new(.tab-forward),
+  ::view-transition-old(.tab-back),
+  ::view-transition-new(.tab-back) {
+    animation: none;
+  }
+}

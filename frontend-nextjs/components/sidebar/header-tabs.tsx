@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation"
 import { Tabs, TabsList, TabsTab } from "@/components/ui/tabs"
 import { resolveHeaderTabs } from "@/lib/header-tabs"
+import { markTabNavigation, tabTransitionTypes } from "@/lib/tab-navigation"
 
 export function HeaderTabs() {
   const pathname = usePathname()
@@ -26,8 +27,19 @@ export function HeaderTabs() {
       className="self-stretch"
       value={active?.value ?? null}
       onValueChange={(value) => {
-        const item = section.items.find((item) => item.value === value)
-        if (item) router.push(item.href)
+        const index = section.items.findIndex((item) => item.value === value)
+        if (index < 0) return
+        const current = active ? section.items.indexOf(active) : -1
+        const { href } = section.items[index]
+        // A direção define para onde o conteúdo desliza na troca de aba.
+        markTabNavigation(href)
+        router.push(href, {
+          transitionTypes: [
+            index > current
+              ? tabTransitionTypes.forward
+              : tabTransitionTypes.back,
+          ],
+        })
       }}
     >
       <TabsList
