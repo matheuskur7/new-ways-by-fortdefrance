@@ -9,21 +9,20 @@ export default async function LoginPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-sm flex-col gap-10">
-      <header className="grid gap-3">
-        <p className="inline-flex w-fit items-center gap-2 text-xs font-semibold tracking-widest text-primary uppercase">
-          <span aria-hidden="true" className="size-1.5 rounded-full bg-primary" />
+    <div className="grid flex-1 grid-rows-[1fr_auto_1fr] gap-6">
+      <header className="self-start">
+        <p className="text-xs font-semibold tracking-widest text-primary uppercase">
           Bem-vindo de volta
         </p>
-        <h1 className="text-4xl leading-tight font-semibold tracking-tight">
+        <h1 className="text-3xl font-semibold tracking-tight">
           Entre na sua conta
         </h1>
-        <p className="text-base text-muted-foreground">
+        <p className="mt-2 text-sm text-muted-foreground">
           Use seu e-mail e sua senha para acessar o sistema.
         </p>
       </header>
       <LoginForm />
-      <footer className="grid gap-4 border-t pt-6">
+      <footer className="-mb-4 grid gap-6 self-end">
         <p className="text-center text-sm text-muted-foreground">
           Ainda não possui uma conta?{" "}
           <Button

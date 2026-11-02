@@ -69,17 +69,7 @@ export default function LoginForm() {
           {errors.email && <FieldError errors={[errors.email]} />}
         </Field>
         <Field data-invalid={Boolean(errors.password)}>
-          <div className="flex items-center justify-between gap-2">
-            <FieldLabel htmlFor="password">Senha</FieldLabel>
-            <Button
-              type="button"
-              variant="link"
-              className="h-auto p-0 text-sm underline"
-              disabled
-            >
-              Esqueci minha senha
-            </Button>
-          </div>
+          <FieldLabel htmlFor="password">Senha</FieldLabel>
           <div className="relative">
             <Input
               {...form.register("password")}
@@ -120,6 +110,15 @@ export default function LoginForm() {
           </div>
           {errors.password && <FieldError errors={[errors.password]} />}
         </Field>
+
+        <Button
+          type="button"
+          variant="link"
+          className="h-auto self-end p-0 underline"
+          disabled
+        >
+          Esqueci minha senha
+        </Button>
 
         {login.isError && (
           <p role="alert" className="text-sm text-destructive">
