@@ -3,19 +3,11 @@ import { HeaderTabs } from "@/components/layout/header-tabs"
 import { Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react"
 import { IconButton } from "@/components/ui/icon-button"
 import { useSidebar } from "@/components/ui/sidebar"
-import { useOrganizations } from "@/features/organization/hooks/use-organizations"
-import { Skeleton } from "@/components/ui/skeleton"
 export function NavigationHeader({
-  userId,
-  activeOrganizationId,
+  organizationName,
 }: {
-  userId: string
-  activeOrganizationId?: string | null
+  organizationName: string
 }) {
-  const organizations = useOrganizations(userId)
-  const organization = organizations.data?.find(
-    (item) => item.id === activeOrganizationId
-  )
   const { isMobile, open, openMobile, toggleSidebar } = useSidebar()
   const expanded = isMobile ? openMobile : open
   const Icon = isMobile ? Menu : open ? PanelLeftClose : PanelLeftOpen
@@ -35,16 +27,7 @@ export function NavigationHeader({
       <HeaderTabs />
       <div className="ml-auto min-w-0 text-right">
         <p className="text-xs text-muted-foreground">Você está em</p>
-        {organizations.isPending ? (
-          <Skeleton className="ml-auto h-5 w-36" />
-        ) : (
-          <p className="truncate text-sm font-medium">
-            {organization?.name ??
-              (organizations.isError
-                ? "Empresa indisponível"
-                : "Selecione uma empresa")}
-          </p>
-        )}
+        <p className="truncate text-sm font-medium">{organizationName}</p>
       </div>
     </header>
   )

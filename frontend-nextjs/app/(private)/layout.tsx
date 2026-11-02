@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 import { requireSession } from "@/lib/auth-server"
+import { getActiveOrganization } from "@/features/organization/services/require-active-organization"
 import { AppSidebar } from "@/components/layout/app-sidebar"
 import { NavigationHeader } from "@/components/layout/navigation-header"
 import { PageTransition } from "@/components/page-transition"
@@ -10,7 +11,10 @@ export default async function PrivateLayout({
 }: {
   children: ReactNode
 }) {
-  const { user, session } = await requireSession()
+  const [{ user }, organization] = await Promise.all([
+    requireSession(),
+    getActiveOrganization(),
+  ])
   return (
     <SidebarProvider>
       <a
@@ -22,8 +26,11 @@ export default async function PrivateLayout({
       <AppSidebar user={user} />
       <SidebarInset className="min-w-0 bg-muted/40">
         <NavigationHeader
-          userId={user.id}
-          activeOrganizationId={session.activeOrganizationId}
+          organizationName={
+            organization === undefined
+              ? "Empresa indisponível"
+              : (organization?.name ?? "Selecione uma empresa")
+          }
         />
         <main
           id="page-content"
