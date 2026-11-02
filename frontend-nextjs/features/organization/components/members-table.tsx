@@ -176,6 +176,7 @@ export function MembersTable({
             data={members}
             getRowId={getMemberId}
             caption="Membros e cargos da empresa"
+            maxVisibleRows={3.5}
           />
         )}
         {total > MEMBERS_PAGE_SIZE && (
