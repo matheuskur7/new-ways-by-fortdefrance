@@ -239,27 +239,12 @@ test("foto usa redirecionamento privado sem cache e mantém erros de autorizaç�
   )
 })
 
-test("configurações da empresa exigem owner ou admin também no acesso direto", async () => {
-  const path = "/configuracoes-empresa?organizationId=org-example"
-  assert.equal((await open(path)).status, 307)
-  for (const cookie of ["session=valid", "session=admin"]) {
-    const response = await fetch(`${origin}${path}`, { headers: { cookie } })
-    assert.equal(response.status, 200)
-    const html = await response.text()
-    assert.match(html, /Gerenciamento da Empresa/)
-    assert.match(html, /Empresa de teste/)
-    assert.match(html, /Não pode ser alterado/)
-    assert.match(html, /Minhas empresas/)
-  }
-  for (const path of [
-    "/configuracoes-empresa",
-    "/configuracoes-empresa?organizationId=missing",
+test("gerenciamento da empresa não é mais uma rota própria", async () => {
+  const response = await open(
     "/configuracoes-empresa?organizationId=org-example",
-  ]) {
-    const response = await open(path, "session=member")
-    assert.equal(response.status, 307)
-    assert.equal(response.headers.get("location"), "/empresas")
-  }
+    "session=valid"
+  )
+  assert.equal(response.status, 404)
 })
 
 test("calculadora de taxas exige sessão e renderiza o formulário", async () => {

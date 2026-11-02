@@ -12,6 +12,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogSection,
 } from "@/components/ui/dialog"
 import {
   ChevronLeft,
@@ -20,12 +21,11 @@ import {
   UserCog,
   UsersRound,
 } from "lucide-react"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { MemberRoleSelect, type MemberRole } from "./member-role-select"
 import { useOrganizationMembers } from "../hooks/use-organization-members"
 import { useUpdateMemberRole } from "../hooks/use-update-member-role"
 import { MEMBERS_PAGE_SIZE } from "../services/list-organization-members"
-import { isOrganizationOwner } from "../../empresas/schemas"
+import { isOrganizationOwner } from "@/app/(auth)/empresas/schemas"
 import type { OrganizationMember } from "../schemas"
 
 const getMemberId = (member: OrganizationMember) => member.id
@@ -132,61 +132,54 @@ export function MembersTable({
   }
   return (
     <>
-      <Card size="sm" className="gap-3 ring-0">
-        <CardHeader className="flex flex-wrap items-center justify-between gap-3">
-          <div className="grid gap-1">
-            <h2 className="flex items-center gap-2 text-base font-semibold">
-              <UsersRound
-                className="size-4 text-muted-foreground"
-                aria-hidden="true"
-              />{" "}
-              Membros da empresa
-            </h2>
-          </div>
+      <DialogSection
+        icon={UsersRound}
+        title="Membros da empresa"
+        description="Quem faz parte da equipe e seus cargos."
+        action={
           <span className="rounded-full border bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground">
             {query.isPending
               ? "Carregando…"
               : `${total} ${total === 1 ? "membro" : "membros"}`}
           </span>
-        </CardHeader>
-        <CardContent>
-          {query.isPending ? (
-            <p
-              role="status"
-              className="flex items-center gap-2 py-6 text-sm text-muted-foreground"
-            >
-              <LoaderCircle
-                className="size-4 animate-spin motion-reduce:animate-none"
-                aria-hidden="true"
-              />
-              Carregando membros…
-            </p>
-          ) : query.isError ? (
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p role="alert" className="text-sm text-muted-foreground">
-                Não foi possível carregar os membros.
-              </p>
-              <Button
-                variant="outline"
-                onClick={() => query.refetch()}
-                disabled={query.isFetching}
-              >
-                Tentar novamente
-              </Button>
-            </div>
-          ) : (
-            <DataTable
-              columns={columns}
-              columnClassNames={{ role: "w-px" }}
-              cellClassNames={{ role: "text-right [&>button]:ml-auto" }}
-              data={members}
-              getRowId={getMemberId}
-              caption="Membros e cargos da empresa"
+        }
+      >
+        {query.isPending ? (
+          <p
+            role="status"
+            className="flex items-center gap-2 py-6 text-sm text-muted-foreground"
+          >
+            <LoaderCircle
+              className="size-4 animate-spin motion-reduce:animate-none"
+              aria-hidden="true"
             />
-          )}
-        </CardContent>
+            Carregando membros…
+          </p>
+        ) : query.isError ? (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p role="alert" className="text-sm text-muted-foreground">
+              Não foi possível carregar os membros.
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => query.refetch()}
+              disabled={query.isFetching}
+            >
+              Tentar novamente
+            </Button>
+          </div>
+        ) : (
+          <DataTable
+            columns={columns}
+            columnClassNames={{ role: "w-px" }}
+            cellClassNames={{ role: "text-right [&>button]:ml-auto" }}
+            data={members}
+            getRowId={getMemberId}
+            caption="Membros e cargos da empresa"
+          />
+        )}
         {total > MEMBERS_PAGE_SIZE && (
-          <CardFooter className="justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-muted-foreground">
               Página {pageIndex + 1} de {pageCount}
             </p>
@@ -212,9 +205,9 @@ export function MembersTable({
                 Próxima <ChevronRight aria-hidden="true" />
               </Button>
             </div>
-          </CardFooter>
+          </div>
         )}
-      </Card>
+      </DialogSection>
       <Dialog
         open={confirmationOpen}
         onOpenChange={(open) => {
