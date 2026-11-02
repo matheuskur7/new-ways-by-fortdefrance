@@ -8,6 +8,16 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
+## Organização de pastas
+
+- `app/`: rotas e o que pertence a uma única rota. Arquivos internos da rota ficam em pastas privadas (`_components`, `_hooks`, `_services`); schemas e utilitários exclusivos podem ficar soltos na pasta da rota (por exemplo, `schemas.ts`, `calculator.ts`).
+- `features/<domínio>/`: código que conhece uma entidade (usuário, organização, taxas de cartão, sessão) e é usado por mais de uma rota ou pelo shell da aplicação, inclusive modais completos, como as configurações de usuário e de empresa. Cada domínio segue a mesma divisão interna: `components/`, `hooks/`, `services/`, `utils/` e `schemas.ts`, com um único arquivo de schemas por domínio.
+- `components/ui/`: primitivas visuais (Shadcn e derivados), sem regra de domínio.
+- `components/layout/`: shell da área privada (sidebar, cabeçalho de navegação e abas).
+- `components/`: componentes reutilizáveis que não conhecem nenhuma entidade (`confirm-dialog`, `data-table`, `page-header`, `image-picker`...).
+- `hooks/` e `lib/`: hooks genéricos e infraestrutura transversal (cliente HTTP, ambiente, leitura de sessão, máscaras).
+- Quando um código de rota passar a ser usado por outra rota, mova-o para o `features/` correspondente em vez de importá-lo de `app/`.
+
 ## Padrões do frontend
 
 - Tabelas simples, sem filtros, paginação ou ordenação, usam diretamente `Table` e seus subcomponentes do Shadcn. Para tabelas que precisam desses recursos, use TanStack Table com `components/data-table.tsx` e defina as colunas no domínio correspondente.
