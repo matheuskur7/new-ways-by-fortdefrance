@@ -5,7 +5,12 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Input } from "@/components/ui/input"
 import { Field, FieldLabel, FieldError } from "@/components/ui/field"
 import { CreditCard, Layers3, Percent } from "lucide-react"
-import { FeeDialogHeader } from "./fee-dialog-header"
+import {
+  DialogDescription,
+  DialogHeader,
+  DialogSection,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { FormActions, type EditorActions } from "./form-actions"
 import {
   groupFormSchema,
@@ -59,30 +64,21 @@ export function GroupEditor({
       aria-busy={pending}
       onSubmit={form.handleSubmit(onSave)}
     >
-      <FeeDialogHeader
-        icon={Layers3}
-        title={group ? "Editar grupo" : "Novo grupo"}
-        description={
-          "Defina o grupo, a quantidade de parcelas e o percentual de cada taxa."
-        }
-      />
+      <DialogHeader icon={Layers3}>
+        <DialogTitle>{group ? "Editar grupo" : "Novo grupo"}</DialogTitle>
+        <DialogDescription>
+          Defina o grupo, a quantidade de parcelas e o percentual de cada taxa.
+        </DialogDescription>
+      </DialogHeader>
       <fieldset
         disabled={pending}
-        className="grid min-w-0 gap-6 py-3 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.5fr)]"
+        className="grid min-w-0 gap-4 py-1 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.5fr)]"
       >
-        <div className="grid min-w-0 content-start gap-4">
-          <div>
-            <h3 className="flex items-center gap-2 text-sm font-semibold">
-              <CreditCard
-                className="size-4 text-muted-foreground"
-                aria-hidden="true"
-              />
-              Dados do grupo
-            </h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Identificação e exibição das opções de pagamento.
-            </p>
-          </div>
+        <DialogSection
+          icon={CreditCard}
+          title="Dados do grupo"
+          description="Identificação e exibição das opções de pagamento."
+        >
           <Field>
             <FieldLabel htmlFor="group-provider">Provedor</FieldLabel>
             <select
@@ -134,20 +130,12 @@ export function GroupEditor({
             />
             <FieldError id="group-logo-error" errors={[errors.logoSvg]} />
           </Field>
-        </div>
-        <div className="grid min-w-0 content-start gap-4 border-t pt-6 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
-          <div>
-            <h3 className="flex items-center gap-2 text-sm font-semibold">
-              <Percent
-                className="size-4 text-muted-foreground"
-                aria-hidden="true"
-              />
-              Taxas por parcela
-            </h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Defina quantas opções serão oferecidas e o percentual de cada uma.
-            </p>
-          </div>
+        </DialogSection>
+        <DialogSection
+          icon={Percent}
+          title="Taxas por parcela"
+          description="Defina quantas opções serão oferecidas e o percentual de cada uma."
+        >
           <Field>
             <FieldLabel htmlFor="group-count">
               Quantidade de parcelas
@@ -219,7 +207,7 @@ export function GroupEditor({
             ))}
           </div>
           <FieldError errors={[errors.rates?.root]} />
-        </div>
+        </DialogSection>
       </fieldset>
       <FormActions
         pending={pending}

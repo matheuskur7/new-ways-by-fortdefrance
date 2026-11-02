@@ -17,6 +17,7 @@ import {
   ChevronLeft,
   ChevronRight,
   LoaderCircle,
+  UserCog,
   UsersRound,
 } from "lucide-react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
@@ -224,7 +225,7 @@ export function MembersTable({
         }}
       >
         <DialogContent showCloseButton={!update.isPending}>
-          <DialogHeader>
+          <DialogHeader icon={UserCog}>
             <DialogTitle>Alterar cargo do membro?</DialogTitle>
             <DialogDescription>
               Confirme a alteração do cargo de{" "}

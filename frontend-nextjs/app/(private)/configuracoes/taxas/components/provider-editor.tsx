@@ -5,7 +5,11 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Input } from "@/components/ui/input"
 import { Field, FieldLabel, FieldError } from "@/components/ui/field"
 import { Building2 } from "lucide-react"
-import { FeeDialogHeader } from "./fee-dialog-header"
+import {
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { FormActions } from "./form-actions"
 import {
   providerFormSchema,
@@ -58,11 +62,14 @@ export function ProviderEditor({
       })}
     >
       <fieldset disabled={pending} className="grid gap-6">
-        <FeeDialogHeader
-          icon={Building2}
-          title={provider ? "Editar provedor" : "Novo provedor"}
-          description={"Identifique a empresa responsável pelas taxas."}
-        />
+        <DialogHeader icon={Building2}>
+          <DialogTitle>
+            {provider ? "Editar provedor" : "Novo provedor"}
+          </DialogTitle>
+          <DialogDescription>
+            Identifique a empresa responsável pelas taxas.
+          </DialogDescription>
+        </DialogHeader>
         <Field className="py-3">
           <FieldLabel htmlFor="provider-name">Nome</FieldLabel>
           <Input

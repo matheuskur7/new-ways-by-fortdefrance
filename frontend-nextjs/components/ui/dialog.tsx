@@ -5,7 +5,7 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
 import { cn } from "cn"
 
 import { Button } from "@/components/ui/button"
-import { XIcon } from "lucide-react"
+import { XIcon, type LucideIcon } from "lucide-react"
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />
@@ -79,13 +79,80 @@ function DialogContent({
   )
 }
 
-function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
+function DialogIcon({
+  icon: Icon,
+  className,
+}: {
+  icon: LucideIcon
+  className?: string
+}) {
+  return (
+    <span
+      data-slot="dialog-icon"
+      className={cn(
+        "flex size-13 shrink-0 items-center justify-center rounded-xl border bg-muted/50 text-muted-foreground",
+        className
+      )}
+    >
+      <Icon className="size-7" aria-hidden="true" />
+    </span>
+  )
+}
+
+function DialogHeader({
+  className,
+  icon,
+  children,
+  ...props
+}: React.ComponentProps<"div"> & {
+  icon?: LucideIcon
+}) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-2", className)}
+      className={cn("flex items-center gap-3 border-b pr-8 pb-4", className)}
       {...props}
-    />
+    >
+      {icon && <DialogIcon icon={icon} />}
+      <div className="grid min-w-0 gap-1">{children}</div>
+    </div>
+  )
+}
+
+function DialogSection({
+  icon: Icon,
+  title,
+  description,
+  className,
+  children,
+  ...props
+}: React.ComponentProps<"section"> & {
+  icon?: LucideIcon
+  title: string
+  description?: string
+}) {
+  return (
+    <section
+      data-slot="dialog-section"
+      className={cn(
+        "grid min-w-0 content-start gap-4 rounded-lg border p-4",
+        className
+      )}
+      {...props}
+    >
+      <div>
+        <h3 className="flex items-center gap-2 text-sm font-semibold">
+          {Icon && (
+            <Icon className="size-4 text-muted-foreground" aria-hidden="true" />
+          )}
+          {title}
+        </h3>
+        {description && (
+          <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+        )}
+      </div>
+      {children}
+    </section>
   )
 }
 
@@ -120,7 +187,10 @@ function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn("font-heading leading-none font-medium", className)}
+      className={cn(
+        "font-heading text-base leading-tight font-semibold text-foreground",
+        className
+      )}
       {...props}
     />
   )
@@ -151,6 +221,7 @@ export {
   DialogHeader,
   DialogOverlay,
   DialogPortal,
+  DialogSection,
   DialogTitle,
   DialogTrigger,
 }

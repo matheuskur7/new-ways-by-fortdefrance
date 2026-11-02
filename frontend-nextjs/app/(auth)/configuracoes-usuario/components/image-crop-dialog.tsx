@@ -12,7 +12,7 @@ import {
 import Cropper, { type Area } from "react-easy-crop"
 import { Button } from "@/components/ui/button"
 import { IconButton } from "@/components/ui/icon-button"
-import { ZoomIn, ZoomOut } from "lucide-react"
+import { Crop, ZoomIn, ZoomOut } from "lucide-react"
 import { Slider } from "@/components/ui/slider"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { prepareUserImage } from "../services/prepare-user-image"
@@ -84,7 +84,7 @@ export function ImageCropDialog({
         finalFocus={returnFocus}
         className="max-h-[calc(100dvh-2rem)] overflow-y-auto md:max-w-2xl"
       >
-        <DialogHeader className="pr-6">
+        <DialogHeader icon={Crop}>
           <DialogTitle>Ajustar foto de perfil</DialogTitle>
           <DialogDescription>
             Arraste a imagem e ajuste o zoom para escolher o enquadramento.
