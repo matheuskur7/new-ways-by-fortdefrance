@@ -37,15 +37,15 @@ export function FeeCalculator() {
     providers.find((item) => item.id === selectedProviderId) ?? providers[0]
   const brands = provider?.brands ?? []
   return (
-    <section className="mx-auto w-full max-w-6xl">
+    <section className="flex w-full flex-1 flex-col">
       <PageHeader
         icon={Calculator}
         title="Calculadora de Taxas de Cartão"
         subtitle="Informe o valor da venda para calcular as opções de parcelamento."
         className="mb-3"
       />
-      <Card className="ring-0">
-        <CardContent>
+      <Card className="flex-1 ring-0">
+        <CardContent className="w-full">
           <div className="flex flex-col-reverse gap-4 sm:flex-row sm:items-start sm:justify-between">
             <form
               onSubmit={handleSubmit((values) =>
@@ -131,7 +131,7 @@ export function FeeCalculator() {
             </p>
           )}
           {!query.isError && (
-            <div className="mt-3 grid gap-2 lg:grid-cols-3">
+            <div className="mt-3 flex flex-wrap gap-2">
               {brands.map((brand) => (
                 <FeeTable key={brand.id} brand={brand} amount={amount} />
               ))}

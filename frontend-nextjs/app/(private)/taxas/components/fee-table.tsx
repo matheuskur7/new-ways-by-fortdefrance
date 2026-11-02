@@ -35,7 +35,7 @@ export function FeeTable({
   amount: number | null
 }) {
   return (
-    <div className="min-w-0 overflow-hidden rounded-lg border">
+    <div className="min-w-0 max-w-sm overflow-hidden rounded-lg border">
       <header className="flex flex-col items-center justify-center gap-2 border-b bg-muted/50 px-4 py-1.5 text-center">
         {brand.logo && (
           // eslint-disable-next-line @next/next/no-img-element
