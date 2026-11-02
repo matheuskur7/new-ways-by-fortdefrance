@@ -9,24 +9,18 @@ import {
 
 const resolver = registerHooks({
   resolve(specifier, context, nextResolve) {
-    if (specifier === "@/lib/masks")
+    if (specifier.startsWith("@/"))
       return nextResolve(
-        new URL("../lib/masks.ts", import.meta.url).href,
+        new URL(`../${specifier.slice(2)}.ts`, import.meta.url).href,
         context
       )
-    if (specifier === "./schemas" && context.parentURL?.includes("/taxas/")) {
-      return nextResolve(
-        new URL("../app/(private)/taxas/schemas.ts", import.meta.url).href,
-        context
-      )
-    }
     return nextResolve(specifier, context)
   },
 })
 const { calculateCardFee } =
   await import("../app/(private)/taxas/calculator.ts")
 const { saleAmountSchema, saleAmountFormSchema } =
-  await import("../app/(private)/taxas/schemas.ts")
+  await import("../features/card-fees/schemas.ts")
 resolver.deregister()
 
 test("interpreta valores brasileiros e rejeita formatos ambíguos", () => {

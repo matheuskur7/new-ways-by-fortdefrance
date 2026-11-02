@@ -11,10 +11,10 @@ const resolver = registerHooks({
       )
     if (
       specifier === "../schemas" &&
-      context.parentURL?.includes("/taxas/services/")
+      context.parentURL?.includes("features/card-fees/services/")
     )
       return nextResolve(
-        new URL("../app/(private)/taxas/schemas.ts", import.meta.url).href,
+        new URL("../features/card-fees/schemas.ts", import.meta.url).href,
         context
       )
     return nextResolve(specifier, context)
@@ -22,7 +22,7 @@ const resolver = registerHooks({
 })
 const { api } = await import("../lib/api.ts")
 const { listCardFees } =
-  await import("../app/(private)/taxas/services/list-card-fees.ts")
+  await import("../features/card-fees/services/list-card-fees.ts")
 resolver.deregister()
 afterEach(() => mock.restoreAll())
 

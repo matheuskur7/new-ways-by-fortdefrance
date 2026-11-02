@@ -3,7 +3,7 @@
 import type { ReactNode } from "react"
 import { CreditCard, Pencil, Trash2 } from "lucide-react"
 import { IconButton } from "@/components/ui/icon-button"
-import { svgDataUrl } from "@/app/(private)/taxas/logo"
+import { svgDataUrl } from "@/features/card-fees/logo"
 import type { FeeBrand } from "../schemas"
 
 export function BrandRow({

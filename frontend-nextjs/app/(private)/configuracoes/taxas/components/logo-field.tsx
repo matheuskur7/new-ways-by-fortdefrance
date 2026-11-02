@@ -4,7 +4,7 @@ import { useState } from "react"
 import { ImageIcon } from "lucide-react"
 import { ImagePicker } from "@/components/image-picker"
 import { Field, FieldLabel } from "@/components/ui/field"
-import { svgDataUrl } from "@/app/(private)/taxas/logo"
+import { svgDataUrl } from "@/features/card-fees/logo"
 import { svgLogoSchema } from "../schemas"
 
 export function LogoField({

@@ -1,4 +1,4 @@
-import { saleAmountSchema, feeRateSchema } from "./schemas"
+import { saleAmountSchema, feeRateSchema } from "@/features/card-fees/schemas"
 
 export function calculateCardFee(
   amount: number,

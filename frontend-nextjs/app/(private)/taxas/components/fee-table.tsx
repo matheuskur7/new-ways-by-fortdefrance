@@ -8,9 +8,9 @@ import {
   TableCell,
 } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
-import type { FeeBrand } from "../schemas"
+import type { FeeBrand } from "@/features/card-fees/schemas"
 import { calculateCardFee } from "../calculator"
-import { svgDataUrl } from "../logo"
+import { svgDataUrl } from "@/features/card-fees/logo"
 import { formatMoney } from "@/lib/masks"
 
 function FeeValue({ value }: { value: number | undefined }) {

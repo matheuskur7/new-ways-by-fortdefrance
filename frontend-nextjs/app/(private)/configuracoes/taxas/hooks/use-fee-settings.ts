@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { isAxiosError } from "axios"
 import { toastManager } from "@/components/ui/toast"
-import { cardFeeKeys } from "@/app/(private)/taxas/hooks/use-card-fees"
+import { cardFeeKeys } from "@/features/card-fees/hooks/use-card-fees"
 import {
   listFeeSettings,
   removeBrand,

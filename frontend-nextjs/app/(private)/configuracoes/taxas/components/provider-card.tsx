@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { svgDataUrl } from "@/app/(private)/taxas/logo"
+import { svgDataUrl } from "@/features/card-fees/logo"
 import type { FeeBrand, FeeProvider } from "../schemas"
 
 const previewLimit = 3

@@ -10,8 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import type { FeeProvider } from "../schemas"
-import { svgDataUrl } from "../logo"
+import type { FeeProvider } from "@/features/card-fees/schemas"
+import { svgDataUrl } from "@/features/card-fees/logo"
 
 function ProviderLabel({ provider }: { provider: FeeProvider }) {
   return (
