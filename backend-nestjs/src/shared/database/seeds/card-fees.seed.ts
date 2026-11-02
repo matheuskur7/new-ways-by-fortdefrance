@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import type { DatabaseService } from '../database.service.js';
-import { cardFeeProviders, cardFeeGroups, cardFees } from '../schemas/card-fees.schema.js';
-import { initialCardFeeGroups, initialCardFeeProviderName } from './card-fees.data.js';
+import { taxProviders, taxBrands } from '../schemas/taxes.schema.js';
+import { initialTaxBrands, initialTaxProvider } from './card-fees.data.js';
 
 export async function seedCardFees(
   database: DatabaseService,
@@ -9,38 +9,42 @@ export async function seedCardFees(
 ): Promise<number> {
   return database.db.transaction(async (tx) => {
     await tx
-      .insert(cardFeeProviders)
-      .values({ name: initialCardFeeProviderName, organizationId })
-      .onConflictDoNothing({ target: [cardFeeProviders.organizationId, cardFeeProviders.name] });
+      .insert(taxProviders)
+      .values({ ...initialTaxProvider, organizationId })
+      .onConflictDoNothing({ target: [taxProviders.organizationId, taxProviders.name] });
+    // Serializa seeds concorrentes do mesmo provedor para não duplicar bandeiras.
     const [provider] = await tx
-      .select({ id: cardFeeProviders.id })
-      .from(cardFeeProviders)
+      .select({ id: taxProviders.id })
+      .from(taxProviders)
       .where(
         and(
-          eq(cardFeeProviders.organizationId, organizationId),
-          eq(cardFeeProviders.name, initialCardFeeProviderName),
+          eq(taxProviders.organizationId, organizationId),
+          eq(taxProviders.name, initialTaxProvider.name),
         ),
       )
-      .limit(1);
+      .limit(1)
+      .for('update');
     if (!provider) throw new Error('Provedor inicial de taxas não encontrado.');
-    let created = 0;
-    for (const { rates, ...values } of initialCardFeeGroups) {
-      const [group] = await tx
-        .insert(cardFeeGroups)
-        .values({ ...values, organizationId, providerId: provider.id })
-        .onConflictDoNothing({ target: [cardFeeGroups.providerId, cardFeeGroups.seedKey] })
-        .returning({ id: cardFeeGroups.id });
-      if (!group) continue;
-      await tx.insert(cardFees).values(
-        rates.map((ratePercent, index) => ({
-          groupId: group.id,
-          organizationId,
-          installments: index + 1,
-          ratePercent,
-        })),
+
+    // Bandeiras são reconhecidas pelo nome; as existentes são preservadas sem alterações.
+    const existing = await tx
+      .select({ name: taxBrands.name })
+      .from(taxBrands)
+      .where(
+        and(eq(taxBrands.organizationId, organizationId), eq(taxBrands.providerId, provider.id)),
       );
-      created++;
-    }
-    return created;
+    const names = new Set(existing.map((brand) => brand.name));
+    const missing = initialTaxBrands.filter((brand) => !names.has(brand.name));
+    if (!missing.length) return 0;
+
+    await tx.insert(taxBrands).values(
+      missing.map(({ rates, ...values }) => ({
+        ...values,
+        organizationId,
+        providerId: provider.id,
+        rates: rates.map((ratePercent, index) => ({ installments: index + 1, ratePercent })),
+      })),
+    );
+    return missing.length;
   });
 }

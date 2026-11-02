@@ -20,10 +20,10 @@ try {
   );
   const database = app.get(DatabaseService);
   const organizations = await database.db.select({ id: organization.id }).from(organization);
-  let groupsCreated = 0;
-  for (const company of organizations) groupsCreated += await seedCardFees(database, company.id);
+  let brandsCreated = 0;
+  for (const company of organizations) brandsCreated += await seedCardFees(database, company.id);
   console.info(
-    `Taxas de cartão: ${groupsCreated} grupo(s) criado(s); grupos existentes preservados.`,
+    `Taxas de cartão: ${brandsCreated} bandeira(s) criada(s); bandeiras existentes preservadas.`,
   );
   console.info('Seeds concluídos.');
 } catch {

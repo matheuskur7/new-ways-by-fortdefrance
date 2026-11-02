@@ -106,11 +106,11 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
             id: '019a1234-5678-7000-8000-123456789abc',
             providerId: '019a1234-5678-7000-8000-123456789def',
             providerName: 'InfinitePay',
+            providerLogo: null,
             name: 'Visa / Mastercard',
             channel: 'Presencial',
-            logoSvg: null,
-            installments: 2,
-            ratePercent: '3.94',
+            logo: null,
+            rates: [{ installments: 2, ratePercent: '3.94' }],
           },
         ]),
       })
@@ -268,9 +268,9 @@ describe('API HTTP (persistência em memória e S3 simulado)', () => {
       {
         id: '019a1234-5678-7000-8000-123456789abc',
         name: 'Visa / Mastercard',
-        provider: { id: '019a1234-5678-7000-8000-123456789def', name: 'InfinitePay' },
+        provider: { id: '019a1234-5678-7000-8000-123456789def', name: 'InfinitePay', logo: null },
         channel: 'Presencial',
-        logoSvg: null,
+        logo: null,
         rates: [{ installments: 2, ratePercent: '3.94' }],
       },
     ]);

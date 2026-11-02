@@ -14,14 +14,15 @@ import { OrganizationRepository } from '../../src/modules/organization/organizat
 import { authSession } from '../fixtures/auth.js';
 
 const providerId = '019a1234-5678-7000-8000-123456789001';
-const groupId = '019a1234-5678-7000-8000-123456789002';
-const rateId = '019a1234-5678-7000-8000-123456789003';
-const groupData = {
+const brandId = '019a1234-5678-7000-8000-123456789002';
+const otherId = '019a1234-5678-7000-8000-123456789003';
+const provider = { name: 'Provedor', logo: null };
+const brandData = {
   providerId,
   name: 'Visa',
   channel: 'Presencial',
   displayOrder: 10,
-  logoSvg: null,
+  logo: null,
   rates: Array.from({ length: 18 }, (_, index) => ({
     installments: index + 1,
     ratePercent: '3.94',
@@ -34,46 +35,31 @@ describe('Gerenciamento HTTP de taxas', () => {
   let revoked = false;
   const audit = { organizationId: 'org-test', createdAt: new Date(), updatedAt: new Date() };
   const repository = {
-    reorderGroups: vi.fn(async (organizationId: string, id: string, ids: string[]) =>
+    reorderBrands: vi.fn(async (organizationId: string, id: string, ids: string[]) =>
       organizationId !== 'org-test' || id !== providerId
         ? 'not-found'
-        : ids.length === 1 && ids[0] === groupId
+        : ids.length === 1 && ids[0] === brandId
           ? 'ok'
           : 'stale',
     ),
-    hasProviderGroups: vi.fn(
-      async (organizationId: string, id: string) => organizationId === 'org-test' && id === groupId,
+    hasProviderBrands: vi.fn(
+      async (organizationId: string, id: string) => organizationId === 'org-test' && id === brandId,
     ),
     removeProvider: vi.fn(async (organizationId: string, id: string) => {
       if (organizationId !== 'org-test') return undefined;
-      if (id === groupId) throw new Error('db', { cause: { code: '23503' } });
+      if (id === brandId) throw new Error('db', { cause: { code: '23503' } });
       return id === providerId ? { id } : undefined;
     }),
-    removeGroup: vi.fn(async (organizationId: string, id: string) =>
-      organizationId === 'org-test' && id === groupId ? { id } : undefined,
+    removeBrand: vi.fn(async (organizationId: string, id: string) =>
+      organizationId === 'org-test' && id === brandId ? { id } : undefined,
     ),
     listProviders: vi.fn(async (organizationId: string) =>
-      organizationId === 'org-test' ? [{ ...audit, id: providerId, name: 'Provedor' }] : [],
+      organizationId === 'org-test' ? [{ ...audit, id: providerId, ...provider }] : [],
     ),
-    listGroups: vi.fn(async (organizationId: string) =>
-      organizationId === 'org-test'
-        ? [
-            {
-              ...audit,
-              seedKey: 'VISA',
-              ...groupData,
-              id: groupId,
-              rates: groupData.rates.map((rate) => ({
-                ...rate,
-                id: rateId,
-                organizationId: 'org-test',
-                groupId,
-              })),
-            },
-          ]
-        : [],
+    listBrands: vi.fn(async (organizationId: string) =>
+      organizationId === 'org-test' ? [{ ...audit, ...brandData, id: brandId }] : [],
     ),
-    saveProvider: vi.fn(async (organizationId: string, data: { name: string }, id?: string) => {
+    saveProvider: vi.fn(async (organizationId: string, data: typeof provider, id?: string) => {
       if (data.name === 'Duplicado') throw new Error('db', { cause: { code: '23505' } });
       return organizationId === 'org-test'
         ? { ...audit, ...data, id: id ?? providerId }
@@ -82,32 +68,10 @@ describe('Gerenciamento HTTP de taxas', () => {
     findProvider: vi.fn(async (organizationId: string, id: string) =>
       organizationId === 'org-test' && id === providerId ? { id } : undefined,
     ),
-    saveGroup: vi.fn(async (organizationId: string, data: typeof groupData, id?: string) =>
-      organizationId === 'org-test' && (!id || id === groupId)
-        ? {
-            ...audit,
-            seedKey: 'VISA',
-            ...data,
-            id: id ?? groupId,
-            rates: data.rates.map((rate) => ({
-              ...rate,
-              id: rateId,
-              organizationId: 'org-test',
-              groupId,
-            })),
-          }
+    saveBrand: vi.fn(async (organizationId: string, data: typeof brandData, id?: string) =>
+      organizationId === 'org-test' && (!id || id === brandId)
+        ? { ...audit, ...data, id: id ?? brandId }
         : undefined,
-    ),
-    saveRate: vi.fn(
-      async (
-        organizationId: string,
-        parentId: string,
-        data: { installments: number; ratePercent: string },
-        id?: string,
-      ) =>
-        organizationId === 'org-test' && parentId === groupId && (!id || id === rateId)
-          ? { ...data, id: id ?? rateId, organizationId, groupId: parentId }
-          : undefined,
     ),
   };
 
@@ -154,33 +118,31 @@ describe('Gerenciamento HTTP de taxas', () => {
     await app?.close();
   });
 
-  it('exige sessão e retorna provedores mesmo sem grupos', async () => {
+  it('exige sessão e retorna provedores e bandeiras com taxas em JSON', async () => {
     await request(app.getHttpServer()).get('/card-fees/catalog').expect(401);
     const response = await request(app.getHttpServer())
       .get('/card-fees/catalog')
       .set('x-test-user', 'owner')
       .expect(200);
-    expect(response.body.providers).toEqual([{ id: providerId, name: 'Provedor' }]);
-    expect(response.body.groups[0].rates).toHaveLength(18);
-    expect(Object.keys(response.body.providers[0]).sort()).toEqual(['id', 'name']);
-    expect(Object.keys(response.body.groups[0]).sort()).toEqual([
+    expect(response.body.providers).toEqual([{ id: providerId, ...provider }]);
+    expect(response.body.brands[0].rates).toHaveLength(18);
+    expect(Object.keys(response.body.brands[0]).sort()).toEqual([
       'channel',
       'displayOrder',
       'id',
-      'logoSvg',
+      'logo',
       'name',
       'providerId',
       'rates',
     ]);
-    expect(Object.keys(response.body.groups[0].rates[0]).sort()).toEqual([
-      'id',
+    expect(Object.keys(response.body.brands[0].rates[0]).sort()).toEqual([
       'installments',
       'ratePercent',
     ]);
     expect(response.headers['cache-control']).toBe('private, no-store');
   });
 
-  it('cria e edita provedor, grupo com 18 taxas e taxa individual', async () => {
+  it('cria e edita provedor e bandeira com 18 taxas', async () => {
     for (const [method, path] of [
       ['post', '/card-fees/providers'],
       ['patch', `/card-fees/providers/${providerId}`],
@@ -188,42 +150,42 @@ describe('Gerenciamento HTTP de taxas', () => {
       const response = await request(app.getHttpServer())
         [method](path)
         .set('x-test-user', 'owner')
-        .send({ name: 'Provedor' })
+        .send({ name: 'Provedor', logo: '<svg viewBox="0 0 1 1"></svg>' })
         .expect(method === 'post' ? 201 : 200);
-      expect(response.body.id).toBe(providerId);
+      expect(response.body).toEqual({
+        id: providerId,
+        name: 'Provedor',
+        logo: '<svg viewBox="0 0 1 1"></svg>',
+      });
     }
     for (const [method, path] of [
-      ['post', '/card-fees/groups'],
-      ['patch', `/card-fees/groups/${groupId}`],
+      ['post', '/card-fees/brands'],
+      ['patch', `/card-fees/brands/${brandId}`],
     ] as const) {
       const response = await request(app.getHttpServer())
         [method](path)
         .set('x-test-user', 'owner')
-        .send(groupData)
+        .send(brandData)
         .expect(method === 'post' ? 201 : 200);
-      expect(response.body.rates).toHaveLength(18);
+      expect(response.body).toEqual({ ...brandData, id: brandId });
     }
-    for (const [method, path] of [
-      ['post', `/card-fees/groups/${groupId}/rates`],
-      ['patch', `/card-fees/groups/${groupId}/rates/${rateId}`],
-    ] as const) {
-      const response = await request(app.getHttpServer())
-        [method](path)
-        .set('x-test-user', 'owner')
-        .send({ installments: 24, ratePercent: '8.99' })
-        .expect(method === 'post' ? 201 : 200);
-      expect(response.body.installments).toBe(24);
-    }
+    await request(app.getHttpServer())
+      .post(`/card-fees/brands/${brandId}/rates`)
+      .set('x-test-user', 'owner')
+      .send({ installments: 24, ratePercent: '8.99' })
+      .expect(404);
   });
 
   it('rejeita payloads inválidos e conflitos sem sucesso falso', async () => {
     for (const body of [
-      { ...groupData, organizationId: 'foreign' },
-      { ...groupData, rates: [groupData.rates[0], groupData.rates[0]] },
-      { ...groupData, rates: [{ installments: 1, ratePercent: '100.00' }] },
+      { ...brandData, organizationId: 'foreign' },
+      { ...brandData, rates: [] },
+      { ...brandData, rates: [brandData.rates[0], brandData.rates[0]] },
+      { ...brandData, rates: [{ installments: 1, ratePercent: '100.00' }] },
+      { ...brandData, logo: 'https://example.com/logo.png' },
     ]) {
       await request(app.getHttpServer())
-        .post('/card-fees/groups')
+        .post('/card-fees/brands')
         .set('x-test-user', 'owner')
         .send(body)
         .expect(400);
@@ -231,12 +193,17 @@ describe('Gerenciamento HTTP de taxas', () => {
     await request(app.getHttpServer())
       .patch('/card-fees/providers/invalid')
       .set('x-test-user', 'owner')
-      .send({ name: 'Nome' })
+      .send(provider)
       .expect(400);
     await request(app.getHttpServer())
       .post('/card-fees/providers')
       .set('x-test-user', 'owner')
-      .send({ name: 'Duplicado' })
+      .send({ name: 'Provedor' })
+      .expect(400);
+    await request(app.getHttpServer())
+      .post('/card-fees/providers')
+      .set('x-test-user', 'owner')
+      .send({ ...provider, name: 'Duplicado' })
       .expect(409);
   });
 
@@ -246,39 +213,33 @@ describe('Gerenciamento HTTP de taxas', () => {
       .set('x-test-user', 'owner')
       .set('x-test-company', 'other-company')
       .expect(200);
-    expect(response.body).toEqual({ providers: [], groups: [] });
+    expect(response.body).toEqual({ providers: [], brands: [] });
     await request(app.getHttpServer())
       .patch(`/card-fees/providers/${providerId}`)
       .set('x-test-user', 'owner')
       .set('x-test-company', 'other-company')
-      .send({ name: 'Nome' })
+      .send(provider)
       .expect(404);
     await request(app.getHttpServer())
-      .post('/card-fees/groups')
+      .post('/card-fees/brands')
       .set('x-test-user', 'owner')
       .set('x-test-company', 'other-company')
-      .send(groupData)
-      .expect(404);
-    await request(app.getHttpServer())
-      .patch(`/card-fees/groups/${groupId}/rates/${rateId}`)
-      .set('x-test-user', 'owner')
-      .set('x-test-company', 'other-company')
-      .send({ installments: 18, ratePercent: '1.00' })
+      .send(brandData)
       .expect(404);
   });
 
-  it('remove grupo e provedor com 204, preserva vínculos e exige empresa/permissão', async () => {
-    await request(app.getHttpServer()).delete(`/card-fees/groups/${groupId}`).expect(401);
+  it('remove bandeira e provedor com 204, preserva vínculos e exige empresa/permissão', async () => {
+    await request(app.getHttpServer()).delete(`/card-fees/brands/${brandId}`).expect(401);
     await request(app.getHttpServer())
-      .delete(`/card-fees/groups/${groupId}`)
+      .delete(`/card-fees/brands/${brandId}`)
       .set('x-test-user', 'member')
       .expect(403);
     const conflict = await request(app.getHttpServer())
-      .delete(`/card-fees/providers/${groupId}`)
+      .delete(`/card-fees/providers/${brandId}`)
       .set('x-test-user', 'owner')
       .expect(409);
-    expect(conflict.body.message).toBe('Remova os grupos deste provedor antes de removê-lo.');
-    for (const path of [`/card-fees/providers/${providerId}`, `/card-fees/groups/${groupId}`]) {
+    expect(conflict.body.message).toBe('Remova as bandeiras deste provedor antes de removê-lo.');
+    for (const path of [`/card-fees/providers/${providerId}`, `/card-fees/brands/${brandId}`]) {
       await request(app.getHttpServer())
         .delete(path)
         .set('x-test-user', 'owner')
@@ -296,38 +257,38 @@ describe('Gerenciamento HTTP de taxas', () => {
       .expect(400);
   });
 
-  it('reordena somente os grupos completos do provedor e da empresa ativa', async () => {
-    const path = `/card-fees/providers/${providerId}/groups/order`;
+  it('reordena somente as bandeiras completas do provedor e da empresa ativa', async () => {
+    const path = `/card-fees/providers/${providerId}/brands/order`;
     await request(app.getHttpServer())
       .patch(path)
-      .send({ groupIds: [groupId] })
+      .send({ brandIds: [brandId] })
       .expect(401);
     await request(app.getHttpServer())
       .patch(path)
       .set('x-test-user', 'member')
-      .send({ groupIds: [groupId] })
+      .send({ brandIds: [brandId] })
       .expect(403);
     await request(app.getHttpServer())
       .patch(path)
       .set('x-test-user', 'owner')
-      .send({ groupIds: [groupId] })
+      .send({ brandIds: [brandId] })
       .expect(204);
     await request(app.getHttpServer())
       .patch(path)
       .set('x-test-user', 'owner')
       .set('x-test-company', 'other-company')
-      .send({ groupIds: [groupId] })
+      .send({ brandIds: [brandId] })
       .expect(404);
     await request(app.getHttpServer())
       .patch(path)
       .set('x-test-user', 'owner')
-      .send({ groupIds: [rateId] })
+      .send({ brandIds: [otherId] })
       .expect(409);
-    for (const groupIds of [[], ['invalid'], [groupId, groupId]]) {
+    for (const brandIds of [[], ['invalid'], [brandId, brandId]]) {
       await request(app.getHttpServer())
         .patch(path)
         .set('x-test-user', 'owner')
-        .send({ groupIds })
+        .send({ brandIds })
         .expect(400);
     }
   });
@@ -336,7 +297,7 @@ describe('Gerenciamento HTTP de taxas', () => {
     await request(app.getHttpServer())
       .post('/card-fees/providers')
       .set('x-test-user', 'member')
-      .send({ name: 'Nome' })
+      .send({ name: 'Nome', logo: null })
       .expect(403);
     revoked = true;
     try {
@@ -347,7 +308,7 @@ describe('Gerenciamento HTTP de taxas', () => {
       await request(app.getHttpServer())
         .post('/card-fees/providers')
         .set('x-test-user', 'owner')
-        .send({ name: 'Nome' })
+        .send({ name: 'Nome', logo: null })
         .expect(403);
     } finally {
       revoked = false;

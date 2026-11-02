@@ -1,12 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, eq, notInArray, sql } from 'drizzle-orm';
-import type { GroupInput, ProviderInput, RateInput } from './dto/card-fees.dto.js';
+import { and, asc, eq } from 'drizzle-orm';
+import type { BrandInput, ProviderInput } from './dto/card-fees.dto.js';
 import { DatabaseService } from '../../shared/database/database.service.js';
-import {
-  cardFeeProviders,
-  cardFeeGroups,
-  cardFees,
-} from '../../shared/database/schemas/card-fees.schema.js';
+import { taxProviders, taxBrands } from '../../shared/database/schemas/taxes.schema.js';
 
 @Injectable()
 export class CardFeesRepository {
@@ -15,41 +11,40 @@ export class CardFeesRepository {
   findAll(organizationId: string) {
     return this.database.db
       .select({
-        id: cardFeeGroups.id,
-        providerId: cardFeeProviders.id,
-        providerName: cardFeeProviders.name,
-        name: cardFeeGroups.name,
-        channel: cardFeeGroups.channel,
-        logoSvg: cardFeeGroups.logoSvg,
-        installments: cardFees.installments,
-        ratePercent: cardFees.ratePercent,
+        id: taxBrands.id,
+        providerId: taxProviders.id,
+        providerName: taxProviders.name,
+        providerLogo: taxProviders.logo,
+        name: taxBrands.name,
+        channel: taxBrands.channel,
+        logo: taxBrands.logo,
+        rates: taxBrands.rates,
       })
-      .from(cardFeeGroups)
-      .innerJoin(cardFeeProviders, eq(cardFeeGroups.providerId, cardFeeProviders.id))
-      .leftJoin(cardFees, eq(cardFees.groupId, cardFeeGroups.id))
-      .where(eq(cardFeeGroups.organizationId, organizationId))
+      .from(taxBrands)
+      .innerJoin(taxProviders, eq(taxBrands.providerId, taxProviders.id))
+      .where(eq(taxBrands.organizationId, organizationId))
       .orderBy(
-        asc(cardFeeProviders.name),
-        asc(cardFeeProviders.id),
-        asc(cardFeeGroups.displayOrder),
-        asc(cardFeeGroups.name),
-        asc(cardFees.installments),
+        asc(taxProviders.name),
+        asc(taxProviders.id),
+        asc(taxBrands.displayOrder),
+        asc(taxBrands.name),
+        asc(taxBrands.id),
       );
   }
 
   listProviders(organizationId: string) {
     return this.database.db
-      .select({ id: cardFeeProviders.id, name: cardFeeProviders.name })
-      .from(cardFeeProviders)
-      .where(eq(cardFeeProviders.organizationId, organizationId))
-      .orderBy(asc(cardFeeProviders.name), asc(cardFeeProviders.id));
+      .select({ id: taxProviders.id, name: taxProviders.name, logo: taxProviders.logo })
+      .from(taxProviders)
+      .where(eq(taxProviders.organizationId, organizationId))
+      .orderBy(asc(taxProviders.name), asc(taxProviders.id));
   }
 
   async findProvider(organizationId: string, id: string) {
     const [provider] = await this.database.db
       .select()
-      .from(cardFeeProviders)
-      .where(and(eq(cardFeeProviders.organizationId, organizationId), eq(cardFeeProviders.id, id)))
+      .from(taxProviders)
+      .where(and(eq(taxProviders.organizationId, organizationId), eq(taxProviders.id, id)))
       .limit(1);
 
     return provider;
@@ -58,118 +53,72 @@ export class CardFeesRepository {
   async saveProvider(organizationId: string, data: ProviderInput, id?: string) {
     const [provider] = id
       ? await this.database.db
-          .update(cardFeeProviders)
+          .update(taxProviders)
           .set(data)
-          .where(
-            and(eq(cardFeeProviders.organizationId, organizationId), eq(cardFeeProviders.id, id)),
-          )
+          .where(and(eq(taxProviders.organizationId, organizationId), eq(taxProviders.id, id)))
           .returning()
       : await this.database.db
-          .insert(cardFeeProviders)
+          .insert(taxProviders)
           .values({ ...data, organizationId })
           .returning();
 
     return provider;
   }
 
-  async listGroups(organizationId: string) {
-    const groups = await this.database.db
+  listBrands(organizationId: string) {
+    return this.database.db
       .select()
-      .from(cardFeeGroups)
-      .where(eq(cardFeeGroups.organizationId, organizationId))
-      .orderBy(asc(cardFeeGroups.displayOrder), asc(cardFeeGroups.name), asc(cardFeeGroups.id));
-    const rates = await this.database.db
-      .select()
-      .from(cardFees)
-      .where(eq(cardFees.organizationId, organizationId))
-      .orderBy(asc(cardFees.installments));
-    const byGroup = new Map<string, typeof rates>();
-    for (const rate of rates) {
-      const values = byGroup.get(rate.groupId) ?? [];
-      values.push(rate);
-      byGroup.set(rate.groupId, values);
-    }
-
-    return groups.map((group) => ({ ...group, rates: byGroup.get(group.id) ?? [] }));
+      .from(taxBrands)
+      .where(eq(taxBrands.organizationId, organizationId))
+      .orderBy(asc(taxBrands.displayOrder), asc(taxBrands.name), asc(taxBrands.id));
   }
 
-  saveGroup(organizationId: string, data: GroupInput, id?: string) {
-    const { rates, ...values } = data;
-    return this.database.db.transaction(async (tx) => {
-      const [group] = id
-        ? await tx
-            .update(cardFeeGroups)
-            .set(values)
-            .where(and(eq(cardFeeGroups.organizationId, organizationId), eq(cardFeeGroups.id, id)))
-            .returning()
-        : await tx
-            .insert(cardFeeGroups)
-            .values({ ...values, organizationId })
-            .returning();
+  async saveBrand(organizationId: string, data: BrandInput, id?: string) {
+    const [brand] = id
+      ? await this.database.db
+          .update(taxBrands)
+          .set(data)
+          .where(and(eq(taxBrands.organizationId, organizationId), eq(taxBrands.id, id)))
+          .returning()
+      : await this.database.db
+          .insert(taxBrands)
+          .values({ ...data, organizationId })
+          .returning();
 
-      if (!group) return undefined;
-
-      // Serializa a alteração do grupo com alterações individuais das suas taxas.
-      await tx.delete(cardFees).where(
-        and(
-          eq(cardFees.organizationId, organizationId),
-          eq(cardFees.groupId, group.id),
-          notInArray(
-            cardFees.installments,
-            rates.map((rate) => rate.installments),
-          ),
-        ),
-      );
-      const saved = await tx
-        .insert(cardFees)
-        .values(rates.map((rate) => ({ ...rate, organizationId, groupId: group.id })))
-        .onConflictDoUpdate({
-          target: [cardFees.groupId, cardFees.installments],
-          set: { ratePercent: sql`excluded.rate_percent` },
-        })
-        .returning();
-
-      return { ...group, rates: saved.sort((a, b) => a.installments - b.installments) };
-    });
+    return brand;
   }
 
-  reorderGroups(organizationId: string, providerId: string, groupIds: string[]) {
+  reorderBrands(organizationId: string, providerId: string, brandIds: string[]) {
     return this.database.db.transaction(async (tx) => {
       const [provider] = await tx
-        .select({ id: cardFeeProviders.id })
-        .from(cardFeeProviders)
+        .select({ id: taxProviders.id })
+        .from(taxProviders)
         .where(
-          and(
-            eq(cardFeeProviders.organizationId, organizationId),
-            eq(cardFeeProviders.id, providerId),
-          ),
+          and(eq(taxProviders.organizationId, organizationId), eq(taxProviders.id, providerId)),
         )
         .for('update');
       if (!provider) return 'not-found' as const;
 
-      const groups = await tx
-        .select({ id: cardFeeGroups.id })
-        .from(cardFeeGroups)
+      const brands = await tx
+        .select({ id: taxBrands.id })
+        .from(taxBrands)
         .where(
-          and(
-            eq(cardFeeGroups.organizationId, organizationId),
-            eq(cardFeeGroups.providerId, providerId),
-          ),
+          and(eq(taxBrands.organizationId, organizationId), eq(taxBrands.providerId, providerId)),
         )
         .for('update');
-      const ids = new Set(groupIds);
-      if (groups.length !== groupIds.length || groups.some((group) => !ids.has(group.id)))
+      const ids = new Set(brandIds);
+      if (brands.length !== brandIds.length || brands.some((brand) => !ids.has(brand.id)))
         return 'stale' as const;
 
-      for (const [displayOrder, id] of groupIds.entries()) {
+      for (const [displayOrder, id] of brandIds.entries()) {
         await tx
-          .update(cardFeeGroups)
+          .update(taxBrands)
           .set({ displayOrder })
           .where(
             and(
-              eq(cardFeeGroups.organizationId, organizationId),
-              eq(cardFeeGroups.providerId, providerId),
-              eq(cardFeeGroups.id, id),
+              eq(taxBrands.organizationId, organizationId),
+              eq(taxBrands.providerId, providerId),
+              eq(taxBrands.id, id),
             ),
           );
       }
@@ -178,67 +127,33 @@ export class CardFeesRepository {
     });
   }
 
-  async hasProviderGroups(organizationId: string, providerId: string) {
-    const [group] = await this.database.db
-      .select({ id: cardFeeGroups.id })
-      .from(cardFeeGroups)
+  async hasProviderBrands(organizationId: string, providerId: string) {
+    const [brand] = await this.database.db
+      .select({ id: taxBrands.id })
+      .from(taxBrands)
       .where(
-        and(
-          eq(cardFeeGroups.organizationId, organizationId),
-          eq(cardFeeGroups.providerId, providerId),
-        ),
+        and(eq(taxBrands.organizationId, organizationId), eq(taxBrands.providerId, providerId)),
       )
       .limit(1);
 
-    return Boolean(group);
+    return Boolean(brand);
   }
 
   async removeProvider(organizationId: string, id: string) {
     const [provider] = await this.database.db
-      .delete(cardFeeProviders)
-      .where(and(eq(cardFeeProviders.organizationId, organizationId), eq(cardFeeProviders.id, id)))
-      .returning({ id: cardFeeProviders.id });
+      .delete(taxProviders)
+      .where(and(eq(taxProviders.organizationId, organizationId), eq(taxProviders.id, id)))
+      .returning({ id: taxProviders.id });
 
     return provider;
   }
 
-  async removeGroup(organizationId: string, id: string) {
-    const [group] = await this.database.db
-      .delete(cardFeeGroups)
-      .where(and(eq(cardFeeGroups.organizationId, organizationId), eq(cardFeeGroups.id, id)))
-      .returning({ id: cardFeeGroups.id });
+  async removeBrand(organizationId: string, id: string) {
+    const [brand] = await this.database.db
+      .delete(taxBrands)
+      .where(and(eq(taxBrands.organizationId, organizationId), eq(taxBrands.id, id)))
+      .returning({ id: taxBrands.id });
 
-    return group;
-  }
-
-  saveRate(organizationId: string, groupId: string, data: RateInput, id?: string) {
-    return this.database.db.transaction(async (tx) => {
-      const [group] = await tx
-        .select({ id: cardFeeGroups.id })
-        .from(cardFeeGroups)
-        .where(and(eq(cardFeeGroups.organizationId, organizationId), eq(cardFeeGroups.id, groupId)))
-        .for('update');
-
-      if (!group) return undefined;
-
-      const [rate] = id
-        ? await tx
-            .update(cardFees)
-            .set(data)
-            .where(
-              and(
-                eq(cardFees.organizationId, organizationId),
-                eq(cardFees.groupId, groupId),
-                eq(cardFees.id, id),
-              ),
-            )
-            .returning()
-        : await tx
-            .insert(cardFees)
-            .values({ ...data, organizationId, groupId })
-            .returning();
-
-      return rate;
-    });
+    return brand;
   }
 }

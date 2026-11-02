@@ -24,27 +24,20 @@ import { Session } from '../auth/session.decorator.js';
 import type { AuthSession } from '../auth/auth.factory.js';
 import { CardFeesService } from './card-fees.service.js';
 import {
-  cardFeeGroupsSchema,
-  reorderGroupsSchema,
+  taxBrandsSchema,
+  reorderBrandsSchema,
   cardFeeIdParamsSchema,
-  cardFeeGroupParamsSchema,
-  cardFeeRateParamsSchema,
   providerInputSchema,
-  groupInputSchema,
-  rateInputSchema,
+  brandInputSchema,
   providerResponseSchema,
-  groupResponseSchema,
-  rateResponseSchema,
+  brandResponseSchema,
   catalogResponseSchema,
 } from './dto/card-fees.dto.js';
 import type {
   ProviderInput,
-  ReorderGroupsInput,
-  GroupInput,
-  RateInput,
+  ReorderBrandsInput,
+  BrandInput,
   CardFeeIdParams,
-  CardFeeGroupParams,
-  CardFeeRateParams,
 } from './dto/card-fees.dto.js';
 
 @ApiTags('Taxas de cartão')
@@ -56,7 +49,7 @@ export class CardFeesController {
 
   @Get()
   @Header('Cache-Control', 'private, no-store')
-  @ApiOkResponse({ standardSchema: cardFeeGroupsSchema })
+  @ApiOkResponse({ standardSchema: taxBrandsSchema })
   findAll(@Session() session: AuthSession) {
     return this.service.findAll(session);
   }
@@ -87,41 +80,41 @@ export class CardFeesController {
     return this.service.saveProvider(body, session, params.id);
   }
 
-  @Post('groups')
-  @ApiCreatedResponse({ standardSchema: groupResponseSchema })
-  createGroup(
-    @Body({ schema: groupInputSchema }) body: GroupInput,
+  @Post('brands')
+  @ApiCreatedResponse({ standardSchema: brandResponseSchema })
+  createBrand(
+    @Body({ schema: brandInputSchema }) body: BrandInput,
     @Session() session: AuthSession,
   ) {
-    return this.service.saveGroup(body, session);
+    return this.service.saveBrand(body, session);
   }
 
-  @Patch('groups/:id')
-  @ApiOkResponse({ standardSchema: groupResponseSchema })
-  updateGroup(
+  @Patch('brands/:id')
+  @ApiOkResponse({ standardSchema: brandResponseSchema })
+  updateBrand(
     @Param({ schema: cardFeeIdParamsSchema }) params: CardFeeIdParams,
-    @Body({ schema: groupInputSchema }) body: GroupInput,
+    @Body({ schema: brandInputSchema }) body: BrandInput,
     @Session() session: AuthSession,
   ) {
-    return this.service.saveGroup(body, session, params.id);
+    return this.service.saveBrand(body, session, params.id);
   }
 
-  @Patch('providers/:id/groups/order')
+  @Patch('providers/:id/brands/order')
   @HttpCode(204)
-  @ApiNoContentResponse({ description: 'Ordem dos grupos atualizada.' })
-  @ApiConflictResponse({ description: 'A lista de grupos mudou.' })
-  reorderGroups(
+  @ApiNoContentResponse({ description: 'Ordem das bandeiras atualizada.' })
+  @ApiConflictResponse({ description: 'A lista de bandeiras mudou.' })
+  reorderBrands(
     @Param({ schema: cardFeeIdParamsSchema }) params: CardFeeIdParams,
-    @Body({ schema: reorderGroupsSchema }) body: ReorderGroupsInput,
+    @Body({ schema: reorderBrandsSchema }) body: ReorderBrandsInput,
     @Session() session: AuthSession,
   ) {
-    return this.service.reorderGroups(params.id, body.groupIds, session);
+    return this.service.reorderBrands(params.id, body.brandIds, session);
   }
 
   @Delete('providers/:id')
   @HttpCode(204)
   @ApiNoContentResponse({ description: 'Provedor removido.' })
-  @ApiConflictResponse({ description: 'O provedor ainda possui grupos.' })
+  @ApiConflictResponse({ description: 'O provedor ainda possui bandeiras.' })
   removeProvider(
     @Param({ schema: cardFeeIdParamsSchema }) params: CardFeeIdParams,
     @Session() session: AuthSession,
@@ -129,33 +122,13 @@ export class CardFeesController {
     return this.service.removeProvider(params.id, session);
   }
 
-  @Delete('groups/:id')
+  @Delete('brands/:id')
   @HttpCode(204)
-  @ApiNoContentResponse({ description: 'Grupo e suas taxas removidos.' })
-  removeGroup(
+  @ApiNoContentResponse({ description: 'Bandeira e suas taxas removidas.' })
+  removeBrand(
     @Param({ schema: cardFeeIdParamsSchema }) params: CardFeeIdParams,
     @Session() session: AuthSession,
   ) {
-    return this.service.removeGroup(params.id, session);
-  }
-
-  @Post('groups/:groupId/rates')
-  @ApiCreatedResponse({ standardSchema: rateResponseSchema })
-  createRate(
-    @Param({ schema: cardFeeGroupParamsSchema }) params: CardFeeGroupParams,
-    @Body({ schema: rateInputSchema }) body: RateInput,
-    @Session() session: AuthSession,
-  ) {
-    return this.service.saveRate(params.groupId, body, session);
-  }
-
-  @Patch('groups/:groupId/rates/:id')
-  @ApiOkResponse({ standardSchema: rateResponseSchema })
-  updateRate(
-    @Param({ schema: cardFeeRateParamsSchema }) params: CardFeeRateParams,
-    @Body({ schema: rateInputSchema }) body: RateInput,
-    @Session() session: AuthSession,
-  ) {
-    return this.service.saveRate(params.groupId, body, session, params.id);
+    return this.service.removeBrand(params.id, session);
   }
 }

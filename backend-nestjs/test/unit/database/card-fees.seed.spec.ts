@@ -3,7 +3,7 @@ import type { Pool } from 'pg';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DatabaseService } from '../../../src/shared/database/database.service.js';
 import { seedCardFees } from '../../../src/shared/database/seeds/card-fees.seed.js';
-import { initialCardFeeGroups } from '../../../src/shared/database/seeds/card-fees.data.js';
+import { initialTaxBrands } from '../../../src/shared/database/seeds/card-fees.data.js';
 import * as schema from '../../../src/shared/database/schemas/index.js';
 
 describe('seedCardFees', () => {
@@ -14,19 +14,16 @@ describe('seedCardFees', () => {
   const statements = () => query.mock.calls.map(([statement]) => statement.text);
 
   beforeEach(() => {
-    query.mockReset().mockImplementation(async (statement, values) => ({
-      rows: statement.text.includes('from "card_fee_providers"')
-        ? [['provider-id']]
-        : statement.text.startsWith('insert into "card_fee_groups"')
-          ? [[`group-${String(values?.[1])}`]]
-          : [],
+    query.mockReset().mockImplementation(async (statement) => ({
+      rows: statement.text.includes('from "tax_providers"') ? [['provider-id']] : [],
     }));
   });
 
-  it('preserva os três grupos e as 36 taxas exatas do projeto de origem', () => {
-    expect(initialCardFeeGroups.map(({ seedKey, rates }) => ({ seedKey, rates }))).toEqual([
+  it('preserva as três bandeiras e as 36 taxas exatas do projeto de origem', () => {
+    expect(initialTaxBrands.map(({ name, channel, rates }) => ({ name, channel, rates }))).toEqual([
       {
-        seedKey: 'VISA_MASTERCARD',
+        name: 'Visa / Mastercard',
+        channel: 'Presencial',
         rates: [
           '0.00',
           '3.94',
@@ -43,7 +40,8 @@ describe('seedCardFees', () => {
         ],
       },
       {
-        seedKey: 'ELO_AMEX',
+        name: 'Elo / American Express',
+        channel: 'Presencial',
         rates: [
           '0.00',
           '5.81',
@@ -60,7 +58,8 @@ describe('seedCardFees', () => {
         ],
       },
       {
-        seedKey: 'PAYMENT_LINK',
+        name: 'Visa / Mastercard / Elo / American Express',
+        channel: 'Link de pagamento',
         rates: [
           '0.00',
           '6.09',
@@ -77,65 +76,73 @@ describe('seedCardFees', () => {
         ],
       },
     ]);
-    for (const group of initialCardFeeGroups) expect(group.logoSvg).toMatch(/^<svg.*<\/svg>$/);
+    for (const group of initialTaxBrands) expect(group.logo).toMatch(/^<svg.*<\/svg>$/);
   });
 
-  it('insere grupos e suas 12 parcelas na mesma transação', async () => {
+  it('insere as três bandeiras com as 12 parcelas em JSON na mesma transação', async () => {
     await expect(seedCardFees(database, 'org-id')).resolves.toBe(3);
-    const inserts = query.mock.calls.filter(([statement]) =>
-      statement.text.startsWith('insert into "card_fees"'),
-    );
-    expect(inserts).toHaveLength(3);
     const providerInsert = query.mock.calls.find(([sql]) =>
-      sql.text.startsWith('insert into "card_fee_providers"'),
+      sql.text.startsWith('insert into "tax_providers"'),
     );
-    expect(providerInsert?.[1]).toEqual(['org-id', 'InfinitePay']);
-    const groupInserts = query.mock.calls.filter(([sql]) =>
-      sql.text.startsWith('insert into "card_fee_groups"'),
+    expect(providerInsert?.[1]).toEqual(['org-id', 'InfinitePay', null]);
+    const brandInserts = query.mock.calls.filter(([sql]) =>
+      sql.text.startsWith('insert into "tax_brands"'),
     );
-    expect(groupInserts).toHaveLength(3);
-    for (const [, values] of groupInserts) expect(values?.[0]).toBe('org-id');
-    for (const [, values] of groupInserts) expect(values?.[1]).toBe('provider-id');
-    for (const [, values] of inserts) {
-      expect(values).toHaveLength(48);
-      expect(values?.filter((_, index) => index % 4 === 2)).toEqual([
+    expect(brandInserts).toHaveLength(1);
+    const [, values] = brandInserts[0]!;
+    expect(statements().find((sql) => sql.includes('for update'))).toContain('"tax_providers"');
+    expect(values?.filter((value) => value === 'org-id')).toHaveLength(3);
+    expect(values?.filter((value) => value === 'provider-id')).toHaveLength(3);
+    const rates = values
+      ?.filter((value): value is string => typeof value === 'string' && value.startsWith('[{'))
+      .map((value) => JSON.parse(value) as { installments: number; ratePercent: string }[]);
+    expect(rates).toHaveLength(3);
+    for (const [index, brand] of initialTaxBrands.entries()) {
+      expect(rates?.[index]?.map((rate) => rate.installments)).toEqual([
         1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
       ]);
+      expect(rates?.[index]?.map((rate) => rate.ratePercent)).toEqual(brand.rates);
     }
     expect(statements()[0]).toBe('begin');
     expect(statements().at(-1)).toBe('commit');
   });
 
-  it('não sobrescreve nem duplica grupos e taxas em reexecuções', async () => {
+  it('reconhece bandeiras existentes pelo nome sem sobrescrevê-las nem duplicá-las', async () => {
     query.mockImplementation(async (statement) => ({
-      rows: statement.text.includes('from "card_fee_providers"') ? [['provider-id']] : [],
+      rows: statement.text.includes('from "tax_providers"')
+        ? [['provider-id']]
+        : statement.text.includes('from "tax_brands"')
+          ? initialTaxBrands.map((brand) => [brand.name])
+          : [],
     }));
     await expect(seedCardFees(database, 'org-id')).resolves.toBe(0);
-    expect(
-      statements().filter((sql) => sql.startsWith('insert into "card_fee_groups"')),
-    ).toHaveLength(3);
-    expect(
-      statements().filter((sql) =>
-        sql.includes('on conflict ("provider_id","seed_key") do nothing'),
-      ),
-    ).toHaveLength(3);
-    expect(
-      statements().some(
-        (sql) => sql.startsWith('insert into "card_fees"') || sql.startsWith('update '),
-      ),
-    ).toBe(false);
+    expect(statements().some((sql) => sql.startsWith('insert into "tax_brands"'))).toBe(false);
+    expect(statements().some((sql) => sql.startsWith('update '))).toBe(false);
+    const lookup = query.mock.calls.find(([sql]) => sql.text.includes('from "tax_brands"'));
+    expect(lookup?.[1]).toEqual(['org-id', 'provider-id']);
   });
 
-  it('reverte a criação dos grupos se a inserção das taxas falhar', async () => {
+  it('insere somente as bandeiras iniciais ausentes, mesmo após renomear outra', async () => {
+    query.mockImplementation(async (statement) => ({
+      rows: statement.text.includes('from "tax_providers"')
+        ? [['provider-id']]
+        : statement.text.includes('from "tax_brands"')
+          ? [[initialTaxBrands[0].name], ['Nome editado']]
+          : [],
+    }));
+    await expect(seedCardFees(database, 'org-id')).resolves.toBe(2);
+    const insert = query.mock.calls.find(([sql]) =>
+      sql.text.startsWith('insert into "tax_brands"'),
+    );
+    expect(insert?.[1]).not.toContain(initialTaxBrands[0].name);
+    expect(insert?.[1]).toContain(initialTaxBrands[1].name);
+    expect(insert?.[1]).toContain(initialTaxBrands[2].name);
+  });
+
+  it('reverte o provedor se a inserção das bandeiras falhar', async () => {
     query.mockImplementation(async (statement) => {
-      if (statement.text.startsWith('insert into "card_fees"')) throw new Error('Falha simulada');
-      return {
-        rows: statement.text.includes('from "card_fee_providers"')
-          ? [['provider-id']]
-          : statement.text.startsWith('insert into "card_fee_groups"')
-            ? [['group-id']]
-            : [],
-      };
+      if (statement.text.startsWith('insert into "tax_brands"')) throw new Error('Falha simulada');
+      return { rows: statement.text.includes('from "tax_providers"') ? [['provider-id']] : [] };
     });
     await expect(seedCardFees(database, 'org-id')).rejects.toThrow();
     expect(statements().at(-1)).toBe('rollback');
@@ -147,6 +154,6 @@ describe('seedCardFees', () => {
       'Provedor inicial de taxas não encontrado.',
     );
     expect(statements().at(-1)).toBe('rollback');
-    expect(statements().some((sql) => sql.startsWith('insert into "card_fee_groups"'))).toBe(false);
+    expect(statements().some((sql) => sql.startsWith('insert into "tax_brands"'))).toBe(false);
   });
 });

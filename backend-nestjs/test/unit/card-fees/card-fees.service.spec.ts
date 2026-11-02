@@ -8,87 +8,78 @@ const session = {} as AuthSession;
 const access = {
   requireActiveOrganization: vi.fn().mockResolvedValue('org-id'),
 } as unknown as OrganizationAccessService;
+const brandA = '019a1234-5678-7000-8000-123456789001';
+const brandB = '019a1234-5678-7000-8000-123456789002';
+const providerA = '019a1234-5678-7000-8000-123456789003';
+const providerB = '019a1234-5678-7000-8000-123456789004';
+
+function serviceWith(rows: unknown[]) {
+  const repository = { findAll: vi.fn().mockResolvedValue(rows) };
+  return new CardFeesService(repository as unknown as CardFeesRepository, access);
+}
+
 describe('CardFeesService', () => {
-  it('agrupa taxas mantendo ordem, precisão e grupos sem taxas', async () => {
-    const group = {
-      id: 'group-a',
-      name: 'Visa / Mastercard',
-      channel: 'Presencial',
-      logoSvg: null,
-    };
-    const provider = { id: 'provider-a', name: 'InfinitePay' };
-    const repository = {
-      findAll: vi.fn().mockResolvedValue([
-        {
-          ...group,
-          providerId: provider.id,
-          providerName: provider.name,
-          installments: 1,
-          ratePercent: '0.00',
-        },
-        {
-          ...group,
-          providerId: provider.id,
-          providerName: provider.name,
-          installments: 2,
-          ratePercent: '3.94',
-        },
-        {
-          ...group,
-          providerId: provider.id,
-          providerName: provider.name,
-          id: 'group-b',
-          installments: null,
-          ratePercent: null,
-        },
-      ]),
-    };
-    const service = new CardFeesService(repository as unknown as CardFeesRepository, access);
+  it('retorna as taxas do JSON da bandeira ordenadas e com precisão exata', async () => {
+    const service = serviceWith([
+      {
+        id: brandA,
+        providerId: providerA,
+        providerName: 'InfinitePay',
+        providerLogo: '<svg></svg>',
+        name: 'Visa / Mastercard',
+        channel: 'Presencial',
+        logo: null,
+        rates: [
+          { installments: 2, ratePercent: '3.94' },
+          { installments: 1, ratePercent: '0.00' },
+        ],
+      },
+    ]);
     expect(await service.findAll(session)).toEqual([
       {
-        ...group,
-        provider,
+        id: brandA,
+        provider: { id: providerA, name: 'InfinitePay', logo: '<svg></svg>' },
+        name: 'Visa / Mastercard',
+        channel: 'Presencial',
+        logo: null,
         rates: [
           { installments: 1, ratePercent: '0.00' },
           { installments: 2, ratePercent: '3.94' },
         ],
       },
-      { ...group, provider, id: 'group-b', rates: [] },
     ]);
   });
-  it('retorna lista vazia sem grupos cadastrados', async () => {
-    const repository = { findAll: vi.fn().mockResolvedValue([]) };
-    await expect(
-      new CardFeesService(repository as unknown as CardFeesRepository, access).findAll(session),
-    ).resolves.toEqual([]);
+
+  it('retorna lista vazia sem bandeiras cadastradas', async () => {
+    await expect(serviceWith([]).findAll(session)).resolves.toEqual([]);
   });
-  it('mantém grupos com o mesmo nome separados por provedor', async () => {
+
+  it('mantém bandeiras com o mesmo nome separadas por provedor', async () => {
     const common = {
       name: 'Visa / Mastercard',
       channel: 'Presencial',
-      logoSvg: null,
-      installments: 2,
-      ratePercent: '3.94',
+      logo: null,
+      providerLogo: null,
     };
-    const repository = {
-      findAll: vi.fn().mockResolvedValue([
-        { ...common, id: 'group-a', providerId: 'provider-a', providerName: 'InfinitePay' },
-        {
-          ...common,
-          id: 'group-b',
-          providerId: 'provider-b',
-          providerName: 'Outro provedor',
-          ratePercent: '5.00',
-        },
-      ]),
-    };
-    const groups = await new CardFeesService(
-      repository as unknown as CardFeesRepository,
-      access,
-    ).findAll(session);
-    expect(groups).toHaveLength(2);
-    expect(groups[0]?.provider.name).toBe('InfinitePay');
-    expect(groups[1]?.provider.name).toBe('Outro provedor');
-    expect(groups[1]?.rates).toEqual([{ installments: 2, ratePercent: '5.00' }]);
+    const brands = await serviceWith([
+      {
+        ...common,
+        id: brandA,
+        providerId: providerA,
+        providerName: 'InfinitePay',
+        rates: [{ installments: 2, ratePercent: '3.94' }],
+      },
+      {
+        ...common,
+        id: brandB,
+        providerId: providerB,
+        providerName: 'Outro provedor',
+        rates: [{ installments: 2, ratePercent: '5.00' }],
+      },
+    ]).findAll(session);
+    expect(brands).toHaveLength(2);
+    expect(brands[0]?.provider.name).toBe('InfinitePay');
+    expect(brands[1]?.provider.name).toBe('Outro provedor');
+    expect(brands[1]?.rates).toEqual([{ installments: 2, ratePercent: '5.00' }]);
   });
 });

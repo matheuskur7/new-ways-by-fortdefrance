@@ -64,6 +64,34 @@
       "when": 1792378567299,
       "tag": "0008_blushing_onslaught",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793586350182,
+      "tag": "0009_tax_brands_json",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793586363680,
+      "tag": "0010_drop_card_fee_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793586900230,
+      "tag": "0011_tax_brands_display_order_smallint",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793587029034,
+      "tag": "0012_tax_brands_drop_seed_key",
+      "breakpoints": true
     }
   ]
 }

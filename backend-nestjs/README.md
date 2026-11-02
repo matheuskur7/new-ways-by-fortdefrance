@@ -265,32 +265,32 @@ O card de convites continua somente visual, com o botão de envio desativado. Es
 
 ### Taxas de cartão
 
-`GET /card-fees` exige sessão Better Auth, empresa ativa e vínculo atual no banco, retornando os grupos de taxas exclusivos dessa empresa, com o provedor (`provider: { id, name }`), ordenados por provedor, exibição e parcelas. A tela `/taxas` calcula `valor da venda / (1 - taxa / 100)` para repassar a taxa ao comprador, com exibição em reais.
+`GET /card-fees` exige sessão Better Auth, empresa ativa e vínculo atual no banco, retornando as bandeiras de taxas exclusivas dessa empresa, com o provedor (`provider: { id, name, logo }`), o `logo` SVG da bandeira e as taxas (`rates`), ordenadas por provedor, exibição e parcelas. A tela `/taxas` calcula `valor da venda / (1 - taxa / 100)` para repassar a taxa ao comprador, com exibição em reais.
 
-O schema Drizzle mantém grupos, logotipos SVG e taxas decimais por parcela (1 a 32.767, limite do smallint), com unicidade por grupo/parcela. Após conferir o banco de destino, execute `pnpm db:migrate` e `pnpm run db:seed` no backend. O seed inclui os três grupos e as 36 taxas do `zexperiments`; execuções posteriores preservam grupos existentes e suas taxas.
+O schema Drizzle (`taxes.schema.ts`) mantém `tax_providers` e `tax_brands`. As taxas de cada bandeira ficam na coluna JSONB `rates` (`[{ installments, ratePercent }]`), com CHECK que exige um array de 1 a 32.767 itens; a API valida parcelas únicas e percentuais com duas casas e grava a lista ordenada por parcela. Após conferir o banco de destino, execute `pnpm db:migrate` e `pnpm run db:seed` no backend. O seed inclui as três bandeiras e as 36 taxas do `zexperiments`; execuções posteriores reconhecem as bandeiras do provedor pelo nome, inserem apenas as ausentes e preservam as existentes e suas taxas.
 
 ### Execução centralizada dos seeds
 
 No diretório `backend-nestjs`, execute `pnpm run db:seed`. O comando compila o backend e executa `src/seed.ts`, que chama, em sequência:
 
 1. Dados iniciais: usuário, credencial, matriz e Outra Empresa com seus vínculos.
-2. Taxas de cartão: os três grupos, logotipos e 36 taxas do `zexperiments`.
+2. Taxas de cartão: as três bandeiras, logotipos e 36 taxas do `zexperiments`.
 
 Todos os seeds e seus dados ficam em `src/shared/database/seeds/`. O `SeedsModule` carrega somente configuração e banco; os seeds não são registrados na API nem executados ao iniciá-la. Novos seeds devem ser adicionados nessa pasta e chamados em `src/seed.ts`.
 
-Aplique as migrações antes e configure as variáveis `INITIAL_USER_*` e `INITIAL_ORGANIZATION_*`. Cada seed usa sua própria transação; uma falha interrompe a sequência, retorna código de erro e permite reexecutar o comando. As taxas só são inseridas para grupos ainda não cadastrados, preservando taxas e logotipos existentes.
+Aplique as migrações antes e configure as variáveis `INITIAL_USER_*` e `INITIAL_ORGANIZATION_*`. Cada seed usa sua própria transação; uma falha interrompe a sequência, retorna código de erro e permite reexecutar o comando. As taxas só são inseridas para bandeiras ainda não cadastradas, preservando taxas e logotipos existentes.
 
 ### Provedores de taxas de cartão
 
-`card_fee_providers` representa o fornecedor das tabelas de taxas e possui somente `id` UUIDv7, `organization_id`, `name` único por empresa e auditoria temporal (`created_at` e `updated_at`). Cada grupo tem um `provider_id` obrigatório. A chave de seed é única dentro de cada provedor; provedores com grupos vinculados não podem ser excluídos.
+`tax_providers` representa o fornecedor das tabelas de taxas e possui `id` UUIDv7, `organization_id`, `name` único por empresa, `logo` SVG opcional e auditoria temporal (`created_at` e `updated_at`). Cada bandeira (`tax_brands`) tem `provider_id` obrigatório, `name`, `channel`, `display_order`, `logo` SVG opcional e `rates` em JSON. Provedores com bandeiras vinculadas não podem ser excluídos.
 
-O seed centralizado cria ou reutiliza **InfinitePay** e cadastra nela os três grupos e as 36 taxas iniciais, preservando registros existentes. A migração `0007` atribui os grupos anteriores à InfinitePay antes de tornar o vínculo obrigatório. Nenhuma migração é aplicada pelo comando de seed.
+O seed centralizado cria ou reutiliza **InfinitePay** (sem logo) e cadastra nela as três bandeiras e as 36 taxas iniciais, preservando registros existentes. A migração `0009` copia provedores e grupos antigos para `tax_providers` e `tax_brands`, preservando UUIDs e agregando as taxas de `card_fees` no JSON `rates` (ela falha se algum grupo não tiver taxas); a `0010` remove as tabelas `card_fee_*`. Nenhuma migração é aplicada pelo comando de seed.
 
 
 ### Gerenciamento de taxas por empresa
 
-A tela `/configuracoes/taxas` usa `GET /card-fees/catalog` para listar todos os provedores da empresa ativa, incluindo os que ainda não têm grupos. `POST /card-fees/providers` e `PATCH /card-fees/providers/:id` cadastram e editam provedores. `POST /card-fees/groups` e `PATCH /card-fees/groups/:id` salvam os dados do grupo e a lista de taxas em uma transação. Reduzir a lista remove as taxas excedentes; as parcelas mantidas preservam seus IDs. Taxas individuais usam `POST /card-fees/groups/:groupId/rates` e `PATCH /card-fees/groups/:groupId/rates/:id`.
+A tela `/configuracoes/taxas` usa `GET /card-fees/catalog` (`{ providers, brands }`) para listar todos os provedores da empresa ativa, incluindo os que ainda não têm bandeiras. `POST /card-fees/providers` e `PATCH /card-fees/providers/:id` cadastram e editam provedores com `{ name, logo }` (`logo` SVG ou null). `POST /card-fees/brands` e `PATCH /card-fees/brands/:id` salvam a bandeira e substituem a lista completa de taxas em uma única instrução. `PATCH /card-fees/providers/:id/brands/order` recebe `{ brandIds }` e `DELETE /card-fees/brands/:id` remove a bandeira com suas taxas. Não há rotas de taxa individual.
 
-O corpo do grupo recebe `providerId`, `name`, `channel`, `displayOrder`, `logoSvg` (ou null) e `rates: [{ installments, ratePercent }]`. Percentuais usam strings decimais com duas casas, de `0.00` a `99.99`. A quantidade de parcelas é definida no cadastro e pode ultrapassar 12. Não envie `organizationId`: o backend deriva a empresa da sessão validada, confirma o vínculo a cada operação e permite alterações apenas a owner/admin. Chaves estrangeiras compostas também impedem relacionar registros de empresas diferentes.
+O corpo da bandeira recebe `providerId`, `name`, `channel`, `displayOrder`, `logo` (SVG ou null) e `rates: [{ installments, ratePercent }]`. Percentuais usam strings decimais com duas casas, de `0.00` a `99.99`. A quantidade de parcelas é definida no cadastro e pode ultrapassar 12. Não envie `organizationId`: o backend deriva a empresa da sessão validada, confirma o vínculo a cada operação e permite alterações apenas a owner/admin. Chaves estrangeiras compostas também impedem relacionar registros de empresas diferentes.
 
 A migração `0008` transforma o catálogo global em cópias independentes para cada empresa existente, preservando os IDs na primeira empresa e gerando os demais no PostgreSQL. Se houver catálogo sem nenhuma empresa, a migração interrompe com uma mensagem para cadastrar a empresa antes. O seed explícito passa a criar o catálogo de referência separadamente em cada empresa existente, sem sobrescrever grupos cadastrados. Empresas novas podem iniciar com catálogo vazio. A migração foi gerada, mas deve ser revisada e aplicada ao banco de destino antes de usar as novas rotas.

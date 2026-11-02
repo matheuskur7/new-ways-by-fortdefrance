@@ -1,4 +1,4 @@
-import { cardFeeProviders } from './card-fees.schema.js';
+import { taxProviders } from './taxes.schema.js';
 import { userImages } from './user-images.schema.js';
 import { relations } from 'drizzle-orm';
 import { user, session, account } from './auth.schema.js';
@@ -59,9 +59,9 @@ export const userImageRelations = relations(userImages, ({ one }) => ({
   user: one(user, { fields: [userImages.userId], references: [user.id] }),
 }));
 
-export const cardFeeProviderOrganizationRelations = relations(cardFeeProviders, ({ one }) => ({
+export const taxProviderOrganizationRelations = relations(taxProviders, ({ one }) => ({
   organization: one(organization, {
-    fields: [cardFeeProviders.organizationId],
+    fields: [taxProviders.organizationId],
     references: [organization.id],
   }),
 }));
