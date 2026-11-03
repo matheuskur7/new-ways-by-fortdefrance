@@ -26,6 +26,7 @@ Dentro de `frontend/`, execute `pnpm dev`. Em produção, configure as URLs HTTP
 - `/esqueci-senha` e `/redefinir-senha?token=`: recuperação de senha. O link expira em 1 hora, vale uma vez e encerra as sessões abertas.
 - `/convite/[id]`: o destinatário entra ou cria conta com o e-mail convidado e aceita ou recusa. O formulário do modal de gerenciamento da empresa envia os convites.
 - `/organizations`: requer sessão; lista, cria e seleciona organizações.
+- Remoção de membros: no modal de gerenciamento da empresa, proprietários e administradores removem membros e administradores pela rota nativa `/api/auth/organization/remove-member`, após confirmação. Proprietários e o próprio usuário não têm a ação. O membro removido perde o acesso na requisição seguinte, porque o vínculo é consultado no banco a cada operação.
 - `/dashboard`: requer sessão e vínculo atual com a organização ativa.
 - Botão Sair: invalida a sessão no backend e retorna ao login.
 
