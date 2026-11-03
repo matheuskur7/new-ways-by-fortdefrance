@@ -27,6 +27,8 @@ const { listOrganizationMembers } =
   await import("../features/organization/services/list-organization-members.ts")
 const { updateMemberRole } =
   await import("../features/organization/services/update-member-role.ts")
+const { removeMember } =
+  await import("../features/organization/services/remove-member.ts")
 const { inviteMember } =
   await import("../features/organization/services/invite-member.ts")
 resolver.deregister()
@@ -38,6 +40,12 @@ const organization = {
   slug: "empresa",
   email: "company@example.com",
   address: "Rua Exemplo, 123",
+}
+const removed = {
+  id: "member-a",
+  organizationId: "org-a",
+  userId: "user-a",
+  role: "member",
 }
 const member = {
   id: "member-a",
@@ -172,6 +180,45 @@ test("falhas HTTP e cargos não confirmados pelo backend não são tratados como
     updateMemberRole("org-a", { memberId: "member-a", role: "admin" }),
     failure
   )
+})
+
+test("remove pela rota nativa enviando somente o ID do membro e a empresa", async () => {
+  const calls = []
+  mock.method(api, "post", async (...args) => {
+    calls.push(args)
+    return { data: { member: removed } }
+  })
+  assert.deepEqual(
+    await removeMember("org-a", { memberId: "member-a" }),
+    removed
+  )
+  assert.deepEqual(calls, [
+    [
+      "/api/auth/organization/remove-member",
+      { organizationId: "org-a", memberIdOrEmail: "member-a" },
+    ],
+  ])
+  await assert.rejects(removeMember("org-a", { memberId: "" }))
+  assert.equal(calls.length, 1)
+})
+
+test("remoções de outro membro, de outra empresa ou com falha HTTP não são sucesso", async () => {
+  for (const response of [
+    { ...removed, id: "member-b" },
+    { ...removed, organizationId: "org-b" },
+  ]) {
+    mock.method(api, "post", async () => ({ data: { member: response } }))
+    await assert.rejects(
+      removeMember("org-a", { memberId: "member-a" }),
+      /membro removido/
+    )
+    mock.restoreAll()
+  }
+  const failure = new Error("Falha simulada")
+  mock.method(api, "post", async () => {
+    throw failure
+  })
+  await assert.rejects(removeMember("org-a", { memberId: "member-a" }), failure)
 })
 
 test("convida pela rota nativa com e-mail normalizado e cargo permitido", async () => {

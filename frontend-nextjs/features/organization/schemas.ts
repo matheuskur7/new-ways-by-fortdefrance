@@ -83,6 +83,9 @@ export const updateMemberRoleSchema = z.object({
 })
 export type UpdateMemberRoleData = z.infer<typeof updateMemberRoleSchema>
 export const updatedMemberSchema = organizationMemberSchema.omit({ user: true })
+export const removeMemberSchema = z.object({ memberId: z.string().min(1) })
+export type RemoveMemberData = z.infer<typeof removeMemberSchema>
+export const removedMemberSchema = z.object({ member: updatedMemberSchema })
 
 const roleLabels: Record<string, string> = {
   owner: "Proprietário",

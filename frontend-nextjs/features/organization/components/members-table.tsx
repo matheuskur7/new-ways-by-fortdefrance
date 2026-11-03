@@ -6,6 +6,8 @@ import { UserImage } from "@/components/user-image"
 import { DataTable } from "@/components/data-table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { IconButton } from "@/components/ui/icon-button"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import {
   Dialog,
   DialogContent,
@@ -20,11 +22,13 @@ import {
   ChevronRight,
   LoaderCircle,
   UserCog,
+  UserMinus,
   UsersRound,
 } from "lucide-react"
 import { MemberRoleSelect, type MemberRole } from "./member-role-select"
 import { useOrganizationMembers } from "../hooks/use-organization-members"
 import { useUpdateMemberRole } from "../hooks/use-update-member-role"
+import { useRemoveMember } from "../hooks/use-remove-member"
 import { MEMBERS_PAGE_SIZE } from "../services/list-organization-members"
 import { isOrganizationOwner, type OrganizationMember } from "../schemas"
 
@@ -40,6 +44,8 @@ export function MembersTable({
   const [pageIndex, setPageIndex] = useState(0)
   const query = useOrganizationMembers(userId, organizationId, pageIndex)
   const update = useUpdateMemberRole(userId, organizationId)
+  const remove = useRemoveMember(userId, organizationId)
+  const busy = update.isPending || remove.isPending
   const members = query.data?.members ?? []
   const total = query.data?.total ?? 0
   const pageCount = Math.max(1, Math.ceil(total / MEMBERS_PAGE_SIZE))
@@ -48,6 +54,10 @@ export function MembersTable({
     memberId: string
     name: string
     role: MemberRole
+  } | null>(null)
+  const [pendingRemoval, setPendingRemoval] = useState<{
+    memberId: string
+    name: string
   } | null>(null)
 
   const columns = useMemo<ColumnDef<OrganizationMember>[]>(
@@ -103,7 +113,7 @@ export function MembersTable({
           ) : member.role === "admin" || member.role === "member" ? (
             <MemberRoleSelect
               value={member.role}
-              disabled={update.isPending}
+              disabled={busy}
               label={`Cargo de ${member.user.name}`}
               onChange={(role) => {
                 if (role === member.role) return
@@ -119,8 +129,35 @@ export function MembersTable({
             <span className="text-muted-foreground">{member.role}</span>
           ),
       },
+      {
+        id: "actions",
+        header: () => <span className="sr-only">Ações</span>,
+        // Proprietários não podem ser removidos por aqui, e a própria saída
+        // da empresa não é uma remoção feita pelo gerenciamento.
+        cell: ({ row: { original: member } }) =>
+          isOrganizationOwner(member.role) ||
+          member.userId === userId ? null : (
+            <IconButton
+              label={`Remover ${member.user.name}`}
+              tooltip="Remover"
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+              disabled={busy}
+              onClick={() =>
+                setPendingRemoval({
+                  memberId: member.id,
+                  name: member.user.name,
+                })
+              }
+            >
+              <UserMinus aria-hidden="true" />
+            </IconButton>
+          ),
+      },
     ],
-    [update.isPending, userId]
+    [busy, userId]
   )
 
   function confirmRoleChange() {
@@ -130,6 +167,21 @@ export function MembersTable({
       { onSuccess: () => setConfirmationOpen(false) }
     )
   }
+  function confirmRemoval() {
+    if (!pendingRemoval) return
+    remove.mutate(
+      { memberId: pendingRemoval.memberId },
+      {
+        onSuccess: () => {
+          setPendingRemoval(null)
+          // Volta uma página quando o membro removido era o último da atual.
+          if (pageIndex > 0 && members.length === 1)
+            setPageIndex((current) => current - 1)
+        },
+      }
+    )
+  }
+
   return (
     <>
       <DialogSection
@@ -171,7 +223,7 @@ export function MembersTable({
         ) : (
           <DataTable
             columns={columns}
-            columnClassNames={{ role: "w-px" }}
+            columnClassNames={{ role: "w-px", actions: "w-px" }}
             cellClassNames={{ role: "text-right [&>button]:ml-auto" }}
             data={members}
             getRowId={getMemberId}
@@ -187,9 +239,7 @@ export function MembersTable({
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                disabled={
-                  pageIndex === 0 || query.isFetching || update.isPending
-                }
+                disabled={pageIndex === 0 || query.isFetching || busy}
                 onClick={() => setPageIndex((current) => current - 1)}
               >
                 <ChevronLeft aria-hidden="true" /> Anterior
@@ -197,9 +247,7 @@ export function MembersTable({
               <Button
                 variant="outline"
                 disabled={
-                  pageIndex + 1 >= pageCount ||
-                  query.isFetching ||
-                  update.isPending
+                  pageIndex + 1 >= pageCount || query.isFetching || busy
                 }
                 onClick={() => setPageIndex((current) => current + 1)}
               >
@@ -258,6 +306,17 @@ export function MembersTable({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog
+        open={pendingRemoval !== null}
+        icon={UserMinus}
+        title="Remover membro da empresa?"
+        description={`${pendingRemoval?.name ?? "O membro"} perderá o acesso à empresa imediatamente. Para voltar, será necessário um novo convite.`}
+        confirmLabel="Remover membro"
+        pendingLabel="Removendo…"
+        pending={remove.isPending}
+        onCancel={() => setPendingRemoval(null)}
+        onConfirm={confirmRemoval}
+      />
     </>
   )
 }
